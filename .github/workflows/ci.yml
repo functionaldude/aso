@@ -35,6 +35,8 @@ jobs:
         run: |
           ./gradlew --no-daemon generateJooq
           git diff --exit-code -- backend/src/generated
+      - name: Install Chromium and Linux system dependencies
+        run: ./gradlew --no-daemon playwrightInstall -PplaywrightWithDeps
       - name: Isolated OIDC fixture smoke tests
         run: ./gradlew --no-daemon oidcSmokeTest
       - name: Independent local service reset checks

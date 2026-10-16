@@ -196,9 +196,9 @@ The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql` and `V3__ques
 
 ## CI and diagnostics
 
-GitHub Actions runs the four Gradle validation commands plus the disposable lifecycle check on pushes/PRs targeting `master`, using a **self-hosted** runner. The runner needs Git, Java setup support, Docker access, Compose 2.24.4+, and Chromium's OS libraries. Gradle provisions Node; the E2E task installs its browser version.
+GitHub Actions runs the four Gradle validation commands plus the disposable lifecycle check on pushes/PRs targeting `master`, using a **self-hosted** runner. The runner needs Git, Java setup support, Docker access, and Compose 2.24.4+. Gradle provisions Node; CI installs the matching Chromium browser and its Linux system dependencies before the OIDC, integration, and packaged-application browser tests.
 
-On Linux, have the runner administrator provision Chromium's runtime dependencies before running CI. Playwright can install them with `./gradlew playwrightInstall -PplaywrightWithDeps` (requires administrative privileges on Linux). This is one-time runner setup.
+CI runs `./gradlew --no-daemon playwrightInstall -PplaywrightWithDeps`, which invokes Playwright's `install --with-deps chromium`. On Linux, the runner must be root or have non-interactive sudo access for the OS package installation. Use the same command when preparing a Linux development host. Ordinary local browser-test tasks download Chromium without changing OS packages.
 
 JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/test-results/`; Angular coverage is under `frontend/coverage/`. Sanitized shell/Q&A fixture screenshots and the packaged application's log are under `backend/build/e2e/`. OIDC reports are in the same test report directories; sanitized Keycloak failure logs and success summaries are under `backend/build/oidc/`. OIDC checks retain no browser traces, tokens, callback URLs, or passwords. Authentication browser traces are deliberately disabled because they can retain passwords, codes, and tokens. CI uploads the sanitized diagnostics even when validation fails. Docker unavailability fails integration/browser tests rather than silently skipping them.
 
