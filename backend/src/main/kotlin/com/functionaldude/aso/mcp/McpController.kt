@@ -2,6 +2,8 @@ package com.functionaldude.aso.mcp
 
 import com.functionaldude.aso.identity.IdentityService
 import com.functionaldude.aso.identity.IdentitySettings
+import com.functionaldude.aso.questions.ContentFailure
+import com.functionaldude.aso.questions.QuestionTools
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -18,6 +20,7 @@ class McpController(
     private val identities: IdentityService,
     private val settings: IdentitySettings,
     private val json: JsonMapper,
+    private val questions: QuestionTools,
 ) {
     private fun originAllowed(request: HttpServletRequest) = request.getHeader("Origin").let { it == null || it == settings.publicUrl }
 
@@ -94,21 +97,33 @@ class McpController(
                                         ),
                                     "annotations" to mapOf("readOnlyHint" to true, "openWorldHint" to false),
                                 ),
-                            ),
+                            ) + questions.definitions(),
                     )
                 "tools/call" -> {
-                    if (params.path("name").asString() != "identity") return error(-32602, "Unknown tool")
-                    val arguments = params.path("arguments")
-                    if (!arguments.isMissingNode &&
-                        (!arguments.isObject || arguments.size() != 0)
-                    ) {
-                        return error(-32602, "identity accepts no arguments")
+                    val name = params.path("name").asString()
+                    if (name != "identity" && questions.definitions().none { it["name"] == name }) return error(-32602, "Unknown tool")
+                    val arguments = params.path("arguments").let { if (it.isMissingNode) json.createObjectNode() else it }
+                    if (!arguments.isObject) return error(-32602, "Tool arguments must be an object")
+                    try {
+                        val value =
+                            if (name == "identity") {
+                                if (arguments.size() != 0) return error(-32602, "identity accepts no arguments")
+                                identity
+                            } else {
+                                questions.call(name, authentication, arguments)
+                            }
+                        mapOf(
+                            "content" to listOf(mapOf("type" to "text", "text" to json.writeValueAsString(value))),
+                            "structuredContent" to value,
+                            "isError" to false,
+                        )
+                    } catch (failure: ContentFailure) {
+                        mapOf(
+                            "content" to listOf(mapOf("type" to "text", "text" to failure.message)),
+                            "structuredContent" to mapOf("code" to failure.code, "message" to failure.message, "status" to failure.status),
+                            "isError" to true,
+                        )
                     }
-                    mapOf(
-                        "content" to listOf(mapOf("type" to "text", "text" to json.writeValueAsString(identity))),
-                        "structuredContent" to identity,
-                        "isError" to false,
-                    )
                 }
                 else -> return error(-32601, "Method not found")
             }

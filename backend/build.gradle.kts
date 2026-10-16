@@ -24,6 +24,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.commonmark:commonmark:0.30.0")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
@@ -162,7 +163,7 @@ tasks.register<Test>("oidcSmokeTest") {
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }
 
-// Parse the identity Flyway DDL offline; never inspect a developer database.
+// Parse the identity and Q&A Flyway DDL offline; never inspect a developer database.
 val jooqCodegen by configurations.creating
 configurations[jooqCodegen.name].extendsFrom(configurations.implementation.get())
 dependencies {
@@ -171,7 +172,7 @@ dependencies {
 }
 tasks.register<JavaExec>("generateJooq") {
     group = "build"
-    description = "Regenerate checked-in jOOQ identity sources from Flyway DDL without a database."
+    description = "Regenerate checked-in jOOQ identity and Q&A sources from Flyway DDL without a database."
     classpath = jooqCodegen
     mainClass = "org.jooq.codegen.GenerationTool"
     workingDir = projectDir

@@ -4,11 +4,26 @@
 package com.functionaldude.aso.jooq;
 
 
+import com.functionaldude.aso.jooq.tables.Answer;
 import com.functionaldude.aso.jooq.tables.AppUser;
+import com.functionaldude.aso.jooq.tables.ContentRequest;
+import com.functionaldude.aso.jooq.tables.Question;
+import com.functionaldude.aso.jooq.tables.QuestionTag;
+import com.functionaldude.aso.jooq.tables.Tag;
 
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
+    public static final Answer ANSWER = Answer.ANSWER;
+
     public static final AppUser APP_USER = AppUser.APP_USER;
+
+    public static final ContentRequest CONTENT_REQUEST = ContentRequest.CONTENT_REQUEST;
+
+    public static final Question QUESTION = Question.QUESTION;
+
+    public static final QuestionTag QUESTION_TAG = QuestionTag.QUESTION_TAG;
+
+    public static final Tag TAG = Tag.TAG;
 }

@@ -131,4 +131,4 @@ Acceptance criteria:
 
 ## Architecture and workflow boundaries
 
-Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goal 001 identity/access; Q&A and later goals are still planned, and this is not a claim that it is ready for a team rollout.
+Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goal 001 identity/access and goal 002 Q&A; goal 003 and later goals are still planned, and this is not a claim that it is ready for a team rollout.
