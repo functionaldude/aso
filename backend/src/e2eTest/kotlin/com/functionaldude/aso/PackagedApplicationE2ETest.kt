@@ -45,7 +45,7 @@ class PackagedApplicationE2ETest {
             OidcBrowserLogin().use { login ->
                 KeycloakFixture(login.callback, login.callback, "$baseUrl/mcp", "$baseUrl/login/oauth2/code/oidc").use { keycloak ->
                     keycloak.start()
-                    val issuer = "http://${keycloak.host}:${keycloak.getMappedPort(8080)}/realms/aso-dev"
+                    val issuer = keycloak.issuer
                     val builder =
                         ProcessBuilder(
                             Path.of(System.getProperty("java.home"), "bin", "java").toString(),

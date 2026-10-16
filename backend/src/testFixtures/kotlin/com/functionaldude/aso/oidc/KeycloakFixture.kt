@@ -13,6 +13,9 @@ class KeycloakFixture(
     resource: String = "http://127.0.0.1:8080/mcp",
     webCallback: String = "http://127.0.0.1:8080/login/oauth2/code/oidc",
 ) : GenericContainer<KeycloakFixture>(DockerImageName.parse(System.getProperty("aso.test.keycloak-image"))) {
+    private var forwarder: LoopbackPortForwarder? = null
+    val issuer: String get() = "${checkNotNull(forwarder) { "Keycloak fixture must be started" }.baseUrl}/realms/aso-dev"
+
     init {
         withExposedPorts(8080)
         withCopyFileToContainer(
@@ -28,5 +31,25 @@ class KeycloakFixture(
         withCommand("start-dev", "--import-realm", "--hostname-strict=false")
         withCreateContainerCmdModifier { it.hostConfig!!.withMemory(1024L * 1024 * 1024) }
         waitingFor(Wait.forHttp("/realms/aso-dev/.well-known/openid-configuration").forPort(8080).withStartupTimeout(Duration.ofMinutes(3)))
+    }
+
+    override fun start() {
+        if (isRunning) return
+        super.start()
+        try {
+            forwarder = LoopbackPortForwarder(host, getMappedPort(8080))
+        } catch (failure: Exception) {
+            super.stop()
+            throw failure
+        }
+    }
+
+    override fun stop() {
+        try {
+            forwarder?.close()
+            forwarder = null
+        } finally {
+            super.stop()
+        }
     }
 }

@@ -152,7 +152,7 @@ class IdentityIntegrationTest {
         private val resource = "http://127.0.0.1:8080/mcp"
         private val login = OidcBrowserLogin()
         private val keycloak = KeycloakFixture(login.callback, login.callback, resource).also { it.start() }
-        private val issuer = "http://${keycloak.host}:${keycloak.getMappedPort(8080)}/realms/aso-dev"
+        private val issuer = keycloak.issuer
         private val db =
             PostgreSQLContainer(
                 DockerImageName.parse(System.getProperty("aso.test.database-image")).asCompatibleSubstituteFor("postgres"),
