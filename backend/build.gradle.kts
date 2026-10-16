@@ -116,4 +116,5 @@ tasks.register<Test>("e2eTest") {
 
 tasks.bootBuildImage {
     imageName = "aso:${project.version}"
+    environment.put("BP_JVM_VERSION", "25")
 }
