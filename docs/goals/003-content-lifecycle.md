@@ -1,6 +1,6 @@
 # 003 — Context, editing, accepted solutions, and moderation
 
-Status: in progress
+Status: complete (PR open, unmerged)
 
 ## Dependencies and prerequisites
 
@@ -46,7 +46,7 @@ Include comments/context on questions and answers, editing own content through R
 
 ## Progress and blockers
 
-Implementation and local acceptance verification are complete on `codex/003-content-lifecycle`, based on updated master `9109bc1`. Publication and PR CI verification are in progress. Goal 004 and later features remain unimplemented.
+Implementation, local acceptance verification, and Linux PR CI are complete on `codex/003-content-lifecycle`, based on updated master `9109bc1`, published in PR #6. No implementation blockers remain. The PR is open and unmerged; goal 004 and later features remain unimplemented.
 
 ## Completion evidence
 
@@ -63,7 +63,7 @@ Verified on 2026-10-17 (Europe/Vienna), on the owner's ARM64 Mac with Java 25.0.
 
 Required local checks passed, with zero failed/error/skipped tests in the final reports:
 
-- `./gradlew --no-daemon oidcSmokeTest`: 2 tests against fresh disposable Keycloak; existing discovery, signing, audiences, claims and PKCE assertions retained. The successful invocation included formatting tasks before the smoke task.
+- `./gradlew --no-daemon oidcSmokeTest`: 2 tests against fresh disposable Keycloak; existing discovery, signing, audiences, claims and PKCE assertions retained. A final standalone invocation on the published source state also passed (19s).
 - `./gradlew --no-daemon check bootJar`: 15 backend tests and 4 frontend tests, strict Kotlin/TypeScript compilation, lint/formatting, production Angular build and executable jar. The final UI refinement was reverified with `./gradlew --no-daemon spotlessApply frontendFormat check bootJar e2eTest` (41s).
 - `./gradlew --no-daemon integrationTest`: 12 tests, zero failures/errors/skips, with isolated PostgreSQL/Keycloak (57s). Includes fresh V1–V4 migration, populated V2 identity upgrade, populated V3 question/answer/reservation preservation through V4, identity security and full Q&A/lifecycle matrices.
 - `./gradlew --no-daemon e2eTest`: one comprehensive packaged-jar Chromium suite, zero failures/errors/skips (35s); the final UI rerun also passes. It retains goal 002's authentication, two-user Q&A, safety, retry, filter and pagination scenarios and adds the lifecycle scenario above.
@@ -75,3 +75,8 @@ Initial formatting/Playwright option-type/test-inference failures were corrected
 Automated checks used disposable PostgreSQL and Keycloak instances only. No development database, realm, or persistent volume was reset or mutated. No deployment, merge, goal 004 work, new framework, or dependency upgrade was performed.
 
 Existing actual Codex CLI 0.162.1 and MCP Jam CLI 5.16.1 login/Q&A verification from goal 002 is retained, alongside the same individual OAuth configuration. Goal 003's new operations are verified through real-Keycloak HTTP adapters and the packaged browser; no additional manual client-login/conformance run is claimed. Claude Code/Cursor remain explicitly unverified. The existing local HTTP/Keycloak resource-indicator and human-presence limitations remain documented in README and Q&A contracts; another IdP still needs separate verification.
+
+
+Implementation commit: `ff57b56020e45b6f7246d35533cb7a3becd57176` (signed). Pull request: [#6 — Add content lifecycle, human acceptance and moderation (goal 003)](https://github.com/functionaldude/aso/pull/6), targeting `master`, open and unmerged. Current checks: [PR #6 checks](https://github.com/functionaldude/aso/pull/6/checks).
+
+[Implementation CI run 38976168659](https://github.com/functionaldude/aso/actions/runs/38976168659) passed every step for `ff57b56020e45b6f7246d35533cb7a3becd57176`: unit/lint/format/package, offline regeneration drift check, Linux Chromium/OS dependencies, fresh OIDC smoke, independent disposable reset checks, integration, packaged browser, and diagnostic upload. Downloaded and inspected its retained JUnit reports: 15 backend unit tests, 2 OIDC smoke tests, 12 integration tests, and 1 packaged-browser suite, all with zero failures/errors/skips. Its frontend check also passed all 4 tests. The publication-evidence-only follow-up commit runs the same CI gate again; current final-commit results are linked on PR #6 checks above.
