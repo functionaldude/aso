@@ -31,7 +31,7 @@ jobs:
         run: docker info
       - name: Unit tests, lint, formatting, and production packaging
         run: ./gradlew --no-daemon check bootJar
-      - name: Reproducible offline identity code generation
+      - name: Reproducible offline schema code generation
         run: |
           ./gradlew --no-daemon generateJooq
           git diff --exit-code -- backend/src/generated

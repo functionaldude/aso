@@ -81,6 +81,7 @@ class PackagedApplicationE2ETest {
                                     }
                                 assertEquals(3, persisted.toSet().size)
                                 loginFailure(browser, baseUrl)
+                                questions(browser, baseUrl, issuer, login, artifacts)
                             }
                         }
                     } finally {
@@ -197,6 +198,222 @@ class PackagedApplicationE2ETest {
             page.navigate("$baseUrl/oauth2/authorization/oidc")
             assertThat(page.locator("#username")).isVisible()
             return persisted
+        }
+    }
+
+    private fun questions(
+        browser: Browser,
+        baseUrl: String,
+        issuer: String,
+        login: OidcBrowserLogin,
+        artifacts: Path,
+    ) {
+        val aliceToken = login.tokens(browser, issuer, "alice", resource = "$baseUrl/mcp")["access_token"].asString()
+        val bobToken = login.tokens(browser, issuer, "bob", resource = "$baseUrl/mcp")["access_token"].asString()
+
+        fun mcp(
+            token: String,
+            name: String,
+            arguments: Map<String, Any>,
+        ): tools.jackson.databind.JsonNode {
+            val response =
+                HttpClient.newHttpClient().send(
+                    HttpRequest
+                        .newBuilder(
+                            URI("$baseUrl/mcp"),
+                        ).header("Authorization", "Bearer $token")
+                        .header("Content-Type", "application/json")
+                        .POST(
+                            HttpRequest.BodyPublishers.ofString(
+                                json.writeValueAsString(
+                                    mapOf(
+                                        "jsonrpc" to "2.0",
+                                        "id" to 1,
+                                        "method" to "tools/call",
+                                        "params" to mapOf("name" to name, "arguments" to arguments),
+                                    ),
+                                ),
+                            ),
+                        ).build(),
+                    HttpResponse.BodyHandlers.ofString(),
+                )
+            assertEquals(200, response.statusCode())
+            val result = json.readTree(response.body())["result"]
+            assertEquals(false, result["isError"].asBoolean(), result.toString())
+            return result["structuredContent"]
+        }
+        val alice = mcp(aliceToken, "identity", emptyMap())
+        val bob = mcp(bobToken, "identity", emptyMap())
+        val unsafe =
+            """
+            A dependency fails to resolve.
+
+            <script>window.asoExecuted = true</script>
+            <img src=x onerror="window.asoExecuted = true">
+
+            [unsafe](javascript:alert%281%29)
+            [documentation](https://example.invalid/docs)
+            ![remote image](https://example.invalid/tracker.png)
+
+            ```kotlin
+            println("<script>code text</script>")
+            ```
+            """.trimIndent()
+        val created =
+            mcp(
+                aliceToken,
+                "create_question",
+                mapOf(
+                    "requestId" to
+                        java.util.UUID
+                            .randomUUID()
+                            .toString(),
+                    "title" to "Java target variant mismatch",
+                    "body" to unsafe,
+                    "tags" to listOf("gradle", "jvm"),
+                    "context" to mapOf("versions" to "Java 25", "errorText" to "No matching variant"),
+                ),
+            )
+        val id = created["id"].asString()
+        browser.newContext(Browser.NewContextOptions().setViewportSize(1440, 1100)).use { context ->
+            val page = context.newPage()
+            val errors = mutableListOf<String>()
+            page.onPageError { errors.add(it) }
+            page.navigate("$baseUrl/oauth2/authorization/oidc")
+            page.locator("#username").fill("bob")
+            page.locator("#password").fill("bob-local-only")
+            page.locator("#kc-login").click()
+            page.waitForURL("$baseUrl/")
+            page.navigate("$baseUrl/questions")
+            assertThat(page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Java target variant mismatch"))).isVisible()
+            page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Java target variant mismatch")).click()
+            page.waitForURL("$baseUrl/questions/$id")
+            page.reload()
+            assertThat(page.getByRole(AriaRole.HEADING, Page.GetByRoleOptions().setName("Java target variant mismatch"))).isVisible()
+            assertThat(page.locator(".markdown pre")).containsText("<script>code text</script>")
+            assertEquals(
+                0,
+                page
+                    .locator(
+                        ".markdown script, .markdown img, .markdown iframe, .markdown [onerror], .markdown a[href^='javascript:']",
+                    ).count(),
+            )
+            assertEquals(null, page.evaluate("window.asoExecuted"))
+            assertThat(page.locator("article").first()).containsText(alice["displayName"].asString())
+            page.getByLabel("Answer (Markdown)").fill("Align the target JVM version in **both modules**.")
+            page.getByLabel("Applicability", Page.GetByLabelOptions().setExact(true)).fill("Java 25 consumers")
+            page.getByLabel("Verification evidence", Page.GetByLabelOptions().setExact(true)).fill("Verified with a clean compile")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Publish answer").setExact(true)).click()
+            assertThat(page.locator(".answer")).containsText(bob["displayName"].asString())
+            assertThat(page.locator(".answer strong")).containsText("both modules")
+            val shared = mcp(aliceToken, "get_question", mapOf("questionId" to id))
+            assertEquals(alice["id"], shared["question"]["author"]["id"])
+            assertEquals(bob["id"], shared["answers"]["items"][0]["author"]["id"])
+            page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("question-desktop.png")).setFullPage(true))
+            page.setViewportSize(390, 844)
+            assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
+            page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("question-mobile.png")).setFullPage(true))
+            page.navigate("$baseUrl/questions/new")
+            assertThat(page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Publish question"))).isDisabled()
+            page.getByLabel("Title", Page.GetByLabelOptions().setExact(true)).fill("Runtime mismatch from browser")
+            page.getByLabel("Problem description (Markdown)").fill("Authorization: Bearer private-test-fixture-value")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Publish question")).click()
+            assertThat(page.getByRole(AriaRole.ALERT)).containsText("remove credentials")
+            page.getByLabel("Problem description (Markdown)").fill("The runtime differs from the configured target.")
+            page.getByLabel("Tags (comma separated, up to 5)").fill("runtime")
+            // Simulate a lost response after the server committed; retry must return the same question.
+            var committedId: String? = null
+            page.route("**/api/v1/questions") { route ->
+                if (route.request().method() == "POST") {
+                    val result = route.fetch()
+                    assertEquals(200, result.status())
+                    committedId = json.readTree(result.text())["id"].asString()
+                    route.abort()
+                } else {
+                    route.resume()
+                }
+            }
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Publish question")).click()
+            assertThat(page.getByRole(AriaRole.ALERT)).containsText("Retry with the same content")
+            page.unroute("**/api/v1/questions")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Publish question")).click()
+            page.waitForURL("$baseUrl/questions/$committedId")
+            val reply =
+                mcp(
+                    aliceToken,
+                    "create_answer",
+                    mapOf(
+                        "questionId" to committedId!!,
+                        "requestId" to
+                            java.util.UUID
+                                .randomUUID()
+                                .toString(),
+                        "body" to "Use a consistent runtime.",
+                        "verification" to "Not tested; proposed fix.",
+                    ),
+                )
+            assertEquals(alice["id"], reply["author"]["id"])
+            page.reload()
+            assertThat(page.locator(".answer")).containsText("Not tested; proposed fix.")
+            assertThat(page.locator(".answer")).containsText(alice["displayName"].asString())
+            val reverse = mcp(bobToken, "get_question", mapOf("questionId" to committedId))
+            assertEquals(bob["id"], reverse["question"]["author"]["id"])
+            page.navigate("$baseUrl/questions/${java.util.UUID.randomUUID()}")
+            assertThat(page.getByRole(AriaRole.ALERT)).containsText("Question not found")
+            assertEquals(404, context.request().get("$baseUrl/api/v1/questions/${java.util.UUID.randomUUID()}").status())
+            assertEquals(
+                403,
+                context.request().get("$baseUrl/questions/missing.js").status(),
+                "Unlisted nested assets remain denied, never forwarded",
+            )
+            // A controlled outage is visible and recoverable.
+            page.route("**/api/v1/questions?*") {
+                it.fulfill(
+                    com.microsoft.playwright.Route
+                        .FulfillOptions()
+                        .setStatus(503)
+                        .setContentType("application/json")
+                        .setBody("{}"),
+                )
+            }
+            page.navigate("$baseUrl/questions")
+            assertThat(page.getByRole(AriaRole.ALERT)).containsText("could not be completed")
+            page.unroute("**/api/v1/questions?*")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Retry").setExact(true)).click()
+            assertThat(page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Java target variant mismatch"))).isVisible()
+            page.getByLabel("Tag filter").fill("no-match")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Apply filters")).click()
+            assertThat(page.locator(".empty")).containsText("No questions match")
+            page.getByLabel("Tag filter").fill("runtime")
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Apply filters")).click()
+            assertThat(page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Runtime mismatch from browser"))).isVisible()
+            assertEquals(1, page.locator(".question-row").count())
+            page.getByRole(AriaRole.COMBOBOX, Page.GetByRoleOptions().setName("State")).click()
+            page.getByRole(AriaRole.OPTION, Page.GetByRoleOptions().setName("Resolved").setExact(true)).click()
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Apply filters")).click()
+            assertThat(page.locator(".empty")).containsText("No questions match")
+            repeat(21) {
+                mcp(
+                    aliceToken,
+                    "create_question",
+                    mapOf(
+                        "requestId" to
+                            java.util.UUID
+                                .randomUUID()
+                                .toString(),
+                        "title" to "Pagination example $it",
+                        "body" to "Focused isolated pagination fixture",
+                        "tags" to listOf("paging"),
+                    ),
+                )
+            }
+            page.navigate("$baseUrl/questions?tag=paging")
+            assertThat(page.locator(".question-row")).hasCount(20)
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Next page")).click()
+            assertThat(page.locator(".question-row")).hasCount(1)
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Previous page")).click()
+            assertThat(page.locator(".question-row")).hasCount(20)
+            assertTrue(errors.isEmpty(), errors.joinToString("\n"))
         }
     }
 

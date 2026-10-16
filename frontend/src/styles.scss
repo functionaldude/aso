@@ -35,3 +35,14 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
+
+.markdown pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--soft);
+  padding: 16px;
+  border-radius: 4px;
+}
+.markdown a {
+  color: var(--accent);
+}

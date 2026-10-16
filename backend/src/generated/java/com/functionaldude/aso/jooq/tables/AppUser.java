@@ -6,6 +6,9 @@ package com.functionaldude.aso.jooq.tables;
 
 import com.functionaldude.aso.jooq.DefaultSchema;
 import com.functionaldude.aso.jooq.Keys;
+import com.functionaldude.aso.jooq.tables.Answer.AnswerPath;
+import com.functionaldude.aso.jooq.tables.ContentRequest.ContentRequestPath;
+import com.functionaldude.aso.jooq.tables.Question.QuestionPath;
 import com.functionaldude.aso.jooq.tables.records.AppUserRecord;
 
 import java.time.OffsetDateTime;
@@ -16,9 +19,13 @@ import java.util.UUID;
 
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.ForeignKey;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
+import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
 import org.jooq.Stringly;
@@ -79,6 +86,36 @@ public class AppUser extends TableImpl<AppUserRecord> {
         this(DSL.name("app_user"), null);
     }
 
+    public <O extends Record> AppUser(Table<O> path, ForeignKey<O, AppUserRecord> childPath, InverseForeignKey<O, AppUserRecord> parentPath) {
+        super(path, childPath, parentPath, APP_USER);
+    }
+
+    public static class AppUserPath extends AppUser implements Path<AppUserRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> AppUserPath(Table<O> path, ForeignKey<O, AppUserRecord> childPath, InverseForeignKey<O, AppUserRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private AppUserPath(Name alias, Table<AppUserRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public AppUserPath as(String alias) {
+            return new AppUserPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public AppUserPath as(Name alias) {
+            return new AppUserPath(alias, this);
+        }
+
+        @Override
+        public AppUserPath as(Table<?> alias) {
+            return new AppUserPath(alias.getQualifiedName(), this);
+        }
+    }
+
     @Override
     public Schema getSchema() {
         return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
@@ -92,6 +129,33 @@ public class AppUser extends TableImpl<AppUserRecord> {
     @Override
     public List<UniqueKey<AppUserRecord>> getUniqueKeys() {
         return Arrays.asList(Keys.APP_USER_IDENTITY);
+    }
+
+    private transient ContentRequestPath _contentRequest;
+
+    public ContentRequestPath contentRequest() {
+        if (_contentRequest == null)
+            _contentRequest = new ContentRequestPath(this, null, Keys.CONSTRAINT_5.getInverseKey());
+
+        return _contentRequest;
+    }
+
+    private transient AnswerPath _answer;
+
+    public AnswerPath answer() {
+        if (_answer == null)
+            _answer = new AnswerPath(this, null, Keys.CONSTRAINT_ABC.getInverseKey());
+
+        return _answer;
+    }
+
+    private transient QuestionPath _question;
+
+    public QuestionPath question() {
+        if (_question == null)
+            _question = new QuestionPath(this, null, Keys.CONSTRAINT_BA.getInverseKey());
+
+        return _question;
     }
 
     @Override

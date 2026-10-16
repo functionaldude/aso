@@ -4,7 +4,12 @@
 package com.functionaldude.aso.jooq;
 
 
+import com.functionaldude.aso.jooq.tables.Answer;
 import com.functionaldude.aso.jooq.tables.AppUser;
+import com.functionaldude.aso.jooq.tables.ContentRequest;
+import com.functionaldude.aso.jooq.tables.Question;
+import com.functionaldude.aso.jooq.tables.QuestionTag;
+import com.functionaldude.aso.jooq.tables.Tag;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +27,17 @@ public class DefaultSchema extends SchemaImpl {
 
     public static final DefaultSchema DEFAULT_SCHEMA = new DefaultSchema();
 
+    public final Answer ANSWER = Answer.ANSWER;
+
     public final AppUser APP_USER = AppUser.APP_USER;
+
+    public final ContentRequest CONTENT_REQUEST = ContentRequest.CONTENT_REQUEST;
+
+    public final Question QUESTION = Question.QUESTION;
+
+    public final QuestionTag QUESTION_TAG = QuestionTag.QUESTION_TAG;
+
+    public final Tag TAG = Tag.TAG;
 
     private DefaultSchema() {
         super(DSL.name(""), null, DSL.comment(""));
@@ -37,7 +52,12 @@ public class DefaultSchema extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
-            AppUser.APP_USER
+            Answer.ANSWER,
+            AppUser.APP_USER,
+            ContentRequest.CONTENT_REQUEST,
+            Question.QUESTION,
+            QuestionTag.QUESTION_TAG,
+            Tag.TAG
         );
     }
 }

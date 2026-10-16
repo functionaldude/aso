@@ -2,6 +2,7 @@ package com.functionaldude.aso
 
 import com.functionaldude.aso.oidc.KeycloakFixture
 import com.functionaldude.aso.oidc.OidcBrowserLogin
+import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,9 +31,47 @@ class DatabaseIntegrationTest {
 
     @Test
     fun `startup applies Flyway migrations and vector operations work`() {
-        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Int::class.java))
+        assertEquals(
+            3,
+            jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Int::class.java),
+        )
         assertTrue(jdbc.queryForObject("SELECT extversion FROM pg_extension WHERE extname = 'vector'", String::class.java)!!.isNotBlank())
         assertEquals(0.0, jdbc.queryForObject("SELECT '[1,2,3]'::vector <-> '[1,2,3]'::vector", Double::class.java))
+    }
+
+    @Test
+    fun `V3 upgrades populated V2 identity data without rewriting it`() {
+        fun migration() =
+            Flyway
+                .configure()
+                .dataSource(
+                    database.jdbcUrl,
+                    database.username,
+                    database.password,
+                ).schemas("upgrade_check")
+                .defaultSchema("upgrade_check")
+        migration().target("2").load().migrate()
+        val id = java.util.UUID.randomUUID()
+        jdbc.update(
+            "INSERT INTO upgrade_check.app_user (id, issuer, subject, display_name) VALUES (?, ?, ?, ?)",
+            id,
+            "https://fixture.invalid",
+            "retained",
+            "Retained identity",
+        )
+        migration().load().migrate()
+        assertEquals(
+            "Retained identity",
+            jdbc.queryForObject("SELECT display_name FROM upgrade_check.app_user WHERE id = ?", String::class.java, id),
+        )
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM upgrade_check.question", Int::class.java))
+        assertEquals(
+            3,
+            jdbc.queryForObject(
+                "SELECT count(*) FROM upgrade_check.flyway_schema_history WHERE success AND version IS NOT NULL",
+                Int::class.java,
+            ),
+        )
     }
 
     @Test

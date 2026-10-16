@@ -15,6 +15,7 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 ## Architecture
 
 - Backend: Kotlin/Spring MVC, package `com.functionaldude.aso`; frontend: Angular standalone components, strict TypeScript, signals, Angular Material, SCSS.
+- Keep short Kotlin conditions and catch declarations on one line. In fluent jOOQ queries, put clauses on separate lines while keeping short argument lists with their call. Review formatter output for unnecessary wrapping.
 - Group new code by feature. REST and future MCP adapters must use shared application services and the same authorization rules.
 - The production jar contains Angular's browser output. Keep explicit SPA forwarding routes in sync with Angular routes. Never forward API, Actuator, or missing asset paths to `index.html`.
 - Use relative `/api/v1` URLs in Angular. The development proxy targets localhost:8080; production uses the same origin.

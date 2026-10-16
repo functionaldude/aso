@@ -21,7 +21,7 @@ describe('ASO connection', () => {
       .flush({ name: 'aso', version: '0.0.1-SNAPSHOT' });
     await fixture.whenStable();
     expect(fixture.nativeElement.textContent).toContain('ASO is connected');
-    expect(fixture.nativeElement.textContent).toContain('No questions yet');
+    expect(fixture.nativeElement.textContent).toContain('Browse questions');
   });
   it('shows a failure and reconnects when the user retries', async () => {
     const fixture = TestBed.createComponent(Home);

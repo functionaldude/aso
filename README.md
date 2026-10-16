@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. The foundation and individual browser/MCP identity are implemented. Q&A and the remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
+A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity and authenticated questions, answers, tags, and technical context are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ cd aso
 ./scripts/dev.sh
 ```
 
-Open **http://127.0.0.1:4200**. Spring runs at **http://127.0.0.1:8080**, and Angular proxies `/api/**` and `/actuator/**` to it. The public shell connects to the real backend. Choose **Sign in** to authenticate with the local OIDC IdP. Questions are not implemented yet. The helper explicitly selects the `development` profile; ordinary runtime startup requires identity configuration.
+Open **http://127.0.0.1:4200**. Spring runs at **http://127.0.0.1:8080**, and Angular proxies `/api/**` and `/actuator/**` to it. The public shell connects to the real backend. Choose **Sign in** to authenticate with the local OIDC IdP. Open **Questions** to browse, filter, ask, and answer. The helper explicitly selects the `development` profile; ordinary runtime startup requires identity configuration.
 
 Press Ctrl-C to stop the application processes. The development database and Keycloak stay running so their data persists. Stop both with `docker compose stop`, or use `./scripts/keycloak-stop.sh` for Keycloak alone.
 
@@ -50,7 +50,7 @@ docker compose up -d --wait database keycloak
 SPRING_PROFILES_ACTIVE=development java -jar backend/build/libs/aso.jar
 ```
 
-Open http://127.0.0.1:8080. Direct navigation to `/about` works. `/api/v1/info` returns application name/version; `/actuator/health` returns minimal health. Protected APIs return 401 without a browser session. Authenticated unknown API routes return JSON problem responses rather than the frontend.
+Open http://127.0.0.1:8080. Direct navigation and refresh work for `/about`, `/questions`, `/questions/new`, and `/questions/{uuid}`. `/api/v1/info` returns application name/version; `/actuator/health` returns minimal health. Protected APIs return 401 without a browser session. Authenticated unknown API routes return JSON problem responses rather than the frontend.
 
 Build one local OCI application image with `./gradlew bootBuildImage` (Docker required). No image registry publication or deployment runs automatically. Running it needs explicit reachable database/IdP settings and the public callback URL; the host JVM commands above are the verified laptop topology. An issuer containing `127.0.0.1` addresses the container itself from inside a container, so do not copy the host-JVM development profile into that topology unchanged.
 
@@ -66,7 +66,7 @@ The development helper works without a `.env` by explicitly selecting `developme
 | `ASO_PORT`        | `8080`                                 | Spring port; keep 8080 with the supplied Angular proxy |
 | `ASO_ADDRESS`     | `127.0.0.1`                            | Spring bind address; use `0.0.0.0` in a container      |
 
-PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; there are no Q&A tables yet.
+PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. See [Q&A contracts](docs/questions-and-answers.md).
 
 Changing database credentials does not rewrite an initialized volume. For a deliberate, destructive reset, stop application processes, then run:
 
@@ -129,11 +129,11 @@ Only `application-development.yaml` supplies the intentionally public local issu
 
 Issuer/public URLs require HTTPS except for loopback development. Configure the provider to include the chosen group claim in **both signed ID tokens and access tokens**. Names/email update attributes; they never identify or merge people. Roles are derived on each protected operation from current validated credentials and are not stored as self-editable user flags. Browser authorization ends when the signed ID token expires even if its servlet session still exists. Sign in again to recover/refresh trusted claims; there is no indefinite cached browser authorization. Logout submits a CSRF-protected POST, clears the ASO session, and uses the provider's discovered end-session endpoint. An IdP without standard RP-initiated logout requires its own compatibility work.
 
-Public routes are `/`, `/about`, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
+Public routes are `/`, `/about`, the `/questions`, `/questions/new`, and `/questions/{uuid}` shells, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
 
-`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and one argument-free `identity` tool. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
+`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and six tools: `identity`, `list_questions`, `get_question`, `list_answers`, `create_question`, and `create_answer`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
 
-Future human-only acceptance/moderation belongs in browser-session-only, CSRF-protected handlers calling the same authorization service; it must have no MCP tool. This is a transport/credential boundary, not proof of human presence. A claimed client name, user-agent, or role payload conveys no human/admin authority. Goal 002 must retain and extend these boundary tests before adding mutations.
+Future human-only acceptance/moderation belongs in browser-session-only, CSRF-protected handlers calling the same authorization service; it must have no MCP tool. This is a transport/credential boundary, not proof of human presence. A claimed client name, user-agent, or role payload conveys no human/admin authority. The Q&A handlers retain this boundary and shared authorization; see [their contracts](docs/questions-and-answers.md).
 
 For another IdP, explicitly configure these values, provision the browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut`, and register individual MCP clients with exact redirects and the intended resource audience. Separately verify discovery, signatures/issuer/audiences, signed groups, logout, PKCE, resource handling, and each target client. Local Keycloak results do not establish another provider's compatibility.
 
@@ -185,14 +185,14 @@ Use a fresh IdP browser session or sign out before testing the second person; an
 
 MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conformance command rejects an HTTP `resource` URI at metadata validation even on loopback; the separate real OAuth login/tool checks succeed. This local HTTP result is not reported as an OAuth conformance pass. Production resource metadata requires HTTPS.
 
-### Reproducible identity schema generation
+### Reproducible schema generation
 
 ```bash
 ./gradlew --no-daemon generateJooq
 git diff --exit-code -- backend/src/generated
 ```
 
-The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql` offline and writes committed Java bindings to `backend/src/generated/java`. V1's pgvector extension is infrastructure and is not an identity table input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2 additively; no existing migration or development data is rewritten.
+The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql` and `V3__questions_and_answers.sql` offline and writes committed Java bindings to `backend/src/generated/java`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2/V3 additively; no existing migration or development data is rewritten.
 
 ## CI and diagnostics
 
@@ -200,11 +200,11 @@ GitHub Actions runs the four Gradle validation commands plus the disposable life
 
 On Linux, have the runner administrator provision Chromium's runtime dependencies before running CI. Playwright can install them with `./gradlew playwrightInstall -PplaywrightWithDeps` (requires administrative privileges on Linux). This is one-time runner setup.
 
-JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/test-results/`; Angular coverage is under `frontend/coverage/`. Sanitized public-shell screenshots and the packaged application's log are under `backend/build/e2e/`. OIDC reports are in the same test report directories; sanitized Keycloak failure logs and success summaries are under `backend/build/oidc/`. OIDC checks retain no browser traces, tokens, callback URLs, or passwords. Authentication browser traces are deliberately disabled because they can retain passwords, codes, and tokens. CI uploads the sanitized diagnostics even when validation fails. Docker unavailability fails integration/browser tests rather than silently skipping them.
+JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/test-results/`; Angular coverage is under `frontend/coverage/`. Sanitized shell/Q&A fixture screenshots and the packaged application's log are under `backend/build/e2e/`. OIDC reports are in the same test report directories; sanitized Keycloak failure logs and success summaries are under `backend/build/oidc/`. OIDC checks retain no browser traces, tokens, callback URLs, or passwords. Authentication browser traces are deliberately disabled because they can retain passwords, codes, and tokens. CI uploads the sanitized diagnostics even when validation fails. Docker unavailability fails integration/browser tests rather than silently skipping them.
 
 ## Next milestones
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity is implemented; the remaining feature areas are planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity and the Q&A slice are implemented; content lifecycle (goal 003) and subsequent features remain planned.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 
@@ -212,4 +212,4 @@ LM Studio configuration and representative search examples are inputs for the se
 
 Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
 
-The foundation is local-only and unauthenticated. Individual user identity is required before product write operations are introduced.
+The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 002](docs/goals/002-questions-and-answers.md) for evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.
