@@ -1,6 +1,6 @@
 # 001 — Individual identity and private workspace access
 
-Status: verified; PR handoff pending
+Status: complete (owner-amended client verification scope)
 
 ## Dependencies and prerequisites
 
@@ -47,7 +47,7 @@ Include provider-neutral Spring Security/OIDC integration using local Keycloak, 
 
 ## Progress and blockers
 
-Implementation and the owner-amended client verification are complete. All required regressions passed; PR handoff is pending. No goal 002 implementation is included. Claude Code/Cursor are deliberately untested per the owner's instruction; no compatibility is claimed. MCP Jam's strict OAuth conformance rejects the HTTP loopback resource at RFC 9728 metadata validation; separate real login and protocol evidence is recorded below, and full HTTPS OAuth conformance is not claimed.
+Implementation and the owner-amended client verification are complete. All required regressions passed and the verified feature branch is published in the unmerged PR below. No goal 002 implementation is included. Claude Code/Cursor are deliberately untested per the owner's instruction; no compatibility is claimed. MCP Jam's strict OAuth conformance rejects the HTTP loopback resource at RFC 9728 metadata validation; separate real login and protocol evidence is recorded below, and full HTTPS OAuth conformance is not claimed.
 
 
 ## Completion evidence
@@ -88,4 +88,4 @@ The additive `./scripts/keycloak-configure-identity.sh` updated only the local b
 
 Additional MCP Jam protocol evidence: the final jar scored 100/100, with all 15 applicable 2025-11-25 checks passed. Initial metadata quality advice identified a missing tool title, which was added and verified in the final run. Nine checks for other profiles were pending/unscored; this is not a claim of 2026 protocol support. The separate strict OAuth conformance command failed before login because its RFC 9728 checker requires an HTTPS resource URI even for loopback (2/3 applicable checks passed). The real HTTP-loopback OAuth login/tool flows above passed independently. No failed conformance check is reported as a pass or mocked away. An early interactive run also timed out during password-manager/UI handling; rerunning the real flow completed successfully.
 
-Commit and PR: pending final handoff. No merge or deployment is authorized.
+Implementation commit: `2bea62206528db9de97825e5b0035505d94dfb6b`. Pull request: [#2 — Add individual OIDC browser and MCP identity access (goal 001)](https://github.com/functionaldude/aso/pull/2), targeting `master`. This completion-evidence update follows on the same branch. No merge, deployment, or goal 002 implementation was performed. Local results do not claim a Linux CI result.
