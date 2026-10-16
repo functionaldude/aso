@@ -2,19 +2,18 @@ package com.functionaldude.aso.questions
 
 import com.functionaldude.aso.identity.Identity
 import com.functionaldude.aso.identity.IdentityService
-import com.functionaldude.aso.jooq.tables.Answer.ANSWER
-import com.functionaldude.aso.jooq.tables.AppUser.APP_USER
-import com.functionaldude.aso.jooq.tables.ContentRequest.CONTENT_REQUEST
-import com.functionaldude.aso.jooq.tables.Question.QUESTION
-import com.functionaldude.aso.jooq.tables.QuestionTag.QUESTION_TAG
-import com.functionaldude.aso.jooq.tables.Tag.TAG
+import com.functionaldude.aso.jooq.tables.references.ANSWER
+import com.functionaldude.aso.jooq.tables.references.APP_USER
+import com.functionaldude.aso.jooq.tables.references.CONTENT_REQUEST
+import com.functionaldude.aso.jooq.tables.references.QUESTION
+import com.functionaldude.aso.jooq.tables.references.QUESTION_TAG
+import com.functionaldude.aso.jooq.tables.references.TAG
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.impl.DSL
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 import java.security.MessageDigest
 import java.time.OffsetDateTime
@@ -78,22 +77,20 @@ class QuestionService(
     @Transactional
     fun createQuestion(
         authentication: Authentication,
-        input: JsonNode,
+        input: CreateQuestionInput,
     ): QuestionView {
         val actor = identities.current(authentication)
-        policy.fields(input, setOf("requestId", "title", "body", "tags", "context"))
-        val request = policy.requestId(input)
-        val title = policy.text(input, "title", 200, true)!!
-        val body = policy.text(input, "body", 20000, true)!!
-        val tags = policy.tags(input)
-        val context = input.path("context")
-        if (!context.isMissingNode && !context.isNull) policy.fields(context, setOf("errorText", "dependencies", "versions", "repository"))
+        val request = policy.requestId(input.requestId)
+        val title = policy.text(input.title, "title", 200, true)!!
+        val body = policy.text(input.body, "body", 20000, true)!!
+        val tags = policy.tags(input.tags)
+        val context = input.context
         val technical =
             TechnicalContext(
-                policy.text(context, "errorText", 2000),
-                policy.text(context, "dependencies", 2000),
-                policy.text(context, "versions", 2000),
-                policy.text(context, "repository", 2000),
+                policy.text(context?.errorText, "errorText", 2000),
+                policy.text(context?.dependencies, "dependencies", 2000),
+                policy.text(context?.versions, "versions", 2000),
+                policy.text(context?.repository, "repository", 2000),
             )
         val id =
             reserve(actor, "create_question", request, listOf(title, body, tags, technical)) { id ->
@@ -129,15 +126,14 @@ class QuestionService(
     fun createAnswer(
         authentication: Authentication,
         questionId: String,
-        input: JsonNode,
+        input: CreateAnswerInput,
     ): AnswerView {
         val actor = identities.current(authentication)
         val parent = policy.uuid(questionId, "questionId")
-        policy.fields(input, setOf("requestId", "body", "applicability", "verification"))
-        val request = policy.requestId(input)
-        val body = policy.text(input, "body", 20000, true)!!
-        val applicability = policy.text(input, "applicability", 2000)
-        val verification = policy.text(input, "verification", 2000)
+        val request = policy.requestId(input.requestId)
+        val body = policy.text(input.body, "body", 20000, true)!!
+        val applicability = policy.text(input.applicability, "applicability", 2000)
+        val verification = policy.text(input.verification, "verification", 2000)
         val id =
             reserve(actor, "create_answer", request, listOf(parent, body, applicability, verification)) { id ->
                 question(parent)
@@ -339,7 +335,8 @@ class QuestionService(
                 .from(QUESTION_TAG)
                 .where(QUESTION_TAG.QUESTION_ID.eq(row[QUESTION.ID]))
                 .orderBy(QUESTION_TAG.TAG_NAME)
-                .fetch(QUESTION_TAG.TAG_NAME),
+                .fetch(QUESTION_TAG.TAG_NAME)
+                .map { it!! },
             TechnicalContext(row[QUESTION.ERROR_TEXT], row[QUESTION.DEPENDENCIES], row[QUESTION.VERSIONS], row[QUESTION.REPOSITORY]),
             Author(row[QUESTION.AUTHOR_ID]!!, row[APP_USER.DISPLAY_NAME]!!),
             row[QUESTION.CHANNEL]!!,

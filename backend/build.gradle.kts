@@ -64,6 +64,7 @@ dependencies {
 spotless {
     kotlin {
         target("src/**/*.kt")
+        targetExclude("src/generated/**")
         ktlint("1.7.1")
     }
 }
@@ -187,7 +188,7 @@ listOf("integrationTest", "e2eTest").forEach { name ->
     }
 }
 
-sourceSets.main { java.srcDir("src/generated/java") }
+kotlin.sourceSets.named("main") { kotlin.srcDir("src/generated/kotlin") }
 
 tasks.named<Test>("integrationTest") {
     dependsOn(playwrightInstall)

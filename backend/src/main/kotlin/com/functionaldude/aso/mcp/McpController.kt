@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import tools.jackson.core.JacksonException
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 
@@ -25,13 +26,7 @@ class McpController(
     private fun originAllowed(request: HttpServletRequest) = request.getHeader("Origin").let { it == null || it == settings.publicUrl }
 
     @GetMapping("/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp")
-    fun metadata() =
-        mapOf(
-            "resource" to settings.resource,
-            "authorization_servers" to listOf(settings.issuer),
-            "scopes_supported" to listOf("openid", "profile", "email"),
-            "bearer_methods_supported" to listOf("header"),
-        )
+    fun metadata() = ResourceMetadata(settings.resource, listOf(settings.issuer), listOf("openid", "profile", "email"), listOf("header"))
 
     @GetMapping("/mcp")
     fun stream(
@@ -56,53 +51,32 @@ class McpController(
         fun error(
             code: Int,
             text: String,
-        ) = ResponseEntity.ok<Any>(
-            mapOf(
-                "jsonrpc" to "2.0",
-                "id" to id,
-                "error" to mapOf("code" to code, "message" to text),
-            ),
-        )
-        if (!message.isObject || message.path("jsonrpc").asString() != "2.0" ||
-            !message.path("method").isString
+        ) = ResponseEntity.ok<Any>(McpFailure(id, McpError(code, text)))
+        if (!message.isObject || !message.path("jsonrpc").isString ||
+            message.path("jsonrpc").asString() != "2.0" || !message.path("method").isString
         ) {
             return error(-32600, "Invalid Request")
         }
-        val method = message["method"].asString()
+        // Inspect the dynamic envelope first so invalid requests retain JSON-RPC errors.
+        val envelope = json.treeToValue(message, McpRequest::class.java)
+        val method = envelope.method
         if (method == "notifications/initialized" || method == "notifications/cancelled") return ResponseEntity.accepted().build()
         if (id.isMissingNode || !(id.isString || id.isNumber)) return error(-32600, "A request ID is required")
-        val params = message.path("params")
         val result: Any =
             when (method) {
-                "initialize" ->
-                    mapOf(
-                        "protocolVersion" to "2025-11-25",
-                        "capabilities" to mapOf("tools" to mapOf("listChanged" to false)),
-                        "serverInfo" to mapOf("name" to "aso", "version" to "0.0.1"),
-                    )
-                "ping" -> emptyMap<String, Any>()
-                "tools/list" ->
-                    mapOf(
-                        "tools" to
-                            listOf(
-                                mapOf(
-                                    "name" to "identity",
-                                    "title" to "Your ASO identity",
-                                    "description" to "Return your persisted ASO identity and trusted workspace role.",
-                                    "inputSchema" to
-                                        mapOf(
-                                            "type" to "object",
-                                            "properties" to emptyMap<String, Any>(),
-                                            "additionalProperties" to false,
-                                        ),
-                                    "annotations" to mapOf("readOnlyHint" to true, "openWorldHint" to false),
-                                ),
-                            ) + questions.definitions(),
-                    )
+                "initialize" -> InitializeResult()
+                "ping" -> EmptyResult
+                "tools/list" -> ToolsResult(listOf(identityTool) + questions.definitions)
                 "tools/call" -> {
-                    val name = params.path("name").asString()
-                    if (name != "identity" && questions.definitions().none { it["name"] == name }) return error(-32602, "Unknown tool")
-                    val arguments = params.path("arguments").let { if (it.isMissingNode) json.createObjectNode() else it }
+                    val params =
+                        try {
+                            envelope.params?.let { json.treeToValue(it, ToolCallParameters::class.java) }
+                        } catch (_: JacksonException) {
+                            return error(-32602, "Invalid tool parameters")
+                        }
+                    val name = params?.name
+                    if (name != "identity" && questions.definitions.none { it.name == name }) return error(-32602, "Unknown tool")
+                    val arguments = params?.arguments ?: json.createObjectNode()
                     if (!arguments.isObject) return error(-32602, "Tool arguments must be an object")
                     try {
                         val value =
@@ -110,23 +84,28 @@ class McpController(
                                 if (arguments.size() != 0) return error(-32602, "identity accepts no arguments")
                                 identity
                             } else {
-                                questions.call(name, authentication, arguments)
+                                questions.call(name!!, authentication, arguments)
                             }
-                        mapOf(
-                            "content" to listOf(mapOf("type" to "text", "text" to json.writeValueAsString(value))),
-                            "structuredContent" to value,
-                            "isError" to false,
-                        )
+                        ToolResult(listOf(TextContent(json.writeValueAsString(value))), value)
                     } catch (failure: ContentFailure) {
-                        mapOf(
-                            "content" to listOf(mapOf("type" to "text", "text" to failure.message)),
-                            "structuredContent" to mapOf("code" to failure.code, "message" to failure.message, "status" to failure.status),
-                            "isError" to true,
+                        ToolResult(
+                            listOf(TextContent(failure.message)),
+                            ToolFailure(failure.code, failure.message, failure.status),
+                            isError = true,
                         )
                     }
                 }
                 else -> return error(-32601, "Method not found")
             }
-        return ResponseEntity.ok(mapOf("jsonrpc" to "2.0", "id" to id, "result" to result))
+        return ResponseEntity.ok(McpSuccess(id, result))
     }
+
+    private val identityTool =
+        ToolDefinition(
+            "identity",
+            "Your ASO identity",
+            "Return your persisted ASO identity and trusted workspace role.",
+            mapOf("type" to "object", "properties" to emptyMap<String, Any>(), "additionalProperties" to false),
+            ToolAnnotations(readOnlyHint = true),
+        )
 }

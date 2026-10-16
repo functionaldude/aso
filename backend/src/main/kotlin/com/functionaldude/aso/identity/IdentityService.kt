@@ -1,6 +1,6 @@
 package com.functionaldude.aso.identity
 
-import com.functionaldude.aso.jooq.tables.AppUser.APP_USER
+import com.functionaldude.aso.jooq.tables.references.APP_USER
 import org.jooq.DSLContext
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.Authentication

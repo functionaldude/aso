@@ -192,7 +192,7 @@ MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conf
 git diff --exit-code -- backend/src/generated
 ```
 
-The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql` and `V3__questions_and_answers.sql` offline and writes committed Java bindings to `backend/src/generated/java`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2/V3 additively; no existing migration or development data is rewritten.
+The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql` and `V3__questions_and_answers.sql` offline and writes committed Kotlin bindings to `backend/src/generated/kotlin`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. The generator owns their formatting; Spotless applies only to handwritten Kotlin. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2/V3 additively; no existing migration or development data is rewritten.
 
 ## CI and diagnostics
 

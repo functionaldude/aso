@@ -5,7 +5,6 @@ import org.commonmark.node.Image
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 import org.springframework.stereotype.Component
-import tools.jackson.databind.JsonNode
 import java.util.UUID
 
 class ContentFailure(
@@ -39,27 +38,17 @@ class ContentPolicy {
             .sanitizeUrls(true)
             .build()
 
-    fun fields(
-        node: JsonNode,
-        allowed: Set<String>,
-    ) {
-        if (!node.isObject) invalid("Expected an object")
-        if (node.propertyNames().any { it !in allowed }) invalid("Unknown fields are not allowed; authorship is assigned from your session")
-    }
-
     fun text(
-        node: JsonNode,
+        value: String?,
         field: String,
         max: Int,
         required: Boolean = false,
     ): String? {
-        val value = node.path(field)
-        if (value.isMissingNode || value.isNull) {
+        if (value == null) {
             if (required) invalid("$field is required")
             return null
         }
-        if (!value.isString) invalid("$field must be text")
-        val result = value.asString().trim()
+        val result = value.trim()
         if (result.length > max || (required && result.isEmpty())) invalid("$field must contain ${if (required) 1 else 0}–$max characters")
         if (result.any { it == '\u0000' || (it.code < 32 && it !in "\n\r\t") }) invalid("$field contains unsupported control characters")
         if (credentials.any { it.containsMatchIn(result) }) {
@@ -78,7 +67,7 @@ class ContentPolicy {
             invalid("$field must be a UUID")
         }
 
-    fun requestId(node: JsonNode): UUID = uuid(text(node, "requestId", 36, true)!!, "requestId")
+    fun requestId(value: String?): UUID = uuid(text(value, "requestId", 36, true)!!, "requestId")
 
     fun tag(value: String): String =
         value.lowercase().also {
@@ -90,16 +79,9 @@ class ContentPolicy {
             }
         }
 
-    fun tags(node: JsonNode): List<String> {
-        val tags = node.path("tags")
-        if (tags.isMissingNode) return emptyList()
-        if (!tags.isArray || tags.size() > 5 || tags.any { !it.isString }) invalid("tags must be an array of at most 5 strings")
-        return tags
-            .asSequence()
-            .map { tag(it.asString()) }
-            .distinct()
-            .sorted()
-            .toList()
+    fun tags(tags: List<String>): List<String> {
+        if (tags.size > 5) invalid("tags must be an array of at most 5 strings")
+        return tags.map(::tag).distinct().sorted()
     }
 
     fun html(markdown: String): String {
