@@ -30,7 +30,8 @@ dependencies {
 
 val integrationTest by sourceSets.creating
 val e2eTest by sourceSets.creating
-listOf(integrationTest, e2eTest).forEach {
+val oidcSmokeTest by sourceSets.creating
+listOf(integrationTest, e2eTest, oidcSmokeTest).forEach {
     it.compileClasspath += sourceSets.main.get().output
     it.runtimeClasspath += sourceSets.main.get().output
     configurations[it.implementationConfigurationName].extendsFrom(configurations.testImplementation.get())
@@ -42,6 +43,8 @@ dependencies {
     add(integrationTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
     add(e2eTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
     add(e2eTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(oidcSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers")
+    add(oidcSmokeTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
 }
 
 spotless {
@@ -117,4 +120,31 @@ tasks.register<Test>("e2eTest") {
 tasks.bootBuildImage {
     imageName = "aso:${project.version}"
     environment.put("BP_JVM_VERSION", "25")
+}
+
+val keycloakImage = rootProject.file("gradle/keycloak-image.txt").readText().trim()
+tasks.register<Test>("oidcSmokeTest") {
+    group = "verification"
+    description = "Verifies the isolated Keycloak fixture via browser code/PKCE login. Requires Docker."
+    // An explicit smoke run must exercise Docker and the real provider, even after a prior success.
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    dependsOn(playwrightInstall)
+    testClassesDirs = oidcSmokeTest.output.classesDirs
+    classpath = oidcSmokeTest.runtimeClasspath
+    inputs.file(rootProject.file("compose.yaml"))
+    outputs.dir(layout.buildDirectory.dir("oidc"))
+    inputs.file(rootProject.file("gradle/keycloak-image.txt"))
+    inputs.file(rootProject.file("dev/keycloak/aso-dev-realm.json"))
+    systemProperty("aso.test.keycloak-image", keycloakImage)
+    systemProperty("aso.test.realm", rootProject.file("dev/keycloak/aso-dev-realm.json").absolutePath)
+    systemProperty("aso.test.compose", rootProject.file("compose.yaml").absolutePath)
+    systemProperty(
+        "aso.test.oidc-artifacts",
+        layout.buildDirectory
+            .dir("oidc")
+            .get()
+            .asFile.absolutePath,
+    )
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }

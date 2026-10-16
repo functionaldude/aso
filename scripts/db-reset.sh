@@ -7,5 +7,5 @@ if [[ "${1:-}" != "--confirm-delete-local-data" ]]; then
   exit 1
 fi
 load_environment
-docker compose down --volumes
+reset_service database
 docker compose up --detach --wait database

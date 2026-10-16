@@ -7,6 +7,7 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 
 - Use Java 25 and the checked-in Gradle 9.2.1 wrapper. Gradle provisions Node 24.22.0 (bundled npm 11.19.1); no global Node changes are needed.
 - `./scripts/setup.sh` checks prerequisites and installs the frontend dependencies. `./scripts/dev.sh` starts the local database and both development servers.
+- Goal `000a-local-keycloak` supplies the seeded local IdP before goal 001. Use `./scripts/keycloak-start.sh` and the lifecycle commands in README. ASO authentication remains goal 001 work. Follow the development/test identity contract in `spec.md`.
 - `./gradlew --no-daemon check bootJar` runs backend/frontend unit tests, lint, formatting checks, and packages the application. It needs no Docker, database, credentials, OIDC, or embedding provider. First use downloads dependencies.
 - `./gradlew --no-daemon integrationTest` uses an isolated pgvector Testcontainer. `./gradlew --no-daemon e2eTest` runs Chromium against the actual executable jar and another isolated database. Docker is required; unavailable prerequisites are failures, not successful skips.
 - Format with `./gradlew spotlessApply frontendFormat`. Do not replace meaningful assertions with assertions that only mirror the implementation.
@@ -19,6 +20,9 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 - Use relative `/api/v1` URLs in Angular. The development proxy targets localhost:8080; production uses the same origin.
 - The foundation has no authentication or domain operations. Preserve the requirement for individual identity before adding product writes. Authorship must come from a validated principal, never an arbitrary caller-supplied user ID.
 - A vote measures usefulness; an occurrence measures another encounter with a problem. Keep those separate when the domain is designed.
+- Follow the MVP rules in `spec.md`: one private workspace, own-content editing, human owner/admin acceptance, upvotes with undo/no self-voting, and retry-safe encounters with separate distinct-user counts. Use vendor-neutral OIDC IdP configuration.
+- Use seeded local Keycloak for development and isolated Keycloak fixtures for integration/browser authentication tests. Keep application OIDC integration provider-neutral; no fake-user bypass or disabled issuer/audience checks. Real client interoperability against local Keycloak remains required; another IdP needs its own later verification.
+- Embeddings stay on locally hosted infrastructure. Initial development uses LM Studio; keep endpoint/model/dimensions and model-specific input preparation configurable. Model changes require an explicit compatible reindex, not a product-data reset or cloud fallback.
 
 ## Data, dependencies, and generated files
 
@@ -26,12 +30,15 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 - No domain schema or jOOQ generation exists yet. Introduce generation deliberately with the first data model; ordinary builds must not introspect a developer's database.
 - Keep the database image digest in `compose.yaml` and `gradle/database-image.txt` aligned when intentionally upgrading it.
 - Commit npm's lockfile and the Gradle wrapper, including its jar. Build output, dependency caches, browser traces, local `.env` files, credentials, and IDE state stay untracked.
+- Intentionally public fictitious development-only IdP passwords/client secrets may live in labelled seed fixtures. Never copy real/personal/production credentials into them or make them production defaults. Pin the Keycloak image consistently between Compose and isolated tests.
 - Tests do not load `.env` and must never depend on or mutate the local development database. The explicit reset script deletes only the Compose project's local volume.
+- Adding Keycloak must preserve independent lifecycles: database reset deletes only database data; Keycloak reset deletes only Keycloak state. Do not keep a broad `docker compose down --volumes` reset after adding another persistent service. Test reset isolation using disposable projects, never the owner's data.
 - Prefer Spring Boot-managed backend dependency versions. Do not add infrastructure or frameworks for hypothetical features.
 
 ## Goals and handoff
 
 - `spec.md` owns product intent and requirements. Goal records own bounded scope, acceptance criteria, material decisions, verification evidence, and remaining blockers. Keep README commands accurate.
+- Read `docs/goals/README.md` for order/dependencies. Planned records do not start feature implementation or enable Goal Mode. The MVP ends at a tested laptop release; deployment and application backup/restore are outside its scope.
 - Create a goal record from the template when a user-defined implementation milestone begins. Do not turn proposed feature areas into approved implementation work.
 - Continue routine work autonomously within the agreed scope. Raise unresolved choices that materially change product behavior, architecture, or requirements.
 - For later goals use a feature branch and pull request. Do not force-push, merge, publish deployments, or enable Goal Mode as a side effect of implementation.
