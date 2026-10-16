@@ -95,7 +95,7 @@ class OidcSmokeTest {
             KeycloakFixture(callback.url).use { keycloak ->
                 try {
                     keycloak.start()
-                    val issuer = "http://${keycloak.host}:${keycloak.getMappedPort(8080)}/realms/aso-dev"
+                    val issuer = keycloak.issuer
                     val discovery = get("$issuer/.well-known/openid-configuration")
                     assertEquals(issuer, discovery["issuer"].asString())
                     val protocol = "$issuer/protocol/openid-connect"

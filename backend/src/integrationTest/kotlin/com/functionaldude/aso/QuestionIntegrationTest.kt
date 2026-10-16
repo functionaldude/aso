@@ -510,7 +510,7 @@ class QuestionIntegrationTest {
                 "$base/mcp",
                 "$base/login/oauth2/code/oidc",
             ).also { it.start() }
-        private val issuer = "http://${keycloak.host}:${keycloak.getMappedPort(8080)}/realms/aso-dev"
+        private val issuer = keycloak.issuer
         private val db =
             PostgreSQLContainer(
                 DockerImageName.parse(System.getProperty("aso.test.database-image")).asCompatibleSubstituteFor("postgres"),
