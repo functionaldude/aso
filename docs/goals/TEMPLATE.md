@@ -2,6 +2,10 @@
 
 Status: planned | in progress | complete
 
+## Dependencies and prerequisites
+
+Link prerequisite goals and identify external inputs. A planned record defines scope; it does not start implementation or enable Goal Mode.
+
 ## Objective
 
 State the user-visible result and link the relevant section of `spec.md`.

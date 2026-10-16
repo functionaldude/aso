@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. This repository contains the application foundation; product features will be specified next. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the foundation milestone](docs/goals/000-foundation.md).
+A private engineering knowledge space for coding agents and humans. The application foundation is implemented; the MVP is specified and its feature implementation is planned. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -65,13 +65,13 @@ Substitute your configured database credentials if you changed the local default
 
 Defaults work without a `.env`. For overrides, copy `.env.example` to `.env`; it is ignored by Git. Helper scripts treat this file as trusted shell configuration. Tests and Gradle never load it.
 
-| Variable | Development default | Purpose |
-| --- | --- | --- |
-| `ASO_DB_URL` | `jdbc:postgresql://localhost:5433/aso` | Backend JDBC URL |
-| `ASO_DB_USER` | `aso` | Backend and Compose database username |
-| `ASO_DB_PASSWORD` | `aso-local-only` | Backend and Compose database password |
-| `ASO_PORT` | `8080` | Spring port; keep 8080 with the supplied Angular proxy |
-| `ASO_ADDRESS` | `127.0.0.1` | Spring bind address; use `0.0.0.0` in a container |
+| Variable          | Development default                    | Purpose                                                |
+| ----------------- | -------------------------------------- | ------------------------------------------------------ |
+| `ASO_DB_URL`      | `jdbc:postgresql://localhost:5433/aso` | Backend JDBC URL                                       |
+| `ASO_DB_USER`     | `aso`                                  | Backend and Compose database username                  |
+| `ASO_DB_PASSWORD` | `aso-local-only`                       | Backend and Compose database password                  |
+| `ASO_PORT`        | `8080`                                 | Spring port; keep 8080 with the supplied Angular proxy |
+| `ASO_ADDRESS`     | `127.0.0.1`                            | Spring bind address; use `0.0.0.0` in a container      |
 
 PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. There are no domain tables or generated jOOQ sources yet.
 
@@ -93,6 +93,14 @@ JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/t
 
 ## Next milestones
 
-Define features with the project owner and update `spec.md`. Copy `docs/goals/TEMPLATE.md` into a numbered milestone, agree observable acceptance criteria, then implement on a feature branch with a pull request. Retain material decisions and verification evidence in that record. This bootstrap does not enable Goal Mode.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. These features are planned, not implemented by this documentation update.
+
+Start with [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md), then follow the [seven product implementation goals](docs/goals/README.md). The setup goal supplies seeded member/admin/non-member accounts, a local realm, lifecycle helpers, and an isolated OIDC smoke task. [Goal 001](docs/goals/001-identity-and-access.md) then implements ASO browser/MCP authentication against it. No external IdP configuration or personal credentials are required to begin.
+
+The planned Keycloak endpoint is `http://127.0.0.1:8180`, with realm `aso-dev`. See the [development/test identity contract](spec.md#development-and-test-identity) for users, clients, claims, and reset isolation. This setup is still planned: the current commands above run the foundation, and goal 000a must implement/document the actual Keycloak commands before they can be used. ASO will remain configurable for another OIDC IdP, with separate compatibility verification before use.
+
+LM Studio configuration and representative search examples are inputs for the search goal. MVP delivery is a tested local release on the owner's laptop using Keycloak and LM Studio. Deployment and backup/restore functionality are deferred.
+
+Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
 
 The foundation is local-only and unauthenticated. Individual user identity is required before product write operations are introduced.
