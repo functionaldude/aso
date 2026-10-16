@@ -97,6 +97,8 @@ class SecurityConfiguration(
                         "/",
                         "/index.html",
                         "/about",
+                        "/moderation",
+                        "/moderation/{id:[0-9a-fA-F-]{36}}",
                         "/questions",
                         "/questions/new",
                         "/questions/{id:[0-9a-fA-F-]{36}}",

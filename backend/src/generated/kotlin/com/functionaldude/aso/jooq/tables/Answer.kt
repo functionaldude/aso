@@ -6,10 +6,13 @@ package com.functionaldude.aso.jooq.tables
 
 import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.indexes.ANSWER_QUESTION
+import com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D14099
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_A
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_AB
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_ABC
 import com.functionaldude.aso.jooq.tables.AppUser.AppUserPath
+import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.Question.QuestionPath
 import com.functionaldude.aso.jooq.tables.records.AnswerRecord
 
@@ -88,6 +91,12 @@ open class Answer(
 
     val CREATED_AT: TableField<AnswerRecord, OffsetDateTime?> = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "")
 
+    val VERSION: TableField<AnswerRecord, Int?> = createField(DSL.name("version"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.INTEGER)), this, "")
+
+    val UPDATED_AT: TableField<AnswerRecord, OffsetDateTime?> = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "")
+
+    val HIDDEN: TableField<AnswerRecord, Boolean?> = createField(DSL.name("hidden"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("FALSE"), SQLDataType.BOOLEAN)), this, "")
+
     private constructor(alias: Name, aliased: Table<AnswerRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<AnswerRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
     private constructor(alias: Name, aliased: Table<AnswerRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
@@ -110,6 +119,7 @@ open class Answer(
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
     override fun getIndexes(): List<Index> = listOf(ANSWER_QUESTION)
     override fun getPrimaryKey(): UniqueKey<AnswerRecord> = CONSTRAINT_A
+    override fun getUniqueKeys(): List<UniqueKey<AnswerRecord>> = listOf(ANSWER_PARENT_ID)
     override fun getReferences(): List<ForeignKey<AnswerRecord, *>> = listOf(CONSTRAINT_AB, CONSTRAINT_ABC)
 
     fun question(): QuestionPath = question
@@ -117,9 +127,22 @@ open class Answer(
 
     fun appUser(): AppUserPath = appUser
     val appUser: AppUserPath by lazy { AppUserPath(this, CONSTRAINT_ABC, null) }
+
+    private lateinit var _contentComment: ContentCommentPath
+
+    fun contentComment(): ContentCommentPath {
+        if (!this::_contentComment.isInitialized)
+            _contentComment = ContentCommentPath(this, null, CONSTRAINT_51D14099.inverseKey)
+
+        return _contentComment;
+    }
+
+    val contentComment: ContentCommentPath
+        get(): ContentCommentPath = contentComment()
     override fun getChecks(): List<Check<AnswerRecord>> = listOf(
         Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA"), "\"channel\" IN('web', 'mcp')", true),
-        Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA3"), "CHAR_LENGTH(\"body\") BETWEEN 1 AND 20000", true)
+        Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA3"), "CHAR_LENGTH(\"body\") BETWEEN 1 AND 20000", true),
+        Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA3F"), "\"version\" > 0", true)
     )
     override fun `as`(alias: String): Answer = Answer(DSL.name(alias), this)
     override fun `as`(alias: Name): Answer = Answer(alias, this)

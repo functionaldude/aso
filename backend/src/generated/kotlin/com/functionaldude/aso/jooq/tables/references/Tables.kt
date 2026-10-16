@@ -7,6 +7,8 @@ package com.functionaldude.aso.jooq.tables.references
 
 import com.functionaldude.aso.jooq.tables.Answer
 import com.functionaldude.aso.jooq.tables.AppUser
+import com.functionaldude.aso.jooq.tables.ContentAudit
+import com.functionaldude.aso.jooq.tables.ContentComment
 import com.functionaldude.aso.jooq.tables.ContentRequest
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
@@ -17,6 +19,10 @@ import com.functionaldude.aso.jooq.tables.Tag
 val ANSWER: Answer = Answer.ANSWER
 
 val APP_USER: AppUser = AppUser.APP_USER
+
+val CONTENT_AUDIT: ContentAudit = ContentAudit.CONTENT_AUDIT
+
+val CONTENT_COMMENT: ContentComment = ContentComment.CONTENT_COMMENT
 
 val CONTENT_REQUEST: ContentRequest = ContentRequest.CONTENT_REQUEST
 

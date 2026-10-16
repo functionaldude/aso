@@ -15,5 +15,14 @@ export const routes: Routes = [
     path: 'questions/:id',
     loadComponent: () => import('./questions/question-detail').then((m) => m.QuestionDetail),
   },
+  {
+    path: 'moderation',
+    loadComponent: () => import('./questions/moderation-list').then((m) => m.ModerationList),
+  },
+  {
+    path: 'moderation/:id',
+    data: { moderation: true },
+    loadComponent: () => import('./questions/question-detail').then((m) => m.QuestionDetail),
+  },
   { path: '**', redirectTo: '' },
 ];

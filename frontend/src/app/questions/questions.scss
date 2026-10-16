@@ -89,3 +89,19 @@ pre {
 [role='alert'] {
   color: #9b2626;
 }
+
+.comment {
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid #64748b;
+}
+.accepted {
+  font-weight: 700;
+  color: #17633c;
+}
+.latest-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 22rem;
+  overflow: auto;
+}

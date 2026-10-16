@@ -7,12 +7,16 @@ package com.functionaldude.aso.jooq.keys
 
 import com.functionaldude.aso.jooq.tables.Answer
 import com.functionaldude.aso.jooq.tables.AppUser
+import com.functionaldude.aso.jooq.tables.ContentAudit
+import com.functionaldude.aso.jooq.tables.ContentComment
 import com.functionaldude.aso.jooq.tables.ContentRequest
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
 import com.functionaldude.aso.jooq.tables.Tag
 import com.functionaldude.aso.jooq.tables.records.AnswerRecord
 import com.functionaldude.aso.jooq.tables.records.AppUserRecord
+import com.functionaldude.aso.jooq.tables.records.ContentAuditRecord
+import com.functionaldude.aso.jooq.tables.records.ContentCommentRecord
 import com.functionaldude.aso.jooq.tables.records.ContentRequestRecord
 import com.functionaldude.aso.jooq.tables.records.QuestionRecord
 import com.functionaldude.aso.jooq.tables.records.QuestionTagRecord
@@ -30,9 +34,12 @@ import org.jooq.impl.QOM.ForeignKeyRule
 // UNIQUE and PRIMARY KEY definitions
 // -------------------------------------------------------------------------
 
+val ANSWER_PARENT_ID: UniqueKey<AnswerRecord> = Internal.createUniqueKey(Answer.ANSWER, DSL.name("answer_parent_id"), arrayOf(Answer.ANSWER.QUESTION_ID, Answer.ANSWER.ID), true)
 val CONSTRAINT_A: UniqueKey<AnswerRecord> = Internal.createUniqueKey(Answer.ANSWER, DSL.name("CONSTRAINT_A"), arrayOf(Answer.ANSWER.ID), true)
 val APP_USER_IDENTITY: UniqueKey<AppUserRecord> = Internal.createUniqueKey(AppUser.APP_USER, DSL.name("app_user_identity"), arrayOf(AppUser.APP_USER.ISSUER, AppUser.APP_USER.SUBJECT), true)
 val CONSTRAINT_4: UniqueKey<AppUserRecord> = Internal.createUniqueKey(AppUser.APP_USER, DSL.name("CONSTRAINT_4"), arrayOf(AppUser.APP_USER.ID), true)
+val CONSTRAINT_FF: UniqueKey<ContentAuditRecord> = Internal.createUniqueKey(ContentAudit.CONTENT_AUDIT, DSL.name("CONSTRAINT_FF"), arrayOf(ContentAudit.CONTENT_AUDIT.ID), true)
+val CONSTRAINT_51: UniqueKey<ContentCommentRecord> = Internal.createUniqueKey(ContentComment.CONTENT_COMMENT, DSL.name("CONSTRAINT_51"), arrayOf(ContentComment.CONTENT_COMMENT.ID), true)
 val CONSTRAINT_5A7: UniqueKey<ContentRequestRecord> = Internal.createUniqueKey(ContentRequest.CONTENT_REQUEST, DSL.name("CONSTRAINT_5A7"), arrayOf(ContentRequest.CONTENT_REQUEST.ACTOR_ID, ContentRequest.CONTENT_REQUEST.OPERATION, ContentRequest.CONTENT_REQUEST.REQUEST_ID), true)
 val CONSTRAINT_B: UniqueKey<QuestionRecord> = Internal.createUniqueKey(Question.QUESTION, DSL.name("CONSTRAINT_B"), arrayOf(Question.QUESTION.ID), true)
 val CONSTRAINT_F5C: UniqueKey<QuestionTagRecord> = Internal.createUniqueKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F5C"), arrayOf(QuestionTag.QUESTION_TAG.QUESTION_ID, QuestionTag.QUESTION_TAG.TAG_NAME), true)
@@ -44,7 +51,13 @@ val CONSTRAINT_1: UniqueKey<TagRecord> = Internal.createUniqueKey(Tag.TAG, DSL.n
 
 val CONSTRAINT_AB: ForeignKey<AnswerRecord, QuestionRecord> = Internal.createForeignKey(Answer.ANSWER, DSL.name("CONSTRAINT_AB"), arrayOf(Answer.ANSWER.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_ABC: ForeignKey<AnswerRecord, AppUserRecord> = Internal.createForeignKey(Answer.ANSWER, DSL.name("CONSTRAINT_ABC"), arrayOf(Answer.ANSWER.AUTHOR_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_4, arrayOf(AppUser.APP_USER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_FFF: ForeignKey<ContentAuditRecord, AppUserRecord> = Internal.createForeignKey(ContentAudit.CONTENT_AUDIT, DSL.name("CONSTRAINT_FFF"), arrayOf(ContentAudit.CONTENT_AUDIT.ACTOR_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_4, arrayOf(AppUser.APP_USER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_FFFC349: ForeignKey<ContentAuditRecord, QuestionRecord> = Internal.createForeignKey(ContentAudit.CONTENT_AUDIT, DSL.name("CONSTRAINT_FFFC349"), arrayOf(ContentAudit.CONTENT_AUDIT.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51D: ForeignKey<ContentCommentRecord, QuestionRecord> = Internal.createForeignKey(ContentComment.CONTENT_COMMENT, DSL.name("CONSTRAINT_51D"), arrayOf(ContentComment.CONTENT_COMMENT.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51D14: ForeignKey<ContentCommentRecord, AppUserRecord> = Internal.createForeignKey(ContentComment.CONTENT_COMMENT, DSL.name("CONSTRAINT_51D14"), arrayOf(ContentComment.CONTENT_COMMENT.AUTHOR_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_4, arrayOf(AppUser.APP_USER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51D14099: ForeignKey<ContentCommentRecord, AnswerRecord> = Internal.createForeignKey(ContentComment.CONTENT_COMMENT, DSL.name("CONSTRAINT_51D14099"), arrayOf(ContentComment.CONTENT_COMMENT.QUESTION_ID, ContentComment.CONTENT_COMMENT.ANSWER_ID), com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID, arrayOf(Answer.ANSWER.QUESTION_ID, Answer.ANSWER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_5: ForeignKey<ContentRequestRecord, AppUserRecord> = Internal.createForeignKey(ContentRequest.CONTENT_REQUEST, DSL.name("CONSTRAINT_5"), arrayOf(ContentRequest.CONTENT_REQUEST.ACTOR_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_4, arrayOf(AppUser.APP_USER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_BA: ForeignKey<QuestionRecord, AppUserRecord> = Internal.createForeignKey(Question.QUESTION, DSL.name("CONSTRAINT_BA"), arrayOf(Question.QUESTION.AUTHOR_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_4, arrayOf(AppUser.APP_USER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val QUESTION_ACCEPTED_ANSWER: ForeignKey<QuestionRecord, AnswerRecord> = Internal.createForeignKey(Question.QUESTION, DSL.name("question_accepted_answer"), arrayOf(Question.QUESTION.ID, Question.QUESTION.ACCEPTED_ANSWER_ID), com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID, arrayOf(Answer.ANSWER.QUESTION_ID, Answer.ANSWER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_F: ForeignKey<QuestionTagRecord, QuestionRecord> = Internal.createForeignKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F"), arrayOf(QuestionTag.QUESTION_TAG.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_F5: ForeignKey<QuestionTagRecord, TagRecord> = Internal.createForeignKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F5"), arrayOf(QuestionTag.QUESTION_TAG.TAG_NAME), com.functionaldude.aso.jooq.keys.CONSTRAINT_1, arrayOf(Tag.TAG.NAME), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)

@@ -36,6 +36,10 @@ import kotlin.test.assertTrue
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 class QuestionIntegrationTest {
     @Autowired private lateinit var database: DSLContext
+
+    @Autowired private lateinit var lifecycle: com.functionaldude.aso.questions.LifecycleService
+
+    @Autowired private lateinit var decoder: org.springframework.security.oauth2.jwt.JwtDecoder
     private val json = JsonMapper.builder().build()
     private val http = HttpClient.newHttpClient()
 
@@ -311,7 +315,7 @@ class QuestionIntegrationTest {
             assertEquals("2025-11-25", initialized["protocolVersion"].asString())
             assertFalse(initialized["capabilities"]["tools"]["listChanged"].asBoolean())
             val tools = rpc(alice, request("tools/list")).body["result"]["tools"]
-            assertEquals(6, tools.size())
+            assertEquals(11, tools.size())
             val identity = tools.first { it["name"].asString() == "identity" }
             assertEquals(setOf("readOnlyHint", "openWorldHint"), identity["annotations"].propertyNames().toSet())
             assertEquals(0, identity["inputSchema"]["properties"].size())
@@ -497,6 +501,512 @@ class QuestionIntegrationTest {
                         .size,
                 )
             }
+        }
+
+    private fun withLifecycleActors(work: (Actor, Actor, Actor) -> Unit) {
+        Playwright.create().use { playwright ->
+            playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(true)).use { browser ->
+                val contexts = mutableListOf<BrowserContext>()
+                try {
+                    work(actor(browser, "alice", contexts), actor(browser, "bob", contexts), actor(browser, "aso-admin", contexts))
+                } finally {
+                    contexts.forEach { it.close() }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `permissions retries conflicts acceptance and hidden descendants`() =
+        withLifecycleActors { alice, bob, admin ->
+            val q = mcp(alice, "create_question", question()).body
+            val qid = q["id"].asString()
+            val a = web(bob, "/api/v1/questions/$qid/answers", answer()).body
+            val aid = a["id"].asString()
+            val other = web(bob, "/api/v1/questions", question()).body["id"].asString()
+            val unrelated = web(bob, "/api/v1/questions/$other/answers", answer()).body["id"].asString()
+            val commentPayload =
+                mapOf(
+                    "requestId" to UUID.randomUUID().toString(),
+                    "body" to "More **context**.\n\n<script>unsafe()</script>",
+                )
+            val c = mcp(alice, "create_comment", commentPayload + mapOf("kind" to "answer", "targetId" to aid))
+            assertEquals(200, c.status)
+            val cid = c.body["id"].asString()
+            assertEquals(alice.id, c.body["author"]["id"].asString())
+            assertEquals("mcp", c.body["channel"].asString())
+            assertTrue(c.body["bodyHtml"].asString().contains("&lt;script&gt;"))
+            assertEquals(c.body, web(alice, "/api/v1/content/answer/$aid/comments", commentPayload).body)
+            assertEquals(409, web(alice, "/api/v1/content/answer/$aid/comments", commentPayload + ("body" to "Changed")).status)
+            assertEquals(409, web(alice, "/api/v1/content/question/$qid/comments", commentPayload).status)
+            for (payload in listOf(
+                commentPayload + ("authorId" to bob.id),
+                commentPayload + ("body" to 4),
+                commentPayload + ("body" to "password=private-fixture"),
+            )) {
+                assertEquals(400, web(alice, "/api/v1/content/question/$qid/comments", payload).status)
+                assertEquals(400, mcp(alice, "create_comment", payload + mapOf("kind" to "question", "targetId" to qid)).status)
+            }
+            repeat(3) {
+                web(
+                    bob,
+                    "/api/v1/content/question/$qid/comments",
+                    mapOf(
+                        "requestId" to UUID.randomUUID().toString(),
+                        "body" to "Context $it",
+                    ),
+                )
+            }
+            val first = web(alice, "/api/v1/content/question/$qid/comments?limit=2").body
+            val second =
+                mcp(
+                    bob,
+                    "list_comments",
+                    mapOf(
+                        "kind" to "question",
+                        "targetId" to qid,
+                        "limit" to 2,
+                        "cursor" to first["nextCursor"].asString(),
+                    ),
+                )
+            assertEquals(1, second.body["items"].size())
+            assertEquals("Context 0", first["items"][0]["body"].asString())
+            assertEquals("Context 2", second.body["items"][0]["body"].asString())
+            assertEquals(400, web(alice, "/api/v1/content/answer/$aid/comments?cursor=${first["nextCursor"].asString()}").status)
+            val editQ =
+                mapOf(
+                    "expectedVersion" to 1,
+                    "title" to "Edited problem",
+                    "body" to "Focused edited problem",
+                    "tags" to listOf("edited"),
+                    "context" to mapOf("versions" to "Java 25"),
+                )
+            val editA = mapOf("expectedVersion" to 1, "body" to "Edited fix", "verification" to "Not tested")
+            val editC = mapOf("expectedVersion" to 1, "body" to "Edited context")
+            for ((who, path, payload) in listOf(
+                Triple(
+                    bob,
+                    "/questions/$qid/edit",
+                    editQ,
+                ),
+                Triple(
+                    alice,
+                    "/answers/$aid/edit",
+                    editA,
+                ),
+                Triple(bob, "/comments/$cid/edit", editC),
+            )) {
+                assertEquals(403, web(who, "/api/v1$path", payload).status)
+            }
+            assertEquals(403, mcp(bob, "edit_question", mapOf("questionId" to qid, "content" to editQ)).status)
+            assertEquals(403, mcp(alice, "edit_answer", mapOf("answerId" to aid, "content" to editA)).status)
+            assertEquals(403, mcp(bob, "edit_comment", mapOf("commentId" to cid, "content" to editC)).status)
+            assertEquals(403, mcp(admin, "edit_question", mapOf("questionId" to qid, "content" to editQ)).status)
+            val updated = mcp(alice, "edit_question", mapOf("questionId" to qid, "content" to editQ))
+            assertEquals(200, updated.status)
+            assertEquals(2, updated.body["version"].asInt())
+            assertEquals(q["createdAt"], updated.body["createdAt"])
+            assertEquals(q["author"], updated.body["author"])
+            assertEquals(409, web(alice, "/api/v1/questions/$qid/edit", editQ).status)
+            assertEquals(200, web(alice, "/api/v1/questions/$qid/edit", editQ + ("expectedVersion" to 2)).status)
+            assertEquals(200, mcp(bob, "edit_answer", mapOf("answerId" to aid, "content" to editA)).status)
+            assertEquals(409, web(bob, "/api/v1/answers/$aid/edit", editA).status)
+            assertEquals(200, mcp(alice, "edit_comment", mapOf("commentId" to cid, "content" to editC)).status)
+            assertEquals(409, mcp(alice, "edit_comment", mapOf("commentId" to cid, "content" to editC)).status)
+            for (badVersion in listOf(null, "3", 3.5, 0)) {
+                assertEquals(400, web(alice, "/api/v1/questions/$qid/edit", editQ + ("expectedVersion" to badVersion)).status)
+            }
+            assertEquals(400, web(alice, "/api/v1/questions/$qid/edit", editQ + mapOf("expectedVersion" to 3, "authorId" to bob.id)).status)
+            assertEquals(403, web(bob, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 3, "answerId" to aid)).status)
+            assertEquals(
+                400,
+                web(alice, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 3, "answerId" to unrelated)).status,
+            )
+            val accepted = web(alice, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 3, "answerId" to aid))
+            assertEquals(200, accepted.status)
+            assertEquals("resolved", accepted.body["state"].asString())
+            assertEquals(aid, mcp(bob, "get_question", mapOf("questionId" to qid)).body["question"]["acceptedAnswerId"].asString())
+            assertTrue(web(bob, "/api/v1/questions?state=resolved").body["items"].any { it["id"].asString() == qid })
+            assertFalse(web(bob, "/api/v1/questions?state=open").body["items"].any { it["id"].asString() == qid })
+            assertEquals(409, web(admin, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 3, "answerId" to null)).status)
+            val a2 = web(alice, "/api/v1/questions/$qid/answers", answer()).body["id"].asString()
+            val changed = web(admin, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 4, "answerId" to a2))
+            assertEquals(a2, changed.body["acceptedAnswerId"].asString())
+            assertEquals(
+                "open",
+                web(
+                    alice,
+                    "/api/v1/questions/$qid/acceptance",
+                    mapOf("expectedVersion" to 5, "answerId" to null),
+                ).body["state"].asString(),
+            )
+            assertEquals(200, web(admin, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 6, "answerId" to aid)).status)
+            // Actual browser credentials without CSRF, and signed member/admin bearer tokens with CSRF, cannot mutate browser actions.
+            val csrfLess =
+                HttpRequest
+                    .newBuilder(URI("$base/api/v1/questions/$qid/acceptance"))
+                    .header("Cookie", alice.cookie)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"expectedVersion\":7}"))
+                    .build()
+            assertEquals(403, http.send(csrfLess, HttpResponse.BodyHandlers.ofString()).statusCode())
+            for (who in listOf(alice, admin)) {
+                for (path in listOf("/questions/$qid/acceptance", "/admin/content/answer/$aid/visibility", "/admin/questions/$qid/edit")) {
+                    val attempt =
+                        HttpRequest
+                            .newBuilder(URI("$base/api/v1$path"))
+                            .header("Authorization", "Bearer ${who.token}")
+                            .header("X-CSRF-TOKEN", who.csrf)
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString("{\"expectedVersion\":7}"))
+                            .build()
+                    assertTrue(http.send(attempt, HttpResponse.BodyHandlers.ofString()).statusCode() in setOf(401, 403))
+                }
+            }
+            // Even bypassing HTTP dispatch cannot promote a validated admin bearer to browser authority.
+            val adminBearer =
+                org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                    decoder.decode(admin.token),
+                )
+            kotlin.test.assertFailsWith<org.springframework.security.access.AccessDeniedException> {
+                lifecycle.accept(
+                    adminBearer,
+                    qid,
+                    com.functionaldude.aso.questions
+                        .AcceptanceInput(7, aid),
+                )
+            }
+            kotlin.test.assertFailsWith<org.springframework.security.access.AccessDeniedException> {
+                lifecycle.visibility(
+                    adminBearer,
+                    "answer",
+                    aid,
+                    com.functionaldude.aso.questions
+                        .VisibilityInput(2, true),
+                )
+            }
+            kotlin.test.assertFailsWith<org.springframework.security.access.AccessDeniedException> {
+                lifecycle.editComment(
+                    adminBearer,
+                    cid,
+                    com.functionaldude.aso.questions
+                        .EditCommentInput(2, "Forbidden"),
+                    moderation = true,
+                )
+            }
+            for (path in listOf("/admin/questions", "/admin/questions/$qid", "/admin/content/comment/$cid")) {
+                val attempt = HttpRequest.newBuilder(URI("$base/api/v1$path")).header("Authorization", "Bearer ${admin.token}").build()
+                assertEquals(401, http.send(attempt, HttpResponse.BodyHandlers.ofString()).statusCode())
+            }
+            val tools = rpc(admin, mapOf("jsonrpc" to "2.0", "id" to 1, "method" to "tools/list")).body["result"]["tools"]
+            assertEquals(
+                setOf(
+                    "identity",
+                    "list_questions",
+                    "get_question",
+                    "list_answers",
+                    "create_question",
+                    "create_answer",
+                    "list_comments",
+                    "create_comment",
+                    "edit_question",
+                    "edit_answer",
+                    "edit_comment",
+                ),
+                tools
+                    .asSequence()
+                    .map {
+                        it["name"].asString()
+                    }.toSet(),
+            )
+            for (tool in listOf("accept_answer", "set_acceptance", "hide_content", "restore_content", "moderate_question")) {
+                assertEquals(
+                    -32602,
+                    rpc(
+                        admin,
+                        mapOf(
+                            "jsonrpc" to "2.0",
+                            "id" to 1,
+                            "method" to "tools/call",
+                            "params" to
+                                mapOf(
+                                    "name" to tool,
+                                    "arguments" to emptyMap<String, Any>(),
+                                ),
+                        ),
+                    ).body["error"]["code"].asInt(),
+                )
+            }
+            assertEquals(403, web(alice, "/api/v1/admin/questions").status)
+            assertEquals(
+                403,
+                web(bob, "/api/v1/admin/content/answer/$aid/visibility", mapOf("expectedVersion" to 2, "hidden" to true)).status,
+            )
+            assertEquals(200, web(admin, "/api/v1/admin/answers/$aid/edit", editA + ("expectedVersion" to 2)).status)
+            assertEquals(200, web(admin, "/api/v1/admin/comments/$cid/edit", editC + ("expectedVersion" to 2)).status)
+            val hide = web(admin, "/api/v1/admin/content/answer/$aid/visibility", mapOf("expectedVersion" to 3, "hidden" to true))
+            assertEquals(200, hide.status)
+            assertEquals("open", web(alice, "/api/v1/questions/$qid").body["question"]["state"].asString())
+            for (path in listOf(
+                "/content/answer/$aid",
+                "/content/comment/$cid",
+                "/content/answer/$aid/comments",
+            )) {
+                assertEquals(
+                    404,
+                    web(alice, "/api/v1$path").status,
+                )
+            }
+            assertEquals(404, mcp(alice, "list_comments", mapOf("kind" to "answer", "targetId" to aid)).status)
+            assertEquals(404, web(alice, "/api/v1/questions/$qid/acceptance", mapOf("expectedVersion" to 8, "answerId" to aid)).status)
+            assertFalse(mcp(alice, "get_question", mapOf("questionId" to qid)).body["answers"]["items"].any { it["id"].asString() == aid })
+            assertEquals(200, web(admin, "/api/v1/admin/content/answer/$aid/comments").status)
+            assertEquals(
+                200,
+                web(
+                    admin,
+                    "/api/v1/admin/content/answer/$aid/visibility",
+                    mapOf("expectedVersion" to 4, "hidden" to false),
+                ).status,
+            )
+            assertTrue(web(alice, "/api/v1/questions/$qid").body["question"]["acceptedAnswerId"].isNull)
+            assertEquals(
+                200,
+                web(
+                    admin,
+                    "/api/v1/admin/content/comment/$cid/visibility",
+                    mapOf("expectedVersion" to 3, "hidden" to true),
+                ).status,
+            )
+            assertEquals(0, mcp(alice, "list_comments", mapOf("kind" to "answer", "targetId" to aid)).body["items"].size())
+            assertEquals(
+                200,
+                web(
+                    admin,
+                    "/api/v1/admin/content/comment/$cid/visibility",
+                    mapOf("expectedVersion" to 4, "hidden" to false),
+                ).status,
+            )
+            assertEquals(
+                200,
+                web(
+                    admin,
+                    "/api/v1/admin/content/question/$qid/visibility",
+                    mapOf("expectedVersion" to 8, "hidden" to true),
+                ).status,
+            )
+            assertEquals(404, web(admin, "/api/v1/questions/$qid").status)
+            assertEquals(404, mcp(alice, "get_question", mapOf("questionId" to qid)).status)
+            assertEquals(404, mcp(bob, "list_answers", mapOf("questionId" to qid)).status)
+            assertEquals(404, web(alice, "/api/v1/content/comment/$cid").status)
+            assertEquals(404, web(bob, "/api/v1/questions/$qid/answers", answer()).status)
+            assertEquals(
+                404,
+                web(
+                    bob,
+                    "/api/v1/content/answer/$aid/comments",
+                    mapOf(
+                        "requestId" to UUID.randomUUID().toString(),
+                        "body" to "Hidden parent",
+                    ),
+                ).status,
+            )
+            assertFalse(web(alice, "/api/v1/questions?state=all").body["items"].any { it["id"].asString() == qid })
+            assertEquals(200, web(admin, "/api/v1/admin/questions/$qid").status)
+            assertEquals(200, web(admin, "/api/v1/admin/questions/$qid/edit", editQ + ("expectedVersion" to 9)).status)
+            assertEquals(
+                200,
+                web(
+                    admin,
+                    "/api/v1/admin/content/question/$qid/visibility",
+                    mapOf("expectedVersion" to 10, "hidden" to false),
+                ).status,
+            )
+            assertEquals(200, web(alice, "/api/v1/content/comment/$cid").status)
+            val audits =
+                database
+                    .selectFrom(com.functionaldude.aso.jooq.tables.references.CONTENT_AUDIT)
+                    .where(
+                        com.functionaldude.aso.jooq.tables.references.CONTENT_AUDIT.QUESTION_ID
+                            .eq(UUID.fromString(qid)),
+                    ).fetch()
+            assertTrue(audits.size >= 15)
+            assertTrue(
+                audits.all { it.actorId != null && it.occurredAt != null && it.targetId != null && it.channel in setOf("web", "mcp") },
+            )
+            assertTrue(
+                audits.any {
+                    it.action == "accept" &&
+                        json.readTree(it.beforeState!!)["acceptedAnswerId"].asString() == aid &&
+                        json.readTree(it.afterState!!)["acceptedAnswerId"].isNull
+                },
+            )
+            assertTrue(
+                audits.any {
+                    it.action == "edit" &&
+                        json.readTree(it.beforeState!!)["contentHash"] != json.readTree(it.afterState!!)["contentHash"]
+                },
+            )
+            assertFalse(audits.any { it.beforeState!!.contains("Focused edited problem") || it.afterState!!.contains("Bearer") })
+        }
+
+    @Test
+    fun `concurrent lifecycle changes preserve state and audits`() =
+        withLifecycleActors { alice, bob, admin ->
+            val q = web(alice, "/api/v1/questions", question()).body["id"].asString()
+            val a = web(bob, "/api/v1/questions/$q/answers", answer()).body["id"].asString()
+            Executors.newFixedThreadPool(8).use { pool ->
+                val edits =
+                    pool
+                        .invokeAll(
+                            (1..8).map { n ->
+                                Callable {
+                                    web(
+                                        alice,
+                                        "/api/v1/questions/$q/edit",
+                                        mapOf(
+                                            "expectedVersion" to 1,
+                                            "title" to "Concurrent $n",
+                                            "body" to "Draft $n",
+                                        ),
+                                    )
+                                }
+                            },
+                        ).map { it.get() }
+                assertEquals(1, edits.count { it.status == 200 })
+                assertEquals(7, edits.count { it.status == 409 })
+                val payload = mapOf("requestId" to UUID.randomUUID().toString(), "body" to "Same encounter context")
+                val comments =
+                    pool
+                        .invokeAll(
+                            (1..8).map { n ->
+                                Callable {
+                                    if (n % 2 == 0) {
+                                        web(
+                                            bob,
+                                            "/api/v1/content/question/$q/comments",
+                                            payload,
+                                        )
+                                    } else {
+                                        mcp(
+                                            bob,
+                                            "create_comment",
+                                            payload +
+                                                mapOf(
+                                                    "kind" to "question",
+                                                    "targetId" to q,
+                                                ),
+                                        )
+                                    }
+                                }
+                            },
+                        ).map { it.get() }
+                assertTrue(comments.all { it.status == 200 })
+                assertEquals(1, comments.map { it.body["id"].asString() }.toSet().size)
+                val cid = comments.first().body["id"].asString()
+                val editsA =
+                    pool
+                        .invokeAll(
+                            (1..4).map { n ->
+                                Callable {
+                                    mcp(
+                                        bob,
+                                        "edit_answer",
+                                        mapOf(
+                                            "answerId" to a,
+                                            "content" to mapOf("expectedVersion" to 1, "body" to "Answer draft $n"),
+                                        ),
+                                    )
+                                }
+                            },
+                        ).map {
+                            it.get()
+                        }
+                assertEquals(1, editsA.count { it.status == 200 })
+                assertEquals(3, editsA.count { it.status == 409 })
+                val editsC =
+                    pool
+                        .invokeAll(
+                            (1..4).map { n ->
+                                Callable {
+                                    web(
+                                        bob,
+                                        "/api/v1/comments/$cid/edit",
+                                        mapOf("expectedVersion" to 1, "body" to "Comment draft $n"),
+                                    )
+                                }
+                            },
+                        ).map {
+                            it.get()
+                        }
+                assertEquals(1, editsC.count { it.status == 200 })
+                assertEquals(3, editsC.count { it.status == 409 })
+                val race =
+                    pool
+                        .invokeAll(
+                            listOf(
+                                Callable { web(alice, "/api/v1/questions/$q/acceptance", mapOf("expectedVersion" to 2, "answerId" to a)) },
+                                Callable {
+                                    web(
+                                        admin,
+                                        "/api/v1/admin/content/answer/$a/visibility",
+                                        mapOf(
+                                            "expectedVersion" to 2,
+                                            "hidden" to true,
+                                        ),
+                                    )
+                                },
+                            ),
+                        ).map { it.get() }
+                assertEquals(200, race[1].status)
+                assertTrue(race[0].status in setOf(200, 404))
+                val current = web(alice, "/api/v1/questions/$q").body
+                assertEquals("open", current["question"]["state"].asString())
+                assertTrue(current["question"]["acceptedAnswerId"].isNull)
+                assertEquals(0, current["answers"]["items"].size())
+                val version = current["question"]["version"].asInt()
+                val moderationRace =
+                    pool
+                        .invokeAll(
+                            listOf(
+                                Callable {
+                                    web(
+                                        admin,
+                                        "/api/v1/admin/content/question/$q/visibility",
+                                        mapOf("expectedVersion" to version, "hidden" to true),
+                                    )
+                                },
+                                Callable {
+                                    web(
+                                        alice,
+                                        "/api/v1/questions/$q/edit",
+                                        mapOf(
+                                            "expectedVersion" to version,
+                                            "title" to "Race draft",
+                                            "body" to "Race body",
+                                        ),
+                                    )
+                                },
+                            ),
+                        ).map { it.get() }
+                assertEquals(1, moderationRace.count { it.status == 200 })
+                assertTrue(moderationRace.all { it.status in setOf(200, 404, 409) })
+            }
+            val audit = com.functionaldude.aso.jooq.tables.references.CONTENT_AUDIT
+            val committedEdits =
+                database
+                    .selectFrom(audit)
+                    .where(audit.QUESTION_ID.eq(UUID.fromString(q)))
+                    .and(audit.ACTION.eq("edit"))
+                    .fetch()
+            assertTrue(committedEdits.size in 3..4)
+            assertTrue(
+                committedEdits.all {
+                    val beforeVersion = json.readTree(it.beforeState!!)["version"].asInt()
+                    val afterVersion = json.readTree(it.afterState!!)["version"].asInt()
+                    afterVersion == beforeVersion + 1
+                },
+            )
         }
 
     companion object {

@@ -48,13 +48,25 @@ open class AnswerRecord() : UpdatableRecordImpl<AnswerRecord>(Answer.ANSWER) {
         set(value): Unit = set(7, value)
         get(): OffsetDateTime? = get(7) as OffsetDateTime?
 
+    open var version: Int?
+        set(value): Unit = set(8, value)
+        get(): Int? = get(8) as Int?
+
+    open var updatedAt: OffsetDateTime?
+        set(value): Unit = set(9, value)
+        get(): OffsetDateTime? = get(9) as OffsetDateTime?
+
+    open var hidden: Boolean?
+        set(value): Unit = set(10, value)
+        get(): Boolean? = get(10) as Boolean?
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
 
     override fun key(): Record1<UUID?> = super.key() as Record1<UUID?>
 
-    constructor(id: UUID? = null, questionId: UUID? = null, body: String? = null, applicability: String? = null, verification: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null): this() {
+    constructor(id: UUID? = null, questionId: UUID? = null, body: String? = null, applicability: String? = null, verification: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null, version: Int? = null, updatedAt: OffsetDateTime? = null, hidden: Boolean? = null): this() {
         this.id = id
         this.questionId = questionId
         this.body = body
@@ -63,6 +75,9 @@ open class AnswerRecord() : UpdatableRecordImpl<AnswerRecord>(Answer.ANSWER) {
         this.authorId = authorId
         this.channel = channel
         this.createdAt = createdAt
+        this.version = version
+        this.updatedAt = updatedAt
+        this.hidden = hidden
         resetTouchedOnNotNull()
     }
 }

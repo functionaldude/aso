@@ -103,7 +103,8 @@ open class ContentRequest(
     fun appUser(): AppUserPath = appUser
     val appUser: AppUserPath by lazy { AppUserPath(this, CONSTRAINT_5, null) }
     override fun getChecks(): List<Check<ContentRequestRecord>> = listOf(
-        Internal.createCheck(this, DSL.name("CONSTRAINT_5A"), "\"operation\" IN('create_question', 'create_answer')", true)
+        Internal.createCheck(this, DSL.name("CONSTRAINT_5A"), "\"operation\" IN('create_question', 'create_answer')", true),
+        Internal.createCheck(this, DSL.name("content_request_operation_check"), "\"operation\" IN('create_question', 'create_answer', 'create_comment')", true)
     )
     override fun `as`(alias: String): ContentRequest = ContentRequest(DSL.name(alias), this)
     override fun `as`(alias: Name): ContentRequest = ContentRequest(alias, this)

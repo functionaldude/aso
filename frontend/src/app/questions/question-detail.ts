@@ -1,3 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { ContentEditor } from './content-editor';
+import { ContentComments } from './content-comments';
 import { Component, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
@@ -14,6 +17,8 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
   selector: 'app-question-detail',
   imports: [
     DatePipe,
+    ContentEditor,
+    ContentComments,
     FormsModule,
     RouterLink,
     MatButtonModule,
@@ -34,7 +39,15 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
       }
       @if (detail(); as detail) {
         <article>
-          <p class="eyebrow">Open question</p>
+          <p class="eyebrow">
+            {{ detail.question.state === 'resolved' ? 'Resolved question' : 'Open question' }}
+          </p>
+          @if (session.identity()?.admin && !moderation) {
+            <a mat-button [routerLink]="['/moderation', detail.question.id]">Moderate content</a>
+          }
+          @if (moderation) {
+            <p>Administrator moderation · Hidden parents keep descendants out of ordinary reads.</p>
+          }
           <h1>{{ detail.question.title }}</h1>
           <p class="metadata">
             {{ detail.question.author.displayName }} ·
@@ -62,11 +75,52 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
             <h3>Repository / module</h3>
             <pre>{{ detail.question.context.repository }}</pre>
           }
+          <app-content-editor
+            kind="question"
+            [content]="detail.question"
+            [moderation]="moderation"
+            (changed)="load()"
+          />
+          <app-content-comments
+            kind="question"
+            [targetId]="detail.question.id"
+            [moderation]="moderation"
+          />
+          @if (canAccept() && detail.question.acceptedAnswerId) {
+            <button
+              mat-button
+              [disabled]="accepting() || acceptanceConflict()"
+              (click)="accept(null)"
+            >
+              Reopen question
+            </button>
+          }
+          @if (acceptanceError()) {
+            <p role="alert">{{ acceptanceError() }}</p>
+            <button mat-button (click)="reviewAcceptance()">Reload acceptance state</button>
+          }
         </article>
         <section aria-label="Answers">
           <h2>Answers</h2>
           @for (answer of detail.answers.items; track answer.id) {
             <article class="answer">
+              @if (detail.question.acceptedAnswerId === answer.id) {
+                <p class="accepted">Accepted answer</p>
+              }
+              @if (
+                canAccept() &&
+                !answer.hidden &&
+                !detail.question.hidden &&
+                detail.question.acceptedAnswerId !== answer.id
+              ) {
+                <button
+                  mat-button
+                  [disabled]="accepting() || acceptanceConflict()"
+                  (click)="accept(answer.id)"
+                >
+                  Accept answer
+                </button>
+              }
               <p class="metadata">
                 {{ answer.author.displayName }} · {{ answer.createdAt | date: 'medium' }} ·
                 {{ answer.channel }}
@@ -78,6 +132,17 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
               }
               <h3>Verification evidence</h3>
               <pre>{{ answer.verification || 'No testing evidence provided.' }}</pre>
+              <app-content-editor
+                kind="answer"
+                [content]="answer"
+                [moderation]="moderation"
+                (changed)="load()"
+              />
+              <app-content-comments
+                kind="answer"
+                [targetId]="answer.id"
+                [moderation]="moderation"
+              />
             </article>
           } @empty {
             <p>No answers yet. Share a proposed fix and what you tested.</p>
@@ -91,50 +156,52 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
             <p role="alert">{{ moreError() }}</p>
           }
         </section>
-        <h2>Your answer</h2>
-        <p>
-          Remove credentials. Describe applicability and verification, or explicitly say the fix was
-          not tested.
-        </p>
-        <form #form="ngForm" (ngSubmit)="submit()" class="content-form">
-          <fieldset [disabled]="saving()">
-            <mat-form-field
-              ><mat-label>Answer (Markdown)</mat-label
-              ><textarea
-                matInput
-                name="body"
-                [(ngModel)]="body"
-                required
-                maxlength="20000"
-                rows="8"
-              ></textarea>
-            </mat-form-field>
-            <mat-form-field
-              ><mat-label>Applicability</mat-label
-              ><textarea
-                matInput
-                name="applicability"
-                [(ngModel)]="applicability"
-                maxlength="2000"
-              ></textarea>
-            </mat-form-field>
-            <mat-form-field
-              ><mat-label>Verification evidence</mat-label
-              ><textarea
-                matInput
-                name="verification"
-                [(ngModel)]="verification"
-                maxlength="2000"
-              ></textarea>
-            </mat-form-field>
-          </fieldset>
-          @if (saveError()) {
-            <p role="alert">{{ saveError() }}</p>
-          }
-          <button mat-flat-button [disabled]="form.invalid || saving()">
-            {{ saving() ? 'Publishing…' : 'Publish answer' }}
-          </button>
-        </form>
+        @if (!moderation) {
+          <h2>Your answer</h2>
+          <p>
+            Remove credentials. Describe applicability and verification, or explicitly say the fix
+            was not tested.
+          </p>
+          <form #form="ngForm" (ngSubmit)="submit()" class="content-form">
+            <fieldset [disabled]="saving()">
+              <mat-form-field
+                ><mat-label>Answer (Markdown)</mat-label
+                ><textarea
+                  matInput
+                  name="body"
+                  [(ngModel)]="body"
+                  required
+                  maxlength="20000"
+                  rows="8"
+                ></textarea>
+              </mat-form-field>
+              <mat-form-field
+                ><mat-label>Applicability</mat-label
+                ><textarea
+                  matInput
+                  name="applicability"
+                  [(ngModel)]="applicability"
+                  maxlength="2000"
+                ></textarea>
+              </mat-form-field>
+              <mat-form-field
+                ><mat-label>Verification evidence</mat-label
+                ><textarea
+                  matInput
+                  name="verification"
+                  [(ngModel)]="verification"
+                  maxlength="2000"
+                ></textarea>
+              </mat-form-field>
+            </fieldset>
+            @if (saveError()) {
+              <p role="alert">{{ saveError() }}</p>
+            }
+            <button mat-flat-button [disabled]="form.invalid || saving()">
+              {{ saving() ? 'Publishing…' : 'Publish answer' }}
+            </button>
+          </form>
+        }
       }
     } @else {
       <p>Sign in with workspace membership to read this question.</p>
@@ -146,6 +213,42 @@ export class QuestionDetail {
   private readonly api = inject(QuestionsApi);
   private readonly route = inject(ActivatedRoute);
   private readonly request = new CreateRequest();
+  readonly moderation = this.route.snapshot.data['moderation'] === true;
+  readonly accepting = signal(false);
+  readonly acceptanceError = signal('');
+  readonly acceptanceConflict = signal(false);
+  canAccept() {
+    const q = this.detail()?.question;
+    return (
+      !!q &&
+      !q.hidden &&
+      (this.session.identity()?.admin || this.session.identity()?.id === q.author.id)
+    );
+  }
+  async accept(answerId: string | null) {
+    const question = this.detail()?.question;
+    if (!question || this.accepting() || this.acceptanceConflict()) return;
+    this.accepting.set(true);
+    this.acceptanceError.set('');
+    try {
+      await this.api.post(`/questions/${this.id}/acceptance`, {
+        expectedVersion: question.version,
+        answerId,
+      });
+      await this.load();
+    } catch (error) {
+      this.acceptanceError.set(contentError(error));
+      this.acceptanceConflict.set(error instanceof HttpErrorResponse && error.status === 409);
+    } finally {
+      this.accepting.set(false);
+    }
+  }
+  async reviewAcceptance() {
+    await this.load();
+    this.acceptanceConflict.set(false);
+    this.acceptanceError.set('');
+  }
+
   private id = '';
   private generation = 0;
   readonly detail = signal<Detail | null>(null);
@@ -160,7 +263,9 @@ export class QuestionDetail {
   verification = '';
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      this.id = params.get('id') ?? '';
+      const id = params.get('id') ?? '';
+      if (id !== this.id) this.detail.set(null);
+      this.id = id;
       if (this.session.state() === 'member') void this.load();
     });
     effect(() => {
@@ -175,12 +280,14 @@ export class QuestionDetail {
     const generation = ++this.generation;
     this.loading.set(true);
     this.error.set('');
-    this.detail.set(null);
     try {
-      const detail = await this.api.detail(this.id);
+      const detail = await this.api.detail(this.id, this.moderation);
       if (generation === this.generation) this.detail.set(detail);
     } catch (error) {
-      if (generation === this.generation) this.error.set(contentError(error));
+      if (generation === this.generation) {
+        this.detail.set(null);
+        this.error.set(contentError(error));
+      }
     } finally {
       if (generation === this.generation) this.loading.set(false);
     }
@@ -191,7 +298,7 @@ export class QuestionDetail {
     this.moreLoading.set(true);
     this.moreError.set('');
     try {
-      const page = await this.api.answers(this.id, detail.answers.nextCursor);
+      const page = await this.api.answers(this.id, detail.answers.nextCursor, this.moderation);
       this.detail.set({
         ...detail,
         answers: { items: [...detail.answers.items, ...page.items], nextCursor: page.nextCursor },

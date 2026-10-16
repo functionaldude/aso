@@ -20,6 +20,8 @@ import java.time.OffsetDateTime
 import java.util.Base64
 import java.util.UUID
 
+sealed interface ContentView
+
 data class Author(
     val id: UUID,
     val displayName: String,
@@ -42,8 +44,12 @@ data class QuestionView(
     val author: Author,
     val channel: String,
     val createdAt: OffsetDateTime,
-    val state: String = "open",
-)
+    val state: String,
+    val acceptedAnswerId: UUID?,
+    val version: Int,
+    val updatedAt: OffsetDateTime,
+    val hidden: Boolean,
+) : ContentView
 
 data class AnswerView(
     val id: UUID,
@@ -55,7 +61,10 @@ data class AnswerView(
     val author: Author,
     val channel: String,
     val createdAt: OffsetDateTime,
-)
+    val version: Int,
+    val updatedAt: OffsetDateTime,
+    val hidden: Boolean,
+) : ContentView
 
 data class ContentPage<T>(
     val items: List<T>,
@@ -136,6 +145,7 @@ class QuestionService(
         val verification = policy.text(input.verification, "verification", 2000)
         val id =
             reserve(actor, "create_answer", request, listOf(parent, body, applicability, verification)) { id ->
+                lockQuestion(parent)
                 question(parent)
                 db
                     .insertInto(ANSWER)
@@ -148,29 +158,27 @@ class QuestionService(
                     .set(ANSWER.CHANNEL, actor.channel)
                     .execute()
             }
-        return answer(
-            db
-                .select(*ANSWER.fields(), APP_USER.DISPLAY_NAME)
-                .from(ANSWER)
-                .join(APP_USER)
-                .on(ANSWER.AUTHOR_ID.eq(APP_USER.ID))
-                .where(ANSWER.ID.eq(id))
-                .fetchOne()!!,
-        )
+        lockQuestion(parent)
+        question(parent)
+        return answerById(id)
     }
 
+    @Transactional
     fun list(
         authentication: Authentication,
         tag: String? = null,
         state: String = "open",
         limit: Int = 20,
         cursor: String? = null,
+        moderation: Boolean = false,
     ): ContentPage<QuestionView> {
-        identities.current(authentication)
+        if (moderation) identities.administrator(authentication) else identities.current(authentication)
         bounds(limit)
         if (state !in setOf("all", "open", "resolved")) invalid("state must be all, open or resolved")
         val normalizedTag = tag?.let(policy::tag)
-        var condition = if (state == "resolved") DSL.falseCondition() else DSL.trueCondition()
+        var condition = if (moderation) DSL.trueCondition() else QUESTION.HIDDEN.isFalse
+        if (state == "resolved") condition = condition.and(QUESTION.ACCEPTED_ANSWER_ID.isNotNull)
+        if (state == "open") condition = condition.and(QUESTION.ACCEPTED_ANSWER_ID.isNull)
         if (normalizedTag != null) {
             condition =
                 condition.and(
@@ -182,7 +190,7 @@ class QuestionService(
                     ),
                 )
         }
-        val scope = "questions:$normalizedTag:$state"
+        val scope = "questions:$normalizedTag:$state:$moderation"
         if (cursor != null) {
             val (time, id) = cursor(cursor, scope)
             condition = condition.and(QUESTION.CREATED_AT.lt(time).or(QUESTION.CREATED_AT.eq(time).and(QUESTION.ID.lt(id))))
@@ -201,35 +209,43 @@ class QuestionService(
         return ContentPage(items, if (rows.size > limit) items.last().let { encode(it.createdAt, it.id, scope) } else null)
     }
 
+    @Transactional
     fun detail(
         authentication: Authentication,
         id: String,
+        moderation: Boolean = false,
     ): QuestionDetail {
-        identities.current(authentication)
+        if (moderation) identities.administrator(authentication) else identities.current(authentication)
         val uuid = policy.uuid(id, "questionId")
-        return QuestionDetail(question(uuid), answerPage(uuid, 20, null))
+        shareQuestion(uuid)
+        return QuestionDetail(question(uuid, moderation), answerPage(uuid, 20, null, moderation))
     }
 
+    @Transactional
     fun answers(
         authentication: Authentication,
         id: String,
         limit: Int = 20,
         cursor: String? = null,
+        moderation: Boolean = false,
     ): ContentPage<AnswerView> {
-        identities.current(authentication)
+        if (moderation) identities.administrator(authentication) else identities.current(authentication)
         val uuid = policy.uuid(id, "questionId")
-        question(uuid)
-        return answerPage(uuid, limit, cursor)
+        shareQuestion(uuid)
+        question(uuid, moderation)
+        return answerPage(uuid, limit, cursor, moderation)
     }
 
     private fun answerPage(
         parent: UUID,
         limit: Int,
         after: String?,
+        moderation: Boolean = false,
     ): ContentPage<AnswerView> {
         bounds(limit)
-        val scope = "answers:$parent"
+        val scope = "answers:$parent:$moderation"
         var condition = ANSWER.QUESTION_ID.eq(parent)
+        if (!moderation) condition = condition.and(ANSWER.HIDDEN.isFalse)
         if (after != null) {
             val (time, id) = cursor(after, scope)
             condition = condition.and(ANSWER.CREATED_AT.gt(time).or(ANSWER.CREATED_AT.eq(time).and(ANSWER.ID.gt(id))))
@@ -273,7 +289,7 @@ class QuestionService(
             invalid("Invalid cursor")
         }
 
-    private fun reserve(
+    internal fun reserve(
         actor: Identity,
         operation: String,
         request: UUID,
@@ -313,13 +329,17 @@ class QuestionService(
         return previous.resultId!!
     }
 
-    private fun question(id: UUID): QuestionView =
+    internal fun question(
+        id: UUID,
+        moderation: Boolean = false,
+    ): QuestionView =
         db
             .select(*QUESTION.fields(), APP_USER.DISPLAY_NAME)
             .from(QUESTION)
             .join(APP_USER)
             .on(QUESTION.AUTHOR_ID.eq(APP_USER.ID))
             .where(QUESTION.ID.eq(id))
+            .and(if (moderation) DSL.trueCondition() else QUESTION.HIDDEN.isFalse)
             .fetchOne()
             ?.let(::question)
             ?: throw ContentFailure(404, "not_found", "Question not found")
@@ -341,6 +361,11 @@ class QuestionService(
             Author(row[QUESTION.AUTHOR_ID]!!, row[APP_USER.DISPLAY_NAME]!!),
             row[QUESTION.CHANNEL]!!,
             row[QUESTION.CREATED_AT]!!,
+            if (row[QUESTION.ACCEPTED_ANSWER_ID] == null) "open" else "resolved",
+            row[QUESTION.ACCEPTED_ANSWER_ID],
+            row[QUESTION.VERSION]!!,
+            row[QUESTION.UPDATED_AT]!!,
+            row[QUESTION.HIDDEN]!!,
         )
 
     private fun answer(row: Record): AnswerView =
@@ -354,5 +379,44 @@ class QuestionService(
             Author(row[ANSWER.AUTHOR_ID]!!, row[APP_USER.DISPLAY_NAME]!!),
             row[ANSWER.CHANNEL]!!,
             row[ANSWER.CREATED_AT]!!,
+            row[ANSWER.VERSION]!!,
+            row[ANSWER.UPDATED_AT]!!,
+            row[ANSWER.HIDDEN]!!,
         )
+
+    internal fun shareQuestion(id: UUID) {
+        db
+            .select(QUESTION.ID)
+            .from(QUESTION)
+            .where(QUESTION.ID.eq(id))
+            .forShare()
+            .fetchOne()
+            ?: throw ContentFailure(404, "not_found", "Question not found")
+    }
+
+    internal fun lockQuestion(id: UUID) {
+        db
+            .select(QUESTION.ID)
+            .from(QUESTION)
+            .where(QUESTION.ID.eq(id))
+            .forUpdate()
+            .fetchOne()
+            ?: throw ContentFailure(404, "not_found", "Question not found")
+    }
+
+    internal fun answerById(
+        id: UUID,
+        moderation: Boolean = false,
+    ): AnswerView =
+        db
+            .select(*ANSWER.fields(), APP_USER.DISPLAY_NAME)
+            .from(ANSWER)
+            .join(APP_USER)
+            .on(ANSWER.AUTHOR_ID.eq(APP_USER.ID))
+            .join(QUESTION)
+            .on(ANSWER.QUESTION_ID.eq(QUESTION.ID))
+            .where(ANSWER.ID.eq(id))
+            .and(if (moderation) DSL.trueCondition() else ANSWER.HIDDEN.isFalse.and(QUESTION.HIDDEN.isFalse))
+            .fetchOne()
+            ?.let(::answer) ?: throw ContentFailure(404, "not_found", "Answer not found")
 }
