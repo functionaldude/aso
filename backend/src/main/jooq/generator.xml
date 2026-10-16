@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.21.0.xsd">
   <generator>
+    <name>org.jooq.codegen.KotlinGenerator</name>
     <database>
       <name>org.jooq.meta.extensions.ddl.DDLDatabase</name>
       <properties>
@@ -10,6 +11,6 @@
       </properties>
     </database>
     <generate><generatedAnnotation>false</generatedAnnotation><javadoc>false</javadoc></generate>
-    <target><packageName>com.functionaldude.aso.jooq</packageName><directory>src/generated/java</directory></target>
+    <target><packageName>com.functionaldude.aso.jooq</packageName><directory>src/generated/kotlin</directory></target>
   </generator>
 </configuration>

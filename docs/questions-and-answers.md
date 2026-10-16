@@ -50,6 +50,8 @@ Answer creation accepts `requestId`, `body`, optional `applicability`, and optio
 | Page `limit` | 1–50, default 20 |
 | Cursor | At most 500 characters; bound to its collection and filters |
 
+Known REST payloads and MCP tool arguments bind to Kotlin data classes before entering shared application services. Binding rejects scalar coercion (including numbers/booleans as text and strings/fractional numbers as page limits). Missing tags default to an empty list; explicit null tags are invalid. Dynamic JSON remains only at the MCP protocol boundary and in JSON Schema definitions.
+
 Unknown object fields, wrong types, NUL/unsupported control characters, blank required fields, and malformed tags are rejected. Optional strings are trimmed; empty/null optional text becomes absent. Context is optional. Bodies/context/evidence/title and tag values reject recognizable private-key headers, AWS access-key IDs, GitHub/OpenAI token shapes, JWTs, Authorization bearer/basic values, common password/key/token assignments, and credential-bearing connection URLs. Replace secrets with `<redacted>` and send only the diagnostic excerpt needed. Pattern checks are a second layer, not a promise to detect every secret or unnecessary personal detail. Do not submit unrestricted logs.
 
 CommonMark 0.30.0 renders Markdown with raw HTML escaped and unsafe URL schemes filtered. Images become alternative text, avoiding unsolicited external image requests. Angular renders returned HTML through its normal sanitizer, without a trust bypass. Code blocks remain text; technical context and evidence use escaped text bindings. The server never executes posted content and accepts no attachments. See [CommonMark's renderer options](https://github.com/commonmark/commonmark-java#usage).

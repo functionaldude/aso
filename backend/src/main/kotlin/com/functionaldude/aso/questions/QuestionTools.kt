@@ -1,13 +1,19 @@
 package com.functionaldude.aso.questions
 
+import com.functionaldude.aso.mcp.ToolAnnotations
+import com.functionaldude.aso.mcp.ToolDefinition
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import tools.jackson.core.JacksonException
 import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
 
+/** MCP adapter: decode method-dependent JSON arguments before invoking typed application services. */
 @Component
 class QuestionTools(
     private val questions: QuestionService,
     private val policy: ContentPolicy,
+    private val json: JsonMapper,
 ) {
     private fun text(max: Int) = mapOf("type" to "string", "maxLength" to max)
 
@@ -26,15 +32,15 @@ class QuestionTools(
         properties: Map<String, Any>,
         required: List<String>,
         read: Boolean,
-    ) = mapOf(
-        "name" to name,
-        "title" to title,
-        "description" to description,
-        "inputSchema" to mapOf("type" to "object", "properties" to properties, "required" to required, "additionalProperties" to false),
-        "annotations" to mapOf("readOnlyHint" to read, "destructiveHint" to false, "idempotentHint" to true, "openWorldHint" to false),
+    ) = ToolDefinition(
+        name,
+        title,
+        description,
+        mapOf("type" to "object", "properties" to properties, "required" to required, "additionalProperties" to false),
+        ToolAnnotations(readOnlyHint = read, destructiveHint = false, idempotentHint = true),
     )
 
-    fun definitions() =
+    val definitions =
         listOf(
             tool(
                 "list_questions",
@@ -99,46 +105,53 @@ class QuestionTools(
         name: String,
         authentication: Authentication,
         arguments: JsonNode,
-    ): Any {
-        fun string(
-            field: String,
-            required: Boolean = false,
-        ) = policy.text(arguments, field, if (field == "cursor") 500 else 40, required)
-
-        fun limit(): Int {
-            val value = arguments.path("limit")
-            if (value.isMissingNode) return 20
-            if (!value.isIntegralNumber || !value.canConvertToInt()) invalid("limit must be an integer between 1 and 50")
-            return value.asInt()
-        }
-        return when (name) {
-            "list_questions" -> {
-                policy.fields(arguments, setOf("tag", "state", "limit", "cursor"))
-                questions.list(
-                    authentication,
-                    string("tag"),
-                    string("state") ?: "open",
-                    limit(),
-                    string("cursor"),
-                )
-            }
-            "get_question" -> {
-                policy.fields(arguments, setOf("questionId"))
-                questions.detail(authentication, string("questionId", true)!!)
-            }
-            "list_answers" -> {
-                policy.fields(arguments, setOf("questionId", "limit", "cursor"))
-                questions.answers(authentication, string("questionId", true)!!, limit(), string("cursor"))
-            }
-            "create_question" -> questions.createQuestion(authentication, arguments)
-            "create_answer" -> {
-                policy.fields(arguments, setOf("questionId", "requestId", "body", "applicability", "verification"))
-                val id = string("questionId", true)!!
-                val input = arguments.deepCopy() as tools.jackson.databind.node.ObjectNode
-                input.remove("questionId")
-                questions.createAnswer(authentication, id, input)
-            }
+    ): Any =
+        when (name) {
+            "list_questions" ->
+                decode(arguments, ListQuestionsArguments::class.java).let {
+                    questions.list(
+                        authentication,
+                        inputText(it.tag, "tag"),
+                        inputText(it.state, "state") ?: "open",
+                        it.limit,
+                        inputText(it.cursor, "cursor"),
+                    )
+                }
+            "get_question" ->
+                decode(arguments, GetQuestionArguments::class.java).let {
+                    questions.detail(authentication, inputText(it.questionId, "questionId", true)!!)
+                }
+            "list_answers" ->
+                decode(arguments, ListAnswersArguments::class.java).let {
+                    questions.answers(
+                        authentication,
+                        inputText(it.questionId, "questionId", true)!!,
+                        it.limit,
+                        inputText(it.cursor, "cursor"),
+                    )
+                }
+            "create_question" -> questions.createQuestion(authentication, decode(arguments, CreateQuestionInput::class.java))
+            "create_answer" ->
+                decode(arguments, CreateAnswerArguments::class.java).let {
+                    questions.createAnswer(authentication, inputText(it.questionId, "questionId", true)!!, it.input())
+                }
             else -> invalid("Unknown tool")
         }
-    }
+
+    private fun inputText(
+        value: String?,
+        field: String,
+        required: Boolean = false,
+    ) = policy.text(value, field, if (field == "cursor") 500 else 40, required)
+
+    // This component is the MCP adapter: dynamic arguments become typed inputs before service calls.
+    private fun <T : Any> decode(
+        arguments: JsonNode,
+        type: Class<T>,
+    ): T =
+        try {
+            json.treeToValue(arguments, type)
+        } catch (_: JacksonException) {
+            invalid(INVALID_JSON_INPUT)
+        }
 }

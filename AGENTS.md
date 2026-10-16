@@ -16,6 +16,8 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 
 - Backend: Kotlin/Spring MVC, package `com.functionaldude.aso`; frontend: Angular standalone components, strict TypeScript, signals, Angular Material, SCSS.
 - Keep short Kotlin conditions and catch declarations on one line. In fluent jOOQ queries, put clauses on separate lines while keeping short argument lists with their call. Review formatter output for unnecessary wrapping.
+- Prefer immutable constructor-injected class properties for stable dependencies and reusable configuration. Keep request-specific values in method parameters or local variables; never cache authentication in singleton controllers. Continue resolving `Authentication` through per-handler parameters.
+- Use Kotlin data classes for known request, response, and nested payload structures. Do not pass `JsonNode` or untyped maps through application services. Restrict raw JSON to genuinely dynamic protocol boundaries, document the reason, and convert to typed inputs before application logic. Maps are appropriate for dynamic JSON Schema properties.
 - Group new code by feature. REST and future MCP adapters must use shared application services and the same authorization rules.
 - The production jar contains Angular's browser output. Keep explicit SPA forwarding routes in sync with Angular routes. Never forward API, Actuator, or missing asset paths to `index.html`.
 - Use relative `/api/v1` URLs in Angular. The development proxy targets localhost:8080; production uses the same origin.
@@ -28,7 +30,7 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 ## Data, dependencies, and generated files
 
 - Flyway owns schema evolution. Add a migration for intentional schema changes; never rewrite an applied migration. Use jOOQ for application database access.
-- Flyway V2 owns the first identity table. `./gradlew generateJooq` parses identity DDL offline into committed bindings; expand inputs deliberately for future tables. Ordinary builds must not introspect a developer's database.
+- Flyway V2 owns the first identity table. `./gradlew generateJooq` parses the deliberately selected Flyway DDL offline into committed Kotlin bindings; expand inputs deliberately for future tables. Keep output reproducible and generator-formatted. Ordinary builds must not introspect a developer's database.
 - Keep the database image digest in `compose.yaml` and `gradle/database-image.txt` aligned when intentionally upgrading it.
 - Commit npm's lockfile and the Gradle wrapper, including its jar. Build output, dependency caches, browser traces, local `.env` files, credentials, and IDE state stay untracked.
 - Intentionally public fictitious development-only IdP passwords/client secrets may live in labelled seed fixtures. Never copy real/personal/production credentials into them or make them production defaults. Pin the Keycloak image consistently between Compose and isolated tests.

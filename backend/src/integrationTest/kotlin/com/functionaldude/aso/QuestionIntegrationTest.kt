@@ -1,6 +1,7 @@
 package com.functionaldude.aso
 
-import com.functionaldude.aso.jooq.tables.Question.QUESTION
+import com.functionaldude.aso.jooq.tables.references.CONTENT_REQUEST
+import com.functionaldude.aso.jooq.tables.references.QUESTION
 import com.functionaldude.aso.oidc.KeycloakFixture
 import com.functionaldude.aso.oidc.OidcBrowserLogin
 import com.microsoft.playwright.Browser
@@ -23,6 +24,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -70,31 +72,43 @@ class QuestionIntegrationTest {
         payload: Any,
     ): Result {
         val response =
+            rpc(
+                actor,
+                mapOf(
+                    "jsonrpc" to "2.0",
+                    "id" to 1,
+                    "method" to "tools/call",
+                    "params" to mapOf("name" to name, "arguments" to payload),
+                ),
+            )
+        val body = response.body
+        if (response.status != 200) return response
+        assertFalse(body.has("error"), body.toString())
+        val result = body["result"]
+        val content = result["structuredContent"]
+        return Result(if (result["isError"].asBoolean()) content["status"].asInt() else 200, content)
+    }
+
+    private fun rpc(
+        actor: Actor,
+        payload: Any,
+    ): Result = rawRpc(actor, json.writeValueAsString(payload))
+
+    private fun rawRpc(
+        actor: Actor,
+        payload: String,
+    ): Result {
+        val response =
             http.send(
                 HttpRequest
                     .newBuilder(URI("$base/mcp"))
                     .header("Authorization", "Bearer ${actor.token}")
                     .header("Content-Type", "application/json")
-                    .POST(
-                        HttpRequest.BodyPublishers.ofString(
-                            json.writeValueAsString(
-                                mapOf(
-                                    "jsonrpc" to "2.0",
-                                    "id" to 1,
-                                    "method" to "tools/call",
-                                    "params" to mapOf("name" to name, "arguments" to payload),
-                                ),
-                            ),
-                        ),
-                    ).build(),
+                    .POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .build(),
                 HttpResponse.BodyHandlers.ofString(),
             )
-        val body = json.readTree(response.body())
-        if (response.statusCode() != 200) return Result(response.statusCode(), body)
-        assertFalse(body.has("error"), body.toString())
-        val result = body["result"]
-        val content = result["structuredContent"]
-        return Result(if (result["isError"].asBoolean()) content["status"].asInt() else 200, content)
+        return Result(response.statusCode(), json.readTree(response.body().ifEmpty { "null" }))
     }
 
     private fun actor(
@@ -201,13 +215,40 @@ class QuestionIntegrationTest {
                 question() + ("title" to "x".repeat(201)),
                 question() + ("context" to mapOf("role" to "admin")),
                 question() + ("tags" to listOf("bad tag")),
+                question() - "requestId",
+                question() - "title",
+                question() - "body",
+                question() + ("title" to null),
+                question() + ("title" to 123),
+                question() + ("body" to false),
+                question() + ("tags" to null),
+                question() + ("tags" to "kotlin"),
+                question() + ("tags" to listOf(1)),
+                question() + ("tags" to listOf(null)),
+                question() + ("context" to mapOf("versions" to 25)),
+                question() + ("context" to "invalid"),
             )) {
-                assertEquals(400, web(alice, "/api/v1/questions", payload).status)
-                assertEquals(400, mcp(alice, "create_question", payload).status)
+                val restError = web(alice, "/api/v1/questions", payload)
+                val toolError = mcp(alice, "create_question", payload)
+                assertEquals(400, restError.status, payload.toString())
+                assertEquals(400, toolError.status, payload.toString())
+                assertEquals("invalid_input", restError.body.path("code").asString(), restError.body.toString())
+                assertEquals(restError.body["detail"].asString(), toolError.body["message"].asString())
+                assertFalse(restError.body.toString().contains("private-test-value"))
             }
             assertEquals(400, web(bob, "/api/v1/questions/$id/answers", answer() + ("authorId" to alice.id)).status)
             assertEquals(400, mcp(bob, "create_answer", answer() + mapOf("questionId" to id, "authorId" to alice.id)).status)
-            assertEquals(400, mcp(alice, "list_questions", mapOf("limit" to 1.5)).status)
+            for (limit in listOf(1.5, 1.0, "20", true, null, 2147483648L)) {
+                assertEquals(400, mcp(alice, "list_questions", mapOf("limit" to limit)).status)
+                assertEquals(400, mcp(alice, "list_answers", mapOf("questionId" to id, "limit" to limit)).status)
+            }
+            for (payload in listOf(answer() - "body", answer() + ("body" to 4), answer() + ("verification" to false))) {
+                val restError = web(bob, "/api/v1/questions/$id/answers", payload)
+                val toolError = mcp(bob, "create_answer", payload + ("questionId" to id))
+                assertEquals(400, restError.status)
+                assertEquals(400, toolError.status)
+                assertEquals(restError.body["detail"].asString(), toolError.body["message"].asString())
+            }
             assertEquals(400, web(alice, "/api/v1/questions?limit=51").status)
             assertEquals(400, web(alice, "/api/v1/questions?cursor=garbage").status)
             assertEquals(413, web(alice, "/api/v1/questions", question() + ("body" to "x".repeat(262145))).status)
@@ -239,6 +280,136 @@ class QuestionIntegrationTest {
             val next = mcp(alice, "list_answers", mapOf("questionId" to id, "limit" to 1, "cursor" to answers["nextCursor"].asString()))
             assertEquals(200, next.status)
             assertNotEquals(answers["items"][0]["id"], next.body["items"][0]["id"])
+        }
+
+    @Test
+    fun `typed MCP envelopes preserve discovery results notifications and protocol errors`() =
+        withActors { alice, _ ->
+            fun request(
+                method: String,
+                id: Any = "request-1",
+                params: Any = emptyMap<String, Any>(),
+            ) = mapOf("jsonrpc" to "2.0", "id" to id, "method" to method, "params" to params)
+            for (id in listOf(7, 1.5, "request-1")) {
+                val ping = rpc(alice, request("ping", id))
+                assertEquals(200, ping.status)
+                assertEquals(json.readTree("{}"), ping.body["result"])
+                assertEquals(json.valueToTree<JsonNode>(id), ping.body["id"])
+                assertEquals("2.0", ping.body["jsonrpc"].asString())
+            }
+            val malformed = rawRpc(alice, "{invalid")
+            assertEquals(400, malformed.status)
+            assertFalse(malformed.body.has("code"))
+            assertFalse(malformed.body.has("result"))
+            val metadata = web(null, "/.well-known/oauth-protected-resource/mcp").body
+            assertEquals(
+                setOf("resource", "authorization_servers", "scopes_supported", "bearer_methods_supported"),
+                metadata.propertyNames().toSet(),
+            )
+            assertEquals("$base/mcp", metadata["resource"].asString())
+            val initialized = rpc(alice, request("initialize")).body["result"]
+            assertEquals("2025-11-25", initialized["protocolVersion"].asString())
+            assertFalse(initialized["capabilities"]["tools"]["listChanged"].asBoolean())
+            val tools = rpc(alice, request("tools/list")).body["result"]["tools"]
+            assertEquals(6, tools.size())
+            val identity = tools.first { it["name"].asString() == "identity" }
+            assertEquals(setOf("readOnlyHint", "openWorldHint"), identity["annotations"].propertyNames().toSet())
+            assertEquals(0, identity["inputSchema"]["properties"].size())
+            val questionTool = tools.first { it["name"].asString() == "create_question" }
+            assertFalse(questionTool["inputSchema"]["additionalProperties"].asBoolean())
+            assertTrue(questionTool["annotations"]["idempotentHint"].asBoolean())
+            assertEquals(-32601, rpc(alice, request("unknown")).body["error"]["code"].asInt())
+            for (payload in listOf(
+                request("ping", true),
+                request("ping") - "id",
+                request("ping") + ("jsonrpc" to 2.0),
+                request("ping") + ("method" to false),
+                emptyList<String>(),
+            )) {
+                val error = rpc(alice, payload)
+                assertEquals(200, error.status)
+                assertEquals(-32600, error.body["error"]["code"].asInt())
+            }
+            for (params in listOf(
+                mapOf("name" to "unknown"),
+                mapOf("name" to 7),
+                mapOf("name" to "identity", "arguments" to null),
+                mapOf("name" to "identity", "arguments" to listOf("invalid")),
+                mapOf("name" to "identity", "arguments" to mapOf("authorId" to "other")),
+                listOf("invalid"),
+            )) {
+                assertEquals(-32602, rpc(alice, request("tools/call", params = params)).body["error"]["code"].asInt())
+            }
+            val noArguments = rpc(alice, request("tools/call", params = mapOf("name" to "identity")))
+            assertEquals(alice.id, noArguments.body["result"]["structuredContent"]["id"].asString())
+            for (method in listOf("notifications/initialized", "notifications/cancelled")) {
+                assertEquals(202, rpc(alice, request(method) - "id").status)
+            }
+        }
+
+    @Test
+    fun `typed inputs retain legacy hashes normalized cross adapter retries and optional defaults`() =
+        withActors { alice, bob ->
+            val requestId = UUID.randomUUID()
+            val payload =
+                mapOf(
+                    "requestId" to requestId.toString(),
+                    "title" to "  Trimmed title  ",
+                    "body" to "  Reproduce the failure.  ",
+                    "tags" to listOf("Kotlin", "c++", "kotlin"),
+                    "context" to mapOf("errorText" to "  Diagnostic  ", "versions" to "  ", "repository" to null),
+                )
+            val created = web(alice, "/api/v1/questions", payload)
+            assertEquals(200, created.status)
+            val id = created.body["id"].asString()
+            // Literal pre-cleanup serialization: ordered normalized list, then TechnicalContext fields.
+            val legacyQuestion =
+                """["Trimmed title","Reproduce the failure.",["c++","kotlin"],""" +
+                    """{"errorText":"Diagnostic","dependencies":null,"versions":null,"repository":null}]"""
+            val expected = MessageDigest.getInstance("SHA-256").digest(legacyQuestion.toByteArray()).joinToString("") { "%02x".format(it) }
+            assertEquals(
+                expected,
+                database
+                    .select(CONTENT_REQUEST.PAYLOAD_HASH)
+                    .from(CONTENT_REQUEST)
+                    .where(CONTENT_REQUEST.REQUEST_ID.eq(requestId))
+                    .fetchSingle(CONTENT_REQUEST.PAYLOAD_HASH),
+            )
+            assertEquals(
+                created.body,
+                mcp(
+                    alice,
+                    "create_question",
+                    payload +
+                        mapOf(
+                            "title" to "Trimmed title",
+                            "body" to "Reproduce the failure.",
+                            "tags" to listOf("c++", "kotlin"),
+                            "context" to mapOf("errorText" to "Diagnostic"),
+                        ),
+                ).body,
+            )
+            val answerRequest = UUID.randomUUID()
+            val answerPayload = mapOf("requestId" to answerRequest.toString(), "body" to "  Fix it.  ", "verification" to " ")
+            val posted = mcp(bob, "create_answer", answerPayload + ("questionId" to id))
+            assertEquals(200, posted.status)
+            val legacyAnswer = """["$id","Fix it.",null,null]"""
+            val answerHash = MessageDigest.getInstance("SHA-256").digest(legacyAnswer.toByteArray()).joinToString("") { "%02x".format(it) }
+            assertEquals(
+                answerHash,
+                database
+                    .select(CONTENT_REQUEST.PAYLOAD_HASH)
+                    .from(CONTENT_REQUEST)
+                    .where(CONTENT_REQUEST.REQUEST_ID.eq(answerRequest))
+                    .fetchSingle(CONTENT_REQUEST.PAYLOAD_HASH),
+            )
+            assertEquals(posted.body, web(bob, "/api/v1/questions/$id/answers", answerPayload - "verification").body)
+            val minimal = question() - "tags" - "context"
+            val defaults = mcp(alice, "create_question", minimal)
+            assertEquals(200, defaults.status)
+            assertEquals(0, defaults.body["tags"].size())
+            assertTrue(defaults.body["context"].properties().all { it.value.isNull })
+            assertEquals(defaults.body, web(alice, "/api/v1/questions", minimal + ("context" to null)).body)
         }
 
     @Test
