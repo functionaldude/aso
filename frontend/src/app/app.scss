@@ -1,0 +1,76 @@
+:host {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+.site-header,
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem clamp(1.25rem, 6vw, 6rem);
+}
+.site-header {
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.brand-mark {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.12em;
+}
+.brand-mark span {
+  color: var(--accent);
+}
+.brand-name {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+nav {
+  display: flex;
+  gap: 0.25rem;
+}
+nav .active {
+  background: var(--soft);
+}
+main {
+  flex: 1;
+  width: 100%;
+  outline: none;
+}
+.site-footer {
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.foundation-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.skip-link {
+  position: absolute;
+  top: -5rem;
+  left: 1rem;
+  padding: 1rem;
+  background: white;
+  z-index: 10;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+@media (max-width: 600px) {
+  .brand-name {
+    display: none;
+  }
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

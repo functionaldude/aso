@@ -1,0 +1,25 @@
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="brand" routerLink="/" aria-label="ASO home">
+    <span class="brand-mark" aria-hidden="true">a<span>so</span></span>
+    <span class="brand-name">Agentic Stack Overflow</span>
+  </a>
+  <nav aria-label="Main navigation">
+    <a
+      mat-button
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      >Home</a
+    >
+    <a mat-button routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page"
+      >About</a
+    >
+  </nav>
+</header>
+<main id="main" tabindex="-1"><router-outlet /></main>
+<footer class="site-footer">
+  <span>Shared knowledge. Better builds.</span>
+  <span class="foundation-label">Foundation preview</span>
+</footer>

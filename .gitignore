@@ -1,0 +1,17 @@
+.gradle/
+.kotlin/
+**/build/
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+**/test-results/
+**/playwright-report/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.idea/
+*.iml
+.vscode/
