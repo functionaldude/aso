@@ -62,10 +62,7 @@ class ContentPolicy {
         val result = value.asString().trim()
         if (result.length > max || (required && result.isEmpty())) invalid("$field must contain ${if (required) 1 else 0}–$max characters")
         if (result.any { it == '\u0000' || (it.code < 32 && it !in "\n\r\t") }) invalid("$field contains unsupported control characters")
-        if (credentials.any {
-                it.containsMatchIn(result)
-            }
-        ) {
+        if (credentials.any { it.containsMatchIn(result) }) {
             invalid("$field contains recognizable credential material; remove credentials and replace them with <redacted>")
         }
         return result.ifEmpty { null }
@@ -85,16 +82,10 @@ class ContentPolicy {
 
     fun tag(value: String): String =
         value.lowercase().also {
-            if (credentials.any { pattern ->
-                    pattern.containsMatchIn(value)
-                }
-            ) {
+            if (credentials.any { pattern -> pattern.containsMatchIn(value) }) {
                 invalid("tags contains recognizable credential material; remove credentials")
             }
-            if (!Regex(
-                    "[a-z0-9][a-z0-9.+#-]{0,39}",
-                ).matches(it)
-            ) {
+            if (!Regex("[a-z0-9][a-z0-9.+#-]{0,39}").matches(it)) {
                 invalid("Tags must be 1–40 letters, digits, ., +, # or - and begin with a letter or digit")
             }
         }

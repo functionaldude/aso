@@ -154,10 +154,8 @@ class QuestionService(
             }
         return answer(
             db
-                .select(
-                    *ANSWER.fields(),
-                    APP_USER.DISPLAY_NAME,
-                ).from(ANSWER)
+                .select(*ANSWER.fields(), APP_USER.DISPLAY_NAME)
+                .from(ANSWER)
                 .join(APP_USER)
                 .on(ANSWER.AUTHOR_ID.eq(APP_USER.ID))
                 .where(ANSWER.ID.eq(id))
@@ -177,12 +175,15 @@ class QuestionService(
         if (state !in setOf("all", "open", "resolved")) invalid("state must be all, open or resolved")
         val normalizedTag = tag?.let(policy::tag)
         var condition = if (state == "resolved") DSL.falseCondition() else DSL.trueCondition()
-        if (normalizedTag !=
-            null
-        ) {
+        if (normalizedTag != null) {
             condition =
                 condition.and(
-                    QUESTION.ID.`in`(db.select(QUESTION_TAG.QUESTION_ID).from(QUESTION_TAG).where(QUESTION_TAG.TAG_NAME.eq(normalizedTag))),
+                    QUESTION.ID.`in`(
+                        db
+                            .select(QUESTION_TAG.QUESTION_ID)
+                            .from(QUESTION_TAG)
+                            .where(QUESTION_TAG.TAG_NAME.eq(normalizedTag)),
+                    ),
                 )
         }
         val scope = "questions:$normalizedTag:$state"
@@ -192,16 +193,11 @@ class QuestionService(
         }
         val rows =
             db
-                .select(
-                    *QUESTION.fields(),
-                    APP_USER.DISPLAY_NAME,
-                ).from(
-                    QUESTION,
-                ).join(
-                    APP_USER,
-                ).on(
-                    QUESTION.AUTHOR_ID.eq(APP_USER.ID),
-                ).where(condition)
+                .select(*QUESTION.fields(), APP_USER.DISPLAY_NAME)
+                .from(QUESTION)
+                .join(APP_USER)
+                .on(QUESTION.AUTHOR_ID.eq(APP_USER.ID))
+                .where(condition)
                 .orderBy(QUESTION.CREATED_AT.desc(), QUESTION.ID.desc())
                 .limit(limit + 1)
                 .fetch()
@@ -244,16 +240,11 @@ class QuestionService(
         }
         val rows =
             db
-                .select(
-                    *ANSWER.fields(),
-                    APP_USER.DISPLAY_NAME,
-                ).from(
-                    ANSWER,
-                ).join(
-                    APP_USER,
-                ).on(
-                    ANSWER.AUTHOR_ID.eq(APP_USER.ID),
-                ).where(condition)
+                .select(*ANSWER.fields(), APP_USER.DISPLAY_NAME)
+                .from(ANSWER)
+                .join(APP_USER)
+                .on(ANSWER.AUTHOR_ID.eq(APP_USER.ID))
+                .where(condition)
                 .orderBy(ANSWER.CREATED_AT.asc(), ANSWER.ID.asc())
                 .limit(limit + 1)
                 .fetch()
@@ -280,9 +271,7 @@ class QuestionService(
             val parts = String(Base64.getUrlDecoder().decode(value)).split('|')
             if (parts.size != 3 || parts[2] != scope) invalid("Cursor does not match the filters")
             OffsetDateTime.parse(parts[0]) to policy.uuid(parts[1], "cursor")
-        } catch (
-            _: IllegalArgumentException,
-        ) {
+        } catch (_: IllegalArgumentException) {
             invalid("Invalid cursor")
         } catch (_: java.time.format.DateTimeParseException) {
             invalid("Invalid cursor")
@@ -299,18 +288,11 @@ class QuestionService(
         val id = UUID.randomUUID()
         val inserted =
             db
-                .insertInto(
-                    CONTENT_REQUEST,
-                ).set(
-                    CONTENT_REQUEST.ACTOR_ID,
-                    actor.id,
-                ).set(
-                    CONTENT_REQUEST.OPERATION,
-                    operation,
-                ).set(
-                    CONTENT_REQUEST.REQUEST_ID,
-                    request,
-                ).set(CONTENT_REQUEST.PAYLOAD_HASH, hash)
+                .insertInto(CONTENT_REQUEST)
+                .set(CONTENT_REQUEST.ACTOR_ID, actor.id)
+                .set(CONTENT_REQUEST.OPERATION, operation)
+                .set(CONTENT_REQUEST.REQUEST_ID, request)
+                .set(CONTENT_REQUEST.PAYLOAD_HASH, hash)
                 .set(CONTENT_REQUEST.RESULT_ID, id)
                 .onConflictDoNothing()
                 .execute()
@@ -320,16 +302,12 @@ class QuestionService(
         }
         val previous =
             db
-                .selectFrom(
-                    CONTENT_REQUEST,
-                ).where(
-                    CONTENT_REQUEST.ACTOR_ID.eq(actor.id),
-                ).and(CONTENT_REQUEST.OPERATION.eq(operation))
+                .selectFrom(CONTENT_REQUEST)
+                .where(CONTENT_REQUEST.ACTOR_ID.eq(actor.id))
+                .and(CONTENT_REQUEST.OPERATION.eq(operation))
                 .and(CONTENT_REQUEST.REQUEST_ID.eq(request))
                 .fetchOne()!!
-        if (previous.payloadHash !=
-            hash
-        ) {
+        if (previous.payloadHash != hash) {
             throw ContentFailure(
                 409,
                 "request_conflict",
@@ -341,10 +319,8 @@ class QuestionService(
 
     private fun question(id: UUID): QuestionView =
         db
-            .select(
-                *QUESTION.fields(),
-                APP_USER.DISPLAY_NAME,
-            ).from(QUESTION)
+            .select(*QUESTION.fields(), APP_USER.DISPLAY_NAME)
+            .from(QUESTION)
             .join(APP_USER)
             .on(QUESTION.AUTHOR_ID.eq(APP_USER.ID))
             .where(QUESTION.ID.eq(id))
@@ -359,11 +335,9 @@ class QuestionService(
             row[QUESTION.BODY]!!,
             policy.html(row[QUESTION.BODY]!!),
             db
-                .select(
-                    QUESTION_TAG.TAG_NAME,
-                ).from(
-                    QUESTION_TAG,
-                ).where(QUESTION_TAG.QUESTION_ID.eq(row[QUESTION.ID]))
+                .select(QUESTION_TAG.TAG_NAME)
+                .from(QUESTION_TAG)
+                .where(QUESTION_TAG.QUESTION_ID.eq(row[QUESTION.ID]))
                 .orderBy(QUESTION_TAG.TAG_NAME)
                 .fetch(QUESTION_TAG.TAG_NAME),
             TechnicalContext(row[QUESTION.ERROR_TEXT], row[QUESTION.DEPENDENCIES], row[QUESTION.VERSIONS], row[QUESTION.REPOSITORY]),

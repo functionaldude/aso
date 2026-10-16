@@ -72,9 +72,8 @@ class QuestionIntegrationTest {
         val response =
             http.send(
                 HttpRequest
-                    .newBuilder(
-                        URI("$base/mcp"),
-                    ).header("Authorization", "Bearer ${actor.token}")
+                    .newBuilder(URI("$base/mcp"))
+                    .header("Authorization", "Bearer ${actor.token}")
                     .header("Content-Type", "application/json")
                     .POST(
                         HttpRequest.BodyPublishers.ofString(
@@ -253,9 +252,7 @@ class QuestionIntegrationTest {
                         .invokeAll(
                             (1..12).map { index ->
                                 Callable {
-                                    if (index % 2 ==
-                                        0
-                                    ) {
+                                    if (index % 2 == 0) {
                                         web(alice, "/api/v1/questions", payload)
                                     } else {
                                         mcp(alice, "create_question", payload)
@@ -276,9 +273,7 @@ class QuestionIntegrationTest {
                         .invokeAll(
                             (1..12).map { index ->
                                 Callable {
-                                    if (index % 2 ==
-                                        0
-                                    ) {
+                                    if (index % 2 == 0) {
                                         web(alice, "/api/v1/questions/$id/answers", answer(key))
                                     } else {
                                         mcp(
@@ -311,9 +306,7 @@ class QuestionIntegrationTest {
                                         "create_question",
                                         question(
                                             raceKey,
-                                            if (index % 2 ==
-                                                0
-                                            ) {
+                                            if (index % 2 == 0) {
                                                 "One"
                                             } else {
                                                 "Two"
