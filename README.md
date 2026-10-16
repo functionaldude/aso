@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, and admin moderation are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
+A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, and encounter/recurring views are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ cd aso
 ./scripts/dev.sh
 ```
 
-Open **http://127.0.0.1:4200**. Spring runs at **http://127.0.0.1:8080**, and Angular proxies `/api/**` and `/actuator/**` to it. The public shell connects to the real backend. Choose **Sign in** to authenticate with the local OIDC IdP. Open **Questions** to browse, filter, ask, answer, add context, and edit your content. Question owners/admins can accept or reopen; admins use **Moderation** to edit/hide/restore. The helper explicitly selects the `development` profile; ordinary runtime startup requires identity configuration.
+Open **http://127.0.0.1:4200**. Spring runs at **http://127.0.0.1:8080**, and Angular proxies `/api/**` and `/actuator/**` to it. The public shell connects to the real backend. Choose **Sign in** to authenticate with the local OIDC IdP. Open **Questions** to browse recent/unanswered/recurring views, filter, ask, answer, upvote/undo, explicitly record encounters, add context, and edit your content. Question owners/admins can accept or reopen; admins use **Moderation** to edit/hide/restore. The helper explicitly selects the `development` profile; ordinary runtime startup requires identity configuration.
 
 Press Ctrl-C to stop the application processes. The development database and Keycloak stay running so their data persists. Stop both with `docker compose stop`, or use `./scripts/keycloak-stop.sh` for Keycloak alone.
 
@@ -66,7 +66,7 @@ The development helper works without a `.env` by explicitly selecting `developme
 | `ASO_PORT`        | `8080`                                 | Spring port; keep 8080 with the supplied Angular proxy |
 | `ASO_ADDRESS`     | `127.0.0.1`                            | Spring bind address; use `0.0.0.0` in a container      |
 
-PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. Flyway V4 adds content lifecycle and audit records without resetting data. See [Q&A contracts](docs/questions-and-answers.md).
+PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. Flyway V4 adds content lifecycle and audit records; V5 adds votes and encounter events without resetting data. See [Q&A contracts](docs/questions-and-answers.md).
 
 Changing database credentials does not rewrite an initialized volume. For a deliberate, destructive reset, stop application processes, then run:
 
@@ -131,7 +131,7 @@ Issuer/public URLs require HTTPS except for loopback development. Configure the 
 
 Public routes are `/`, `/about`, the `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}` shells, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
 
-`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and eleven tools: `identity`, `list_questions`, `get_question`, `list_answers`, `create_question`, `create_answer`, `list_comments`, `create_comment`, `edit_question`, `edit_answer`, and `edit_comment`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
+`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and fourteen tools: `identity`, `list_questions`, `get_question`, `list_answers`, `create_question`, `create_answer`, `list_comments`, `create_comment`, `edit_question`, `edit_answer`, `edit_comment`, `set_vote`, `list_votes`, and `report_occurrence`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
 
 Human-only acceptance/moderation uses browser-session-only, CSRF-protected handlers and shared authorization services; it has no MCP tool. This is a transport/credential boundary, not proof of human presence. A claimed client name, user-agent, or role payload conveys no human/admin authority. The Q&A handlers retain this boundary and shared authorization; see [their contracts](docs/questions-and-answers.md).
 
@@ -192,7 +192,7 @@ MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conf
 git diff --exit-code -- backend/src/generated
 ```
 
-The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql`, `V3__questions_and_answers.sql`, and `V4__content_lifecycle.sql` offline and writes committed Kotlin bindings to `backend/src/generated/kotlin`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. The generator owns their formatting; Spotless applies only to handwritten Kotlin. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2–V4 additively; no existing migration or development data is rewritten.
+The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql`, `V3__questions_and_answers.sql`, `V4__content_lifecycle.sql`, and `V5__votes_and_occurrences.sql` offline and writes committed Kotlin bindings to `backend/src/generated/kotlin`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. The generator owns their formatting; Spotless applies only to handwritten Kotlin. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2–V5 additively; no existing migration or development data is rewritten.
 
 ## CI and diagnostics
 
@@ -204,7 +204,7 @@ JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/t
 
 ## Next milestones
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity, Q&A, and content lifecycle (goal 003) are implemented; goal 004 and subsequent features remain planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity, Q&A, content lifecycle, and engagement (goal 004) are implemented; goal 005 and subsequent features remain planned.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 
@@ -212,4 +212,4 @@ LM Studio configuration and representative search examples are inputs for the se
 
 Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
 
-The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 003](docs/goals/003-content-lifecycle.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.
+The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 004](docs/goals/004-votes-occurrences-and-trends.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.

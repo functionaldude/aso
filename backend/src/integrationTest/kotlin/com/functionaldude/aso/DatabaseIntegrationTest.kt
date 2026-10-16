@@ -32,7 +32,7 @@ class DatabaseIntegrationTest {
     @Test
     fun `startup applies Flyway migrations and vector operations work`() {
         assertEquals(
-            4,
+            5,
             jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Int::class.java),
         )
         assertTrue(jdbc.queryForObject("SELECT extversion FROM pg_extension WHERE extname = 'vector'", String::class.java)!!.isNotBlank())
@@ -66,7 +66,7 @@ class DatabaseIntegrationTest {
         )
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM upgrade_check.question", Int::class.java))
         assertEquals(
-            4,
+            5,
             jdbc.queryForObject(
                 "SELECT count(*) FROM upgrade_check.flyway_schema_history WHERE success AND version IS NOT NULL",
                 Int::class.java,
@@ -124,6 +124,82 @@ class DatabaseIntegrationTest {
                 request,
             ),
         )
+    }
+
+    @Test
+    fun `V5 preserves populated V4 lifecycle and creates no invented engagement`() {
+        fun migration() =
+            Flyway
+                .configure()
+                .dataSource(database.jdbcUrl, database.username, database.password)
+                .schemas("engagement_upgrade")
+                .defaultSchema("engagement_upgrade")
+        migration().target("4").load().migrate()
+        val actor = java.util.UUID.randomUUID()
+        val question = java.util.UUID.randomUUID()
+        val answer = java.util.UUID.randomUUID()
+        val comment = java.util.UUID.randomUUID()
+        val audit = java.util.UUID.randomUUID()
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.app_user(id,issuer,subject,display_name) VALUES (?, 'https://fixture.invalid', 'owner', 'Owner')",
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.question(id,title,body,author_id,channel,version) VALUES (?, 'Retained', 'Problem', ?, 'mcp', 3)",
+            question,
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.answer(id,question_id,body,author_id,channel) VALUES (?, ?, 'Fix', ?, 'web')",
+            answer,
+            question,
+            actor,
+        )
+        jdbc.update("UPDATE engagement_upgrade.question SET accepted_answer_id = ? WHERE id = ?", answer, question)
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.content_comment(id,question_id,body,author_id,channel,hidden) VALUES (?, ?, 'Hidden context', ?, 'web', TRUE)",
+            comment,
+            question,
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.content_request VALUES (?, 'create_comment', ?, ?, ?)",
+            actor,
+            comment,
+            "a".repeat(64),
+            comment,
+        )
+        jdbc.update(
+            "INSERT INTO engagement_upgrade.content_audit(id,actor_id,channel,action,target_kind,target_id,question_id,before_state,after_state) VALUES (?, ?, 'web', 'accept', 'question', ?, ?, '{}', '{}')",
+            audit,
+            actor,
+            question,
+            question,
+        )
+        migration().load().migrate()
+        assertEquals(
+            answer,
+            jdbc.queryForObject(
+                "SELECT accepted_answer_id FROM engagement_upgrade.question WHERE id = ?",
+                java.util.UUID::class.java,
+                question,
+            ),
+        )
+        assertEquals(3, jdbc.queryForObject("SELECT version FROM engagement_upgrade.question WHERE id = ?", Int::class.java, question))
+        assertTrue(
+            jdbc.queryForObject("SELECT hidden FROM engagement_upgrade.content_comment WHERE id = ?", Boolean::class.java, comment)!!,
+        )
+        assertEquals(
+            comment,
+            jdbc.queryForObject(
+                "SELECT result_id FROM engagement_upgrade.content_request WHERE request_id = ?",
+                java.util.UUID::class.java,
+                comment,
+            ),
+        )
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM engagement_upgrade.content_audit WHERE id = ?", Int::class.java, audit))
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM engagement_upgrade.content_vote", Int::class.java))
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM engagement_upgrade.occurrence", Int::class.java))
     }
 
     @Test

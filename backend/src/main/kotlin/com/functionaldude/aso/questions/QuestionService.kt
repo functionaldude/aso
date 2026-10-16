@@ -49,6 +49,8 @@ data class QuestionView(
     val version: Int,
     val updatedAt: OffsetDateTime,
     val hidden: Boolean,
+    val votes: VoteSummary,
+    val occurrences: QuestionMetrics,
 ) : ContentView
 
 data class AnswerView(
@@ -64,11 +66,13 @@ data class AnswerView(
     val version: Int,
     val updatedAt: OffsetDateTime,
     val hidden: Boolean,
+    val votes: VoteSummary,
 ) : ContentView
 
 data class ContentPage<T>(
     val items: List<T>,
     val nextCursor: String?,
+    val asOf: OffsetDateTime? = null,
 )
 
 data class QuestionDetail(
@@ -82,6 +86,7 @@ class QuestionService(
     private val identities: IdentityService,
     private val policy: ContentPolicy,
     private val json: JsonMapper,
+    private val engagement: EngagementReads,
 ) {
     @Transactional
     fun createQuestion(
@@ -128,7 +133,7 @@ class QuestionService(
                         .execute()
                 }
             }
-        return question(id)
+        return question(id, viewer = actor.id)
     }
 
     @Transactional
@@ -160,7 +165,7 @@ class QuestionService(
             }
         lockQuestion(parent)
         question(parent)
-        return answerById(id)
+        return answerById(id, viewer = actor.id)
     }
 
     @Transactional
@@ -171,12 +176,19 @@ class QuestionService(
         limit: Int = 20,
         cursor: String? = null,
         moderation: Boolean = false,
+        view: String = "recent",
     ): ContentPage<QuestionView> {
-        if (moderation) identities.administrator(authentication) else identities.current(authentication)
+        val actor = if (moderation) identities.administrator(authentication) else identities.current(authentication)
         bounds(limit)
         if (state !in setOf("all", "open", "resolved")) invalid("state must be all, open or resolved")
+        if (view !in setOf("recent", "unanswered", "recurring")) invalid("view must be recent, unanswered or recurring")
         val normalizedTag = tag?.let(policy::tag)
+        val scope = "questions:$normalizedTag:$state:$moderation:$view"
+        val after = cursor?.let { questionCursor(it, scope) }
+        val asOf = after?.asOf ?: engagement.now()
+        if (asOf.isAfter(engagement.now())) invalid("Invalid cursor cutoff")
         var condition = if (moderation) DSL.trueCondition() else QUESTION.HIDDEN.isFalse
+        condition = condition.and(QUESTION.CREATED_AT.le(asOf))
         if (state == "resolved") condition = condition.and(QUESTION.ACCEPTED_ANSWER_ID.isNotNull)
         if (state == "open") condition = condition.and(QUESTION.ACCEPTED_ANSWER_ID.isNull)
         if (normalizedTag != null) {
@@ -190,24 +202,105 @@ class QuestionService(
                     ),
                 )
         }
-        val scope = "questions:$normalizedTag:$state:$moderation"
-        if (cursor != null) {
-            val (time, id) = cursor(cursor, scope)
-            condition = condition.and(QUESTION.CREATED_AT.lt(time).or(QUESTION.CREATED_AT.eq(time).and(QUESTION.ID.lt(id))))
+        if (view == "unanswered") {
+            condition =
+                condition.andNotExists(
+                    db
+                        .selectOne()
+                        .from(ANSWER)
+                        .where(ANSWER.QUESTION_ID.eq(QUESTION.ID))
+                        .and(ANSWER.HIDDEN.isFalse),
+                )
         }
+        val reporters = engagement.reporters(asOf)
+        val encounters = engagement.encounters(asOf)
+        val latest = engagement.latest(asOf)
+        if (view == "recurring") condition = condition.and(encounters.gt(0))
+        if (after != null) {
+            condition =
+                condition.and(
+                    if (view == "recurring") {
+                        val rank = DSL.row(reporters, encounters, latest, QUESTION.ID)
+                        rank.lt(DSL.row(after.reporters, after.encounters, after.time, after.id))
+                    } else {
+                        QUESTION.CREATED_AT.lt(after.time).or(QUESTION.CREATED_AT.eq(after.time).and(QUESTION.ID.lt(after.id)))
+                    },
+                )
+        }
+        val order =
+            if (view == "recurring") {
+                listOf(reporters.desc(), encounters.desc(), latest.desc(), QUESTION.ID.desc())
+            } else {
+                listOf(QUESTION.CREATED_AT.desc(), QUESTION.ID.desc())
+            }
         val rows =
             db
-                .select(*QUESTION.fields(), APP_USER.DISPLAY_NAME)
-                .from(QUESTION)
+                .select(
+                    *QUESTION.fields(),
+                    APP_USER.DISPLAY_NAME,
+                    reporters.`as`("reporters"),
+                    encounters.`as`("encounters"),
+                    latest.`as`("latest"),
+                ).from(QUESTION)
                 .join(APP_USER)
                 .on(QUESTION.AUTHOR_ID.eq(APP_USER.ID))
                 .where(condition)
-                .orderBy(QUESTION.CREATED_AT.desc(), QUESTION.ID.desc())
+                .orderBy(order)
                 .limit(limit + 1)
                 .fetch()
-        val items = rows.take(limit).map(::question)
-        return ContentPage(items, if (rows.size > limit) items.last().let { encode(it.createdAt, it.id, scope) } else null)
+        val items = rows.take(limit).map { question(it, actor.id, asOf) }
+        val next =
+            if (rows.size > limit) {
+                rows[limit - 1].let {
+                    val time = if (view == "recurring") it.get("latest", OffsetDateTime::class.java)!! else it[QUESTION.CREATED_AT]!!
+                    val key =
+                        listOf(
+                            asOf,
+                            time,
+                            it[QUESTION.ID],
+                            it.get("reporters", Int::class.java),
+                            it.get("encounters", Int::class.java),
+                            scope,
+                        )
+                    Base64.getUrlEncoder().withoutPadding().encodeToString(key.joinToString("|").toByteArray())
+                }
+            } else {
+                null
+            }
+        return ContentPage(items, next, asOf)
     }
+
+    private data class QuestionCursor(
+        val asOf: OffsetDateTime,
+        val time: OffsetDateTime,
+        val id: UUID,
+        val reporters: Int,
+        val encounters: Int,
+    )
+
+    private fun questionCursor(
+        value: String,
+        scope: String,
+    ): QuestionCursor =
+        try {
+            if (value.length > 500) invalid("Invalid cursor")
+            val parts = String(Base64.getUrlDecoder().decode(value)).split('|')
+            if (parts.size != 6 || parts[5] != scope) invalid("Cursor does not match the filters")
+            val reporters = parts[3].toInt()
+            val encounters = parts[4].toInt()
+            if (reporters < 0 || encounters < 0) invalid("Invalid cursor")
+            QuestionCursor(
+                OffsetDateTime.parse(parts[0]),
+                OffsetDateTime.parse(parts[1]),
+                policy.uuid(parts[2], "cursor"),
+                reporters,
+                encounters,
+            )
+        } catch (_: IllegalArgumentException) {
+            invalid("Invalid cursor")
+        } catch (_: java.time.format.DateTimeParseException) {
+            invalid("Invalid cursor")
+        }
 
     @Transactional
     fun detail(
@@ -215,10 +308,10 @@ class QuestionService(
         id: String,
         moderation: Boolean = false,
     ): QuestionDetail {
-        if (moderation) identities.administrator(authentication) else identities.current(authentication)
+        val actor = if (moderation) identities.administrator(authentication) else identities.current(authentication)
         val uuid = policy.uuid(id, "questionId")
         shareQuestion(uuid)
-        return QuestionDetail(question(uuid, moderation), answerPage(uuid, 20, null, moderation))
+        return QuestionDetail(question(uuid, moderation, actor.id), answerPage(uuid, 20, null, moderation, actor.id))
     }
 
     @Transactional
@@ -229,11 +322,11 @@ class QuestionService(
         cursor: String? = null,
         moderation: Boolean = false,
     ): ContentPage<AnswerView> {
-        if (moderation) identities.administrator(authentication) else identities.current(authentication)
+        val actor = if (moderation) identities.administrator(authentication) else identities.current(authentication)
         val uuid = policy.uuid(id, "questionId")
         shareQuestion(uuid)
         question(uuid, moderation)
-        return answerPage(uuid, limit, cursor, moderation)
+        return answerPage(uuid, limit, cursor, moderation, actor.id)
     }
 
     private fun answerPage(
@@ -241,6 +334,7 @@ class QuestionService(
         limit: Int,
         after: String?,
         moderation: Boolean = false,
+        viewer: UUID? = null,
     ): ContentPage<AnswerView> {
         bounds(limit)
         val scope = "answers:$parent:$moderation"
@@ -260,7 +354,7 @@ class QuestionService(
                 .orderBy(ANSWER.CREATED_AT.asc(), ANSWER.ID.asc())
                 .limit(limit + 1)
                 .fetch()
-        val items = rows.take(limit).map(::answer)
+        val items = rows.take(limit).map { answer(it, viewer) }
         return ContentPage(items, if (rows.size > limit) items.last().let { encode(it.createdAt, it.id, scope) } else null)
     }
 
@@ -332,6 +426,7 @@ class QuestionService(
     internal fun question(
         id: UUID,
         moderation: Boolean = false,
+        viewer: UUID? = null,
     ): QuestionView =
         db
             .select(*QUESTION.fields(), APP_USER.DISPLAY_NAME)
@@ -341,10 +436,14 @@ class QuestionService(
             .where(QUESTION.ID.eq(id))
             .and(if (moderation) DSL.trueCondition() else QUESTION.HIDDEN.isFalse)
             .fetchOne()
-            ?.let(::question)
+            ?.let { question(it, viewer, engagement.now()) }
             ?: throw ContentFailure(404, "not_found", "Question not found")
 
-    private fun question(row: Record): QuestionView =
+    private fun question(
+        row: Record,
+        viewer: UUID?,
+        asOf: OffsetDateTime,
+    ): QuestionView =
         QuestionView(
             row[QUESTION.ID]!!,
             row[QUESTION.TITLE]!!,
@@ -366,9 +465,14 @@ class QuestionService(
             row[QUESTION.VERSION]!!,
             row[QUESTION.UPDATED_AT]!!,
             row[QUESTION.HIDDEN]!!,
+            engagement.votes(row[QUESTION.ID]!!, null, viewer),
+            engagement.metrics(row[QUESTION.ID]!!, asOf),
         )
 
-    private fun answer(row: Record): AnswerView =
+    private fun answer(
+        row: Record,
+        viewer: UUID?,
+    ): AnswerView =
         AnswerView(
             row[ANSWER.ID]!!,
             row[ANSWER.QUESTION_ID]!!,
@@ -382,6 +486,7 @@ class QuestionService(
             row[ANSWER.VERSION]!!,
             row[ANSWER.UPDATED_AT]!!,
             row[ANSWER.HIDDEN]!!,
+            engagement.votes(row[ANSWER.QUESTION_ID]!!, row[ANSWER.ID]!!, viewer),
         )
 
     internal fun shareQuestion(id: UUID) {
@@ -407,6 +512,7 @@ class QuestionService(
     internal fun answerById(
         id: UUID,
         moderation: Boolean = false,
+        viewer: UUID? = null,
     ): AnswerView =
         db
             .select(*ANSWER.fields(), APP_USER.DISPLAY_NAME)
@@ -418,5 +524,5 @@ class QuestionService(
             .where(ANSWER.ID.eq(id))
             .and(if (moderation) DSL.trueCondition() else ANSWER.HIDDEN.isFalse.and(QUESTION.HIDDEN.isFalse))
             .fetchOne()
-            ?.let(::answer) ?: throw ContentFailure(404, "not_found", "Answer not found")
+            ?.let { answer(it, viewer) } ?: throw ContentFailure(404, "not_found", "Answer not found")
 }

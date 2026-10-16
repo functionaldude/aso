@@ -139,12 +139,12 @@ class LifecycleService(
         targetId: String,
         moderation: Boolean = false,
     ): ContentView {
-        actor(authentication, moderation)
+        val actor = actor(authentication, moderation)
         val target = id(targetId, "targetId")
         questions.shareQuestion(parent(kind, target))
         return when (kind) {
-            "question" -> questions.question(target, moderation)
-            "answer" -> questions.answerById(target, moderation)
+            "question" -> questions.question(target, moderation, actor.id)
+            "answer" -> questions.answerById(target, moderation, actor.id)
             "comment" -> comment(target, moderation)
             else -> invalid("Invalid content kind")
         }
@@ -192,7 +192,7 @@ class LifecycleService(
                 .set(QUESTION_TAG.TAG_NAME, tag)
                 .execute()
         }
-        val after = questions.question(target, moderation)
+        val after = questions.question(target, moderation, actor.id)
         audit(actor, "edit", "question", target, target, state(before), state(after))
         return after
     }
@@ -219,7 +219,7 @@ class LifecycleService(
             .set(ANSWER.UPDATED_AT, OffsetDateTime.now())
             .where(ANSWER.ID.eq(target))
             .execute()
-        val after = questions.answerById(target, moderation)
+        val after = questions.answerById(target, moderation, actor.id)
         audit(actor, "edit", "answer", target, parent, state(before), state(after))
         return after
     }
@@ -350,7 +350,7 @@ class LifecycleService(
         val actor = identities.current(authentication, human = true)
         val target = id(questionId, "questionId")
         lock("question", target, false)
-        val before = questions.question(target)
+        val before = questions.question(target, viewer = actor.id)
         if (before.author.id != actor.id && !actor.admin) {
             throw ContentFailure(403, "forbidden", "Only the question owner or an administrator may change acceptance")
         }
@@ -365,7 +365,7 @@ class LifecycleService(
             .set(QUESTION.UPDATED_AT, OffsetDateTime.now())
             .where(QUESTION.ID.eq(target))
             .execute()
-        val after = questions.question(target)
+        val after = questions.question(target, viewer = actor.id)
         audit(actor, "accept", "question", target, target, state(before), state(after))
         return after
     }

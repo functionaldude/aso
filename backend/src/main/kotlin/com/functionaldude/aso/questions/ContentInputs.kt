@@ -27,6 +27,7 @@ data class CreateAnswerInput(
 )
 
 data class ListQuestionsArguments(
+    val view: String = "recent",
     val tag: String? = null,
     val state: String? = null,
     val limit: Int = 20,

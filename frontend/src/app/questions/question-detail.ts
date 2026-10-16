@@ -1,3 +1,4 @@
+import { EngagementControls } from './engagement-controls';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ContentEditor } from './content-editor';
 import { ContentComments } from './content-comments';
@@ -18,6 +19,7 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
   imports: [
     DatePipe,
     ContentEditor,
+    EngagementControls,
     ContentComments,
     FormsModule,
     RouterLink,
@@ -74,6 +76,13 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
           @if (detail.question.context.repository) {
             <h3>Repository / module</h3>
             <pre>{{ detail.question.context.repository }}</pre>
+          }
+          @if (!moderation) {
+            <app-engagement-controls
+              kind="question"
+              [content]="detail.question"
+              (changed)="load()"
+            />
           }
           <app-content-editor
             kind="question"
@@ -132,6 +141,9 @@ import { Answer, CreateRequest, Detail, QuestionsApi, contentError } from './que
               }
               <h3>Verification evidence</h3>
               <pre>{{ answer.verification || 'No testing evidence provided.' }}</pre>
+              @if (!moderation) {
+                <app-engagement-controls kind="answer" [content]="answer" (changed)="load()" />
+              }
               <app-content-editor
                 kind="answer"
                 [content]="answer"

@@ -7,12 +7,14 @@ package com.functionaldude.aso.jooq.tables
 import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.indexes.ANSWER_QUESTION
 import com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_3195B
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D14099
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_A
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_AB
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_ABC
 import com.functionaldude.aso.jooq.tables.AppUser.AppUserPath
 import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
+import com.functionaldude.aso.jooq.tables.ContentVote.ContentVotePath
 import com.functionaldude.aso.jooq.tables.Question.QuestionPath
 import com.functionaldude.aso.jooq.tables.records.AnswerRecord
 
@@ -127,6 +129,18 @@ open class Answer(
 
     fun appUser(): AppUserPath = appUser
     val appUser: AppUserPath by lazy { AppUserPath(this, CONSTRAINT_ABC, null) }
+
+    private lateinit var _contentVote: ContentVotePath
+
+    fun contentVote(): ContentVotePath {
+        if (!this::_contentVote.isInitialized)
+            _contentVote = ContentVotePath(this, null, CONSTRAINT_3195B.inverseKey)
+
+        return _contentVote;
+    }
+
+    val contentVote: ContentVotePath
+        get(): ContentVotePath = contentVote()
 
     private lateinit var _contentComment: ContentCommentPath
 

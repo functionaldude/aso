@@ -6,7 +6,24 @@ export interface Author {
   id: string;
   displayName: string;
 }
+export interface VoteSummary {
+  upvotes: number;
+  votedByYou: boolean;
+}
+export interface EncounterCounts {
+  encounters: number;
+  distinctDevelopers: number;
+}
+export interface VoteEvidence {
+  id: string;
+  voter: Author;
+  channel: string;
+  createdAt: string;
+  callerReportedVerification: string | null;
+}
 export interface Question {
+  votes: VoteSummary;
+  occurrences: { allTime: EncounterCounts; sevenDay: EncounterCounts };
   id: string;
   title: string;
   body: string;
@@ -28,6 +45,7 @@ export interface Question {
   hidden: boolean;
 }
 export interface Answer {
+  votes: VoteSummary;
   version: number;
   updatedAt: string;
   hidden: boolean;
@@ -59,6 +77,7 @@ export type ContentKind = 'question' | 'answer' | 'comment';
 export interface ContentPage<T> {
   items: T[];
   nextCursor: string | null;
+  asOf?: string;
 }
 export interface Detail {
   question: Question;
@@ -97,8 +116,8 @@ export class CreateRequest {
 @Injectable({ providedIn: 'root' })
 export class QuestionsApi {
   private readonly http = inject(HttpClient);
-  list(tag: string, state: string, cursor?: string) {
-    let params = new HttpParams().set('state', state);
+  list(tag: string, state: string, cursor?: string, view = 'recent') {
+    let params = new HttpParams().set('state', state).set('view', view);
     if (tag.trim()) params = params.set('tag', tag.trim());
     if (cursor) params = params.set('cursor', cursor);
     return firstValueFrom(this.http.get<ContentPage<Question>>('/api/v1/questions', { params }));

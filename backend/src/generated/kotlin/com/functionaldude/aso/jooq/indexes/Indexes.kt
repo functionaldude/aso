@@ -8,6 +8,8 @@ package com.functionaldude.aso.jooq.indexes
 import com.functionaldude.aso.jooq.tables.Answer
 import com.functionaldude.aso.jooq.tables.ContentAudit
 import com.functionaldude.aso.jooq.tables.ContentComment
+import com.functionaldude.aso.jooq.tables.ContentVote
+import com.functionaldude.aso.jooq.tables.Occurrence
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
 
@@ -24,5 +26,8 @@ import org.jooq.impl.Internal
 val ANSWER_QUESTION: Index = Internal.createIndex(DSL.name("answer_question"), Answer.ANSWER, arrayOf(Answer.ANSWER.QUESTION_ID, Answer.ANSWER.CREATED_AT, Answer.ANSWER.ID), false)
 val AUDIT_QUESTION: Index = Internal.createIndex(DSL.name("audit_question"), ContentAudit.CONTENT_AUDIT, arrayOf(ContentAudit.CONTENT_AUDIT.QUESTION_ID, ContentAudit.CONTENT_AUDIT.OCCURRED_AT, ContentAudit.CONTENT_AUDIT.ID), false)
 val COMMENT_CHRONOLOGY: Index = Internal.createIndex(DSL.name("comment_chronology"), ContentComment.CONTENT_COMMENT, arrayOf(ContentComment.CONTENT_COMMENT.QUESTION_ID, ContentComment.CONTENT_COMMENT.ANSWER_ID, ContentComment.CONTENT_COMMENT.CREATED_AT, ContentComment.CONTENT_COMMENT.ID), false)
+val OCCURRENCE_QUESTION_WINDOW: Index = Internal.createIndex(DSL.name("occurrence_question_window"), Occurrence.OCCURRENCE, arrayOf(Occurrence.OCCURRENCE.QUESTION_ID, Occurrence.OCCURRENCE.CREATED_AT, Occurrence.OCCURRENCE.REPORTER_ID), false)
 val QUESTION_RECENT: Index = Internal.createIndex(DSL.name("question_recent"), Question.QUESTION, arrayOf(Question.QUESTION.CREATED_AT, Question.QUESTION.ID), false)
 val QUESTION_TAG_FILTER: Index = Internal.createIndex(DSL.name("question_tag_filter"), QuestionTag.QUESTION_TAG, arrayOf(QuestionTag.QUESTION_TAG.TAG_NAME, QuestionTag.QUESTION_TAG.QUESTION_ID), false)
+val QUESTION_VOTE_ACTOR: Index = Internal.createIndex(DSL.name("question_vote_actor"), ContentVote.CONTENT_VOTE, arrayOf(ContentVote.CONTENT_VOTE.QUESTION_ID, ContentVote.CONTENT_VOTE.ACTOR_ID), true)
+val VOTE_TARGET_PAGE: Index = Internal.createIndex(DSL.name("vote_target_page"), ContentVote.CONTENT_VOTE, arrayOf(ContentVote.CONTENT_VOTE.QUESTION_ID, ContentVote.CONTENT_VOTE.ANSWER_ID, ContentVote.CONTENT_VOTE.CREATED_AT, ContentVote.CONTENT_VOTE.ID), false)
