@@ -1,6 +1,6 @@
 # 002b — CI verification repair
 
-Status: in progress
+Status: complete (PR open)
 
 ## Dependencies and prerequisites
 
@@ -37,12 +37,14 @@ Include diagnosis from retained CI reports, the necessary workflow setup and iso
 
 ## Progress and blockers
 
-Two runner-specific causes confirmed on `codex/fix-ci-browser-dependencies`, published in [PR #5](https://github.com/functionaldude/aso/pull/5). The browser setup fix passed Linux CI, and the full local suite passes with the fixture-networking fix. Final PR CI evidence is pending.
+Both runner-specific failures are fixed on `codex/fix-ci-browser-dependencies`, published in [PR #5](https://github.com/functionaldude/aso/pull/5). Full local and Linux pull-request verification pass. No implementation blockers remain; the PR is open and unmerged. Goal 003 remains planned.
 
 ## Completion evidence
 
 - Downloaded `verification-reports` from run `38971245349` and inspected `TEST-com.functionaldude.aso.oidc.OidcSmokeTest.xml`. The failure is at Chromium launch in `OidcSmokeTest.kt:111`, before any identity assertions.
 - `./gradlew --no-daemon check bootJar` passed locally on Java 25.0.4.1 and Gradle 9.2.1. Frontend tests (4), lint, and formatting executed; unchanged backend tests/build outputs were up to date. `git diff --check` passed.
-- Linux browser setup and Docker-backed verification will be checked on the PR runner; Mac results do not establish Linux dependency installation.
 - [First PR CI run](https://github.com/functionaldude/aso/actions/runs/38971892372): automatically triggered by `pull_request` at `dd5ae88`; browser dependency installation, OIDC smoke, and disposable reset isolation pass. Integration tests fail on the non-loopback HTTP issuer and E2E is skipped. This run is diagnostic evidence, not a passing result.
 - `./gradlew --no-daemon spotlessApply check bootJar oidcSmokeTest integrationTest e2eTest` passed in 1m33s on the owner's ARM64 Mac with Java 25.0.4.1 and Gradle 9.2.1. Backend unit tests (15), frontend tests (4), OIDC smoke (2), integration (9), and packaged browser (1) all pass with zero failures/errors/skips. This includes new forwarder regression checks for concurrent HTTP requests preserving Host/path/query/body and cleanup of active sockets/listener. Test fixtures use isolated Docker state; no development data was reset.
+- [Successful Linux CI run](https://github.com/functionaldude/aso/actions/runs/38972760258), automatically triggered by `pull_request` for implementation commit `d46fa6e67dea9ec974714955aa14406b94f7f2fa`, passed every workflow step in 4m35s. This includes unit/lint/format/package, reproducible offline schema generation, explicit browser/OS dependency installation, real OIDC smoke, disposable reset isolation, database integration, packaged browser tests, and diagnostic upload.
+- Downloaded and inspected the successful run's JUnit reports: 15 backend unit tests, 2 OIDC smoke tests, 9 integration tests, and 1 packaged-browser suite; zero failures, errors, or skipped tests. The workflow also passes all 4 frontend tests.
+- Verification spanned 2026-10-16–17 in Europe/Vienna. Final evidence/status is recorded in a documentation-only follow-up commit on the same PR, which runs the same CI gate again before handoff. Current checks are visible on [PR #5](https://github.com/functionaldude/aso/pull/5/checks).
