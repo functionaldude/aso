@@ -18,8 +18,50 @@
     >
   </nav>
 </header>
+<section class="identity-panel" aria-label="Your account">
+  @if (session.loginError) {
+    <p role="alert">Sign-in failed. Please try again.</p>
+  }
+  @switch (session.state()) {
+    @case ('loading') {
+      <p>Checking your session…</p>
+    }
+    @case ('member') {
+      <p>
+        Signed in as <strong>{{ session.identity()?.displayName }}</strong>
+        @if (session.identity()?.admin) {
+          <span> · Administrator</span>
+        }
+      </p>
+    }
+    @case ('signedOut') {
+      <p>Sign in to access your private workspace. If your session expired, sign in again.</p>
+    }
+    @case ('denied') {
+      <p role="alert">
+        Workspace access is unavailable. Your session may have expired or your account may lack
+        membership. Sign in again or contact your administrator.
+      </p>
+    }
+    @case ('unavailable') {
+      <p role="alert">Your account is temporarily unavailable.</p>
+      <button mat-button (click)="session.refresh()">Retry account</button>
+    }
+  }
+  @if (session.state() !== 'member') {
+    <a mat-flat-button href="/oauth2/authorization/oidc">Sign in</a>
+  }
+  @if (session.state() === 'member' || session.state() === 'denied') {
+    @if (session.csrf(); as csrf) {
+      <form method="post" action="/logout">
+        <input type="hidden" [name]="csrf.parameterName" [value]="csrf.token" />
+        <button mat-button type="submit">Sign out</button>
+      </form>
+    }
+  }
+</section>
 <main id="main" tabindex="-1"><router-outlet /></main>
 <footer class="site-footer">
   <span>Shared knowledge. Better builds.</span>
-  <span class="foundation-label">Foundation preview</span>
+  <span class="foundation-label">Private workspace</span>
 </footer>

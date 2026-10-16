@@ -90,3 +90,8 @@ tasks.clean {
     delete("frontend/dist", "frontend/coverage", "frontend/.angular")
     dependsOn(":backend:clean")
 }
+
+tasks.register("generateJooq") {
+    group = "build"
+    dependsOn(":backend:generateJooq")
+}

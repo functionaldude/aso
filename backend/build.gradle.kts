@@ -7,6 +7,7 @@ plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
     id("com.diffplug.spotless")
+    `java-test-fixtures`
 }
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
@@ -15,6 +16,9 @@ kotlin { compilerOptions { freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotat
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
@@ -25,6 +29,10 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("org.springframework.security:spring-security-test")
+    testFixturesImplementation("org.testcontainers:testcontainers")
+    testFixturesImplementation("com.microsoft.playwright:playwright:1.58.0")
+    testFixturesImplementation("tools.jackson.core:jackson-databind")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -32,6 +40,8 @@ val integrationTest by sourceSets.creating
 val e2eTest by sourceSets.creating
 val oidcSmokeTest by sourceSets.creating
 listOf(integrationTest, e2eTest, oidcSmokeTest).forEach {
+    it.compileClasspath += sourceSets.testFixtures.get().output
+    it.runtimeClasspath += sourceSets.testFixtures.get().output
     it.compileClasspath += sourceSets.main.get().output
     it.runtimeClasspath += sourceSets.main.get().output
     configurations[it.implementationConfigurationName].extendsFrom(configurations.testImplementation.get())
@@ -41,6 +51,9 @@ listOf(integrationTest, e2eTest, oidcSmokeTest).forEach {
 dependencies {
     add(integrationTest.implementationConfigurationName, "org.springframework.boot:spring-boot-starter-test")
     add(integrationTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
+    add(integrationTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(integrationTest.implementationConfigurationName, "org.testcontainers:testcontainers")
+    add(e2eTest.implementationConfigurationName, "org.testcontainers:testcontainers")
     add(e2eTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
     add(e2eTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
     add(oidcSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers")
@@ -146,5 +159,36 @@ tasks.register<Test>("oidcSmokeTest") {
             .get()
             .asFile.absolutePath,
     )
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+}
+
+// Parse the identity Flyway DDL offline; never inspect a developer database.
+val jooqCodegen by configurations.creating
+configurations[jooqCodegen.name].extendsFrom(configurations.implementation.get())
+dependencies {
+    add(jooqCodegen.name, "org.jooq:jooq-codegen")
+    add(jooqCodegen.name, "org.jooq:jooq-meta-extensions")
+}
+tasks.register<JavaExec>("generateJooq") {
+    group = "build"
+    description = "Regenerate checked-in jOOQ identity sources from Flyway DDL without a database."
+    classpath = jooqCodegen
+    mainClass = "org.jooq.codegen.GenerationTool"
+    workingDir = projectDir
+    args("src/main/jooq/generator.xml")
+}
+listOf("integrationTest", "e2eTest").forEach { name ->
+    tasks.named<Test>(name) {
+        systemProperty("aso.test.keycloak-image", keycloakImage)
+        systemProperty("aso.test.realm", rootProject.file("dev/keycloak/aso-dev-realm.json").absolutePath)
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+    }
+}
+
+sourceSets.main { java.srcDir("src/generated/java") }
+
+tasks.named<Test>("integrationTest") {
+    dependsOn(playwrightInstall)
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }

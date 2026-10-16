@@ -1,0 +1,11 @@
+# Explicit opt-in only. Public fictitious fixture credentials; never select this profile in production.
+aso:
+  identity:
+    issuer: ${ASO_OIDC_ISSUER:http://127.0.0.1:8180/realms/aso-dev}
+    web-client-id: ${ASO_OIDC_WEB_CLIENT_ID:aso-web}
+    web-client-secret: ${ASO_OIDC_WEB_CLIENT_SECRET:aso-web-secret-local-only}
+    public-url: ${ASO_PUBLIC_URL:http://127.0.0.1:8080}
+    mcp-audience: ${ASO_MCP_AUDIENCE:http://127.0.0.1:8080/mcp}
+    groups-claim: ${ASO_OIDC_GROUPS_CLAIM:groups}
+    member-group: ${ASO_OIDC_MEMBER_GROUP:aso-members}
+    admin-group: ${ASO_OIDC_ADMIN_GROUP:aso-admins}

@@ -26,3 +26,13 @@ management:
       show-details: never
 aso:
   version: '@projectVersion@'
+
+  identity:
+    issuer: ${ASO_OIDC_ISSUER}
+    web-client-id: ${ASO_OIDC_WEB_CLIENT_ID}
+    web-client-secret: ${ASO_OIDC_WEB_CLIENT_SECRET}
+    public-url: ${ASO_PUBLIC_URL}
+    mcp-audience: ${ASO_MCP_AUDIENCE}
+    groups-claim: ${ASO_OIDC_GROUPS_CLAIM}
+    member-group: ${ASO_OIDC_MEMBER_GROUP}
+    admin-group: ${ASO_OIDC_ADMIN_GROUP}
