@@ -1,6 +1,6 @@
 # 000a — Seeded local development Keycloak
 
-Status: in progress
+Status: complete
 
 ## Dependencies and prerequisites
 
@@ -51,7 +51,7 @@ Exclude ASO Spring Security/login integration, Angular login UI, identity schema
 
 ## Progress and blockers
 
-Implementation is bounded to the provider fixture, lifecycle tooling, and standalone verification. Foundation regressions and disposable reset isolation pass on the Mac. OIDC verification passes; commit and PR evidence are being recorded. ASO browser/MCP authentication remains pending in goal 001.
+Goal 000a is complete: the provider fixture, lifecycle tooling, standalone OIDC verification, documentation, and required foundation regressions pass on the Mac. No implementation blockers remain for this goal. ASO browser/MCP authentication remains pending in goal 001.
 
 ## Completion evidence
 
@@ -67,4 +67,4 @@ Verified on 2026-10-16 on the owner's ARM64 Mac, Java 25.0.4.1, Docker Desktop e
 - Reports: `backend/build/reports/tests/{test,integrationTest,e2eTest,oidcSmokeTest}/`, JUnit XML under `backend/build/test-results/`, packaged UI screenshots/trace/log under `backend/build/e2e/`, and a token-free OIDC success summary (or Keycloak failure log) under `backend/build/oidc/`. These stay untracked. CI explicitly runs the smoke and lifecycle checks and retains diagnostics.
 - Initial smoke attempts failed on an intercepted redirect (connection refused), then exposed the missing `basic` subject scope. Both were corrected and verified with a real dynamic callback and the final scope configuration; no failed check is treated as a skip.
 - Linux execution is designed into the existing self-hosted workflow; local Mac results do not claim an observed Linux CI result. Actual ASO authorization and MCP client compatibility remain unimplemented and unverified until goal 001.
-- Commit and PR: pending final handoff.
+- Implementation commit: `9867995a0579614c0a5b3ba1e902fb67f54a3c9f` on `codex/000a-local-keycloak`. Pull request: [#1 — Add seeded local Keycloak and isolated OIDC smoke verification](https://github.com/functionaldude/aso/pull/1), targeting `master` and retaining the prior planning commit. Completion evidence/status is recorded in the subsequent documentation commit on the same PR. No merge or deployment was performed.
