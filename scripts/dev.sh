@@ -10,7 +10,7 @@ if [[ "${ASO_PORT:-8080}" != 8080 ]]; then
 fi
 
 docker compose up --detach --wait database keycloak
-./gradlew bootRun &
+SPRING_PROFILES_ACTIVE=development ./gradlew bootRun &
 aso_backend_pid=$!
 cleanup() {
   kill "$aso_backend_pid" 2>/dev/null || true

@@ -1,0 +1,10 @@
+CREATE TABLE app_user (
+    id UUID PRIMARY KEY,
+    issuer VARCHAR(2048) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    email VARCHAR(320),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT app_user_identity UNIQUE (issuer, subject)
+);

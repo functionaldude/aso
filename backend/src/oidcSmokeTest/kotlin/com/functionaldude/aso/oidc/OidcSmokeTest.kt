@@ -50,7 +50,7 @@ class OidcSmokeTest {
         val realm = json.readTree(Files.readString(Path.of(System.getProperty("aso.test.realm"))))
         assertEquals("aso-dev", realm["realm"].asString())
         val clients = realm["clients"].associateBy { it["clientId"].asString() }
-        assertEquals(setOf("aso-web", client), clients.keys)
+        assertEquals(setOf("aso-web", client, "aso-codex", "aso-mcpjam", "aso-mcp-test"), clients.keys)
         clients.values.forEach {
             assertEquals(
                 setOf("basic", "profile", "email"),
@@ -76,7 +76,7 @@ class OidcSmokeTest {
         )
         assertFalse(clients.getValue("aso-web")["publicClient"].asBoolean())
         assertEquals(
-            listOf("http://127.0.0.1:8080/login/oauth2/code/oidc"),
+            listOf("\${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}"),
             clients
                 .getValue("aso-web")["redirectUris"]
                 .asSequence()
@@ -308,24 +308,6 @@ class OidcSmokeTest {
 
     private fun form(values: Map<String, String>) =
         values.entries.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
-}
-
-/** Shared image and realm are independent of Compose and persistent development state. */
-class KeycloakFixture(
-    callback: String,
-) : GenericContainer<KeycloakFixture>(DockerImageName.parse(System.getProperty("aso.test.keycloak-image"))) {
-    init {
-        withExposedPorts(8080)
-        withCopyFileToContainer(
-            MountableFile.forHostPath(System.getProperty("aso.test.realm")),
-            "/opt/keycloak/data/import/aso-dev-realm.json",
-        )
-        withEnv("KC_DB", "dev-mem")
-        withEnv("ASO_PROBE_CALLBACK", callback)
-        withCommand("start-dev", "--import-realm", "--hostname-strict=false")
-        withCreateContainerCmdModifier { it.hostConfig!!.withMemory(1024L * 1024 * 1024) }
-        waitingFor(Wait.forHttp("/realms/aso-dev/.well-known/openid-configuration").forPort(8080).withStartupTimeout(Duration.ofMinutes(3)))
-    }
 }
 
 /** Real loopback callback with an OS-allocated port, closed even when login fails. */

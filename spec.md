@@ -103,6 +103,8 @@ MVP completion requires all planned goals' evidence, including:
 6. Authorization, safe content rendering, ownership/moderation, migration, concurrency/idempotency, packaged UI/API, and regression checks pass. A failed external prerequisite remains visible and is not recorded as a successful skip.
 7. A clean setup and the packaged release run on the owner's laptop using local Keycloak and LM Studio, with reproducible setup/configuration and verification instructions. No external IdP account, deployment, or backup/restore functionality is required for MVP delivery. ASO remains configurable for a different OIDC IdP, whose actual compatibility must be verified separately.
 
+Goal 001 client evidence was amended by the owner on 2026-10-16: Claude Code and Cursor are not installed and must not be tested in this milestone; use MCP Jam (CLI preferred) alongside installed Codex. Their actual compatibility remains unverified and is still required before later all-client milestones claim completion.
+
 ## Inputs still required
 
 - Goal 000a supplies the local realm, four test identities, client fixture, and mapping defaults. Goal 001 supplies ASO's final browser/MCP resource and client configuration and must document interoperability constraints early. No access to an external IdP is needed to begin.
@@ -129,4 +131,4 @@ Acceptance criteria:
 
 ## Architecture and workflow boundaries
 
-Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current foundation is local-only and unauthenticated; the planned product scope is not a claim that it is ready for a team rollout.
+Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goal 001 identity/access; Q&A and later goals are still planned, and this is not a claim that it is ready for a team rollout.
