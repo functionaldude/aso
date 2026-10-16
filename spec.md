@@ -34,7 +34,7 @@ For autonomous local development and tests, the owner selected a seeded local Ke
 
 ## Development and test identity
 
-- Use an official Keycloak container in development mode, pinned to an intentional version and immutable digest. Import a checked-in `aso-dev` realm with deterministic development users, groups, and client settings. Keycloak supports [development containers and realm import on startup](https://www.keycloak.org/server/containers#importing-a-realm-on-startup). Select and verify the image during goal 000a; no Keycloak service is implemented by this planning update.
+- Use an official Keycloak container in development mode, pinned to an intentional version and immutable digest. Import a checked-in `aso-dev` realm with deterministic development users, groups, and client settings. Keycloak supports [development containers and realm import on startup](https://www.keycloak.org/server/containers#importing-a-realm-on-startup). Goal 000a supplies the pinned service and verified fixture; see its completion evidence and README commands.
 - The default development endpoint is `http://127.0.0.1:8180`, with issuer `http://127.0.0.1:8180/realms/aso-dev`. Bind published ports to loopback. Store Keycloak development state separately from ASO's PostgreSQL data, using a dedicated volume and Keycloak's development database; do not add its tables to ASO's database. Keep the service's memory use bounded.
 - Seed the following fictitious accounts with stable subject IDs and documented development-only passwords. No real credentials or personal accounts are required, and no initial password-change/MFA setup should block the disposable test fixture.
 

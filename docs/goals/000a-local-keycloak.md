@@ -1,6 +1,6 @@
 # 000a — Seeded local development Keycloak
 
-Status: planned
+Status: in progress
 
 ## Dependencies and prerequisites
 
@@ -42,12 +42,29 @@ Exclude ASO Spring Security/login integration, Angular login UI, identity schema
 - Owner selected a local seeded Keycloak for autonomous development/testing on 2026-10-16, and requested this setup as a separate next-chat goal.
 - ASO's OIDC contract remains configurable and provider-neutral. A future external IdP is not required for the laptop MVP and cannot be declared compatible without its own check.
 - [Keycloak container documentation](https://www.keycloak.org/server/containers) describes development mode and startup realm imports; [import behavior](https://www.keycloak.org/server/importExport#importing-a-realm-during-startup) explains why existing realms are not overwritten. Use these as setup references, then verify the selected version's actual behavior.
-- Current `scripts/db-reset.sh` uses `docker compose down --volumes`. That was scoped to the database-only foundation; it must be replaced with a database-only reset when adding another persistent service.
+- Replaced the foundation's broad `docker compose down --volumes` database reset with removal of only the selected service and its inspected volume. Disposable lifecycle projects are the only tests allowed to use a project-wide volume cleanup.
+- Selected official Keycloak 26.8.1, multi-platform image digest `sha256:79c623a22abacf3fe6c00a5fb30f5b7843d717b234033b80995891c06116d244`. Verified native ARM64 execution on Docker Desktop. Compose and isolated tests share this pin, with an automated alignment check.
+- Development uses a separate H2 `dev-file` volume, loopback port 8180, private management readiness, and a 1 GiB memory limit. Isolated tests use H2 `dev-mem`, a dynamic Keycloak port, and a real OS-allocated loopback callback. The same realm fixture substitutes only that exact callback through `ASO_PROBE_CALLBACK`; development defaults to port 8765, path `/oidc/callback`. No wildcard redirects or password grants are enabled on the seeded clients.
+- Keycloak's `basic` default client scope supplies the access-token subject. `profile` and `email` supply fictitious attributes; explicit group and probe-audience mappers supply membership and the standalone test audience. This is not the final ASO resource audience.
+- The browser smoke check uses Java's RSA signature verification against discovery JWKS and checks issuer, audience, lifetime, nonce, subject, groups, and userinfo. No Keycloak application dependency, Spring Security, product schema, or Angular login code was added.
+- The initial working tree was clean at planning commit `7983391` on `docs/mvp-spec-and-goals`; that planning work is retained unchanged as the feature branch's parent. Only goal 000a implementation and related status/command documentation are added.
 
 ## Progress and blockers
 
-Not started. Select/verify the image and implement the fixture/helpers/smoke task in this goal. No external IdP access blocks it. Real ASO browser/MCP authentication belongs to goal 001; keep that verification visibly pending.
+Implementation is bounded to the provider fixture, lifecycle tooling, and standalone verification. Foundation regressions and disposable reset isolation pass on the Mac. OIDC verification passes; commit and PR evidence are being recorded. ASO browser/MCP authentication remains pending in goal 001.
 
 ## Completion evidence
 
-None yet. Record image/version, actual commands, smoke/login/claim results, persistence/reset-isolation evidence, regression results, commit, and PR. Never paste raw tokens or real credentials into evidence.
+Verified on 2026-10-16 on the owner's ARM64 Mac, Java 25.0.4.1, Docker Desktop engine 29.8.2 and Compose 5.6.0:
+
+- Pulled the official 26.8.1 image and inspected its immutable repository digest and native `arm64` image; pin recorded above and in `gradle/keycloak-image.txt`.
+- Every helper passes `bash -n` individually; `docker compose config --quiet` and the smoke task's fixture/pin contract checks pass.
+- `./scripts/keycloak-start.sh` and `./scripts/keycloak-status.sh`: healthy `aso-keycloak-1` on `127.0.0.1:8180`. Discovery returns the exact documented issuer and `/auth`, `/token`, `/certs`, `/userinfo` endpoints. The existing database container remained running with the same ID.
+- Stopped/started development Keycloak independently; it reported `Realm 'aso-dev' already exists. Import skipped`. Admin-console inspection after restart confirmed all four users with their expected fixed subject IDs. During implementation, assigned the corrected `basic` client scope to the two already-imported development clients without resetting the realm; final clean imports include it automatically. The persistent development database and Keycloak volumes were never reset for testing.
+- `./scripts/keycloak-lifecycle-test.sh`: PASS in disposable projects using dynamic ports and no `.env`. Confirmed both deletion guards; Keycloak stop/start preserves the database container and SQL sentinel; database reset removes only its SQL sentinel while preserving Keycloak's container and file sentinel; Keycloak reset removes only its sentinel while preserving the database container and SQL sentinel. The disposable project/volumes are removed on exit.
+- `./gradlew --no-daemon oidcSmokeTest`: two tests pass, no skips. Chromium signs in as `alice`, `bob`, `aso-admin`, and `outsider`, exchanges real codes with S256 PKCE, verifies RSA signatures against discovery JWKS, issuer/audience/lifetime/nonce, fixed distinct subjects, userinfo and exact groups. An incorrect verifier returns HTTP 400 `invalid_grant` specifically for PKCE failure and no access token. The dynamic callback listener and disposable container close on success and failure.
+- `./gradlew --no-daemon check bootJar`, `./gradlew --no-daemon integrationTest`, and `./gradlew --no-daemon e2eTest`: PASS. Also forced fresh execution with `./gradlew --no-daemon check bootJar integrationTest e2eTest --rerun-tasks`: 23 tasks executed; backend/API unit checks, two Angular tests, lint/formatting/build/package, isolated pgvector migration/API integration, and executable-jar Chromium checks all pass.
+- Reports: `backend/build/reports/tests/{test,integrationTest,e2eTest,oidcSmokeTest}/`, JUnit XML under `backend/build/test-results/`, packaged UI screenshots/trace/log under `backend/build/e2e/`, and a token-free OIDC success summary (or Keycloak failure log) under `backend/build/oidc/`. These stay untracked. CI explicitly runs the smoke and lifecycle checks and retains diagnostics.
+- Initial smoke attempts failed on an intercepted redirect (connection refused), then exposed the missing `basic` subject scope. Both were corrected and verified with a real dynamic callback and the final scope configuration; no failed check is treated as a skip.
+- Linux execution is designed into the existing self-hosted workflow; local Mac results do not claim an observed Linux CI result. Actual ASO authorization and MCP client compatibility remain unimplemented and unverified until goal 001.
+- Commit and PR: pending final handoff.

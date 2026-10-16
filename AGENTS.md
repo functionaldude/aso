@@ -7,7 +7,7 @@ Read `README.md`, `spec.md`, and the applicable record in `docs/goals/` before m
 
 - Use Java 25 and the checked-in Gradle 9.2.1 wrapper. Gradle provisions Node 24.22.0 (bundled npm 11.19.1); no global Node changes are needed.
 - `./scripts/setup.sh` checks prerequisites and installs the frontend dependencies. `./scripts/dev.sh` starts the local database and both development servers.
-- Goal `000a-local-keycloak` adds the local IdP before goal 001. Until its implementation is recorded complete, Keycloak commands/configuration are planned rather than available. Follow the development/test identity contract in `spec.md` and update the README with commands actually implemented.
+- Goal `000a-local-keycloak` supplies the seeded local IdP before goal 001. Use `./scripts/keycloak-start.sh` and the lifecycle commands in README. ASO authentication remains goal 001 work. Follow the development/test identity contract in `spec.md`.
 - `./gradlew --no-daemon check bootJar` runs backend/frontend unit tests, lint, formatting checks, and packages the application. It needs no Docker, database, credentials, OIDC, or embedding provider. First use downloads dependencies.
 - `./gradlew --no-daemon integrationTest` uses an isolated pgvector Testcontainer. `./gradlew --no-daemon e2eTest` runs Chromium against the actual executable jar and another isolated database. Docker is required; unavailable prerequisites are failures, not successful skips.
 - Format with `./gradlew spotlessApply frontendFormat`. Do not replace meaningful assertions with assertions that only mirror the implementation.

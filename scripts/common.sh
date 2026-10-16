@@ -30,3 +30,18 @@ load_environment() {
     set +a
   fi
 }
+
+# Resolve the exact volume from the selected Compose project, never a guessed global name.
+# Removing only this service leaves the other service/container/volume untouched.
+reset_service() {
+  local service="$1" container volume
+  docker compose create "$service"
+  container="$(docker compose ps --all --quiet "$service")"
+  volume="$(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' "$container")"
+  if [[ -z "$volume" || "$volume" == *$'\n'* ]]; then
+    echo "Expected exactly one dedicated volume for $service; refusing reset." >&2
+    exit 1
+  fi
+  docker compose rm --stop --force "$service"
+  docker volume rm "$volume"
+}

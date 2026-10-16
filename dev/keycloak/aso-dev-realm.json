@@ -1,0 +1,189 @@
+{
+  "realm": "aso-dev",
+  "displayName": "ASO \u2014 LOCAL DEVELOPMENT ONLY",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": false,
+  "groups": [
+    {
+      "name": "aso-members"
+    },
+    {
+      "name": "aso-admins"
+    }
+  ],
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.invalid",
+      "emailVerified": true,
+      "firstName": "alice",
+      "lastName": "Fixture",
+      "requiredActions": [],
+      "groups": [
+        "/aso-members"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice-local-only",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@example.invalid",
+      "emailVerified": true,
+      "firstName": "bob",
+      "lastName": "Fixture",
+      "requiredActions": [],
+      "groups": [
+        "/aso-members"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bob-local-only",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "username": "aso-admin",
+      "enabled": true,
+      "email": "aso-admin@example.invalid",
+      "emailVerified": true,
+      "firstName": "aso-admin",
+      "lastName": "Fixture",
+      "requiredActions": [],
+      "groups": [
+        "/aso-members",
+        "/aso-admins"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "aso-admin-local-only",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "username": "outsider",
+      "enabled": true,
+      "email": "outsider@example.invalid",
+      "emailVerified": true,
+      "firstName": "outsider",
+      "lastName": "Fixture",
+      "requiredActions": [],
+      "groups": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "outsider-local-only",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "aso-web",
+      "name": "aso-web (LOCAL DEVELOPMENT ONLY)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:8080/login/oauth2/code/oidc"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "profile",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "secret": "aso-web-secret-local-only"
+    },
+    {
+      "clientId": "aso-dev-probe",
+      "name": "aso-dev-probe (LOCAL DEVELOPMENT ONLY)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "${ASO_PROBE_CALLBACK:http://127.0.0.1:8765/oidc/callback}"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "profile",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "probe audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "aso-dev-probe",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

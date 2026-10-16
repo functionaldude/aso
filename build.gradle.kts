@@ -74,6 +74,10 @@ tasks.register("integrationTest") {
     group = "verification"
     dependsOn(":backend:integrationTest")
 }
+tasks.register("oidcSmokeTest") {
+    group = "verification"
+    dependsOn(":backend:oidcSmokeTest")
+}
 tasks.register("e2eTest") {
     group = "verification"
     dependsOn(":backend:e2eTest")
