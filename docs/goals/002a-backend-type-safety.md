@@ -1,6 +1,6 @@
 # 002a — Backend type safety
 
-Status: in progress
+Status: complete (PR open)
 
 ## Dependencies and prerequisites
 
@@ -38,7 +38,7 @@ Run repeated `./gradlew --no-daemon generateJooq` with file hashes, `./gradlew -
 
 ## Progress and blockers
 
-Implementation and required local verification are complete on `codex/002a-backend-type-safety`; pull-request publication remains. Goal 003 remains planned.
+Implementation and required local verification are complete on `codex/002a-backend-type-safety`, published in the open pull request below. No implementation criterion is blocked. Goal 003 remains planned.
 
 ## Completion evidence
 
@@ -50,7 +50,7 @@ Verified on 2026-10-16 on the owner's ARM64 Mac with Java 25.0.4.1, Gradle 9.2.1
 | 2 — Typed contracts | Q&A creation and technical context use data classes shared by both adapters; each MCP tool decodes known arguments before service calls. Fixed MCP envelopes/results/tool descriptions and CSRF output are typed. `ContentPolicy` accepts typed strings/lists. Remaining JSON trees are documented MCP boundary data; maps describe dynamic JSON Schema properties or provider claim sets. |
 | 3 — Compatibility | HTTP integration tests reject unknown/authorship fields, nested extras, missing required values, null/wrong-type tags, scalar coercion, fractional/null/overflowing page limits, and invalid answer inputs. REST and MCP domain errors agree. Golden pre-cleanup question/answer serialization produces the exact stored hashes; normalized cross-interface retries return original results. Existing concurrent creates, pagination, identity security, and Markdown checks remain intact. MCP tests cover integer/fractional/string IDs, initialize/ping/discovery, notifications, protocol errors, and preserved malformed-JSON transport handling. |
 | 4 — Permanent guidance | `AGENTS.md` now requires Kotlin generation, immutable stable dependency properties, per-handler authentication, typed payloads, and narrow documented dynamic-JSON exceptions. README and Q&A contracts describe the implementation. |
-| 5 — Validation/publication | All local checks below passed. Pull-request publication is pending. |
+| 5 — Validation/publication | All local checks below passed; [PR #4](https://github.com/functionaldude/aso/pull/4) is open against `master`. |
 
 Final verification command: `./gradlew --no-daemon check bootJar integrationTest e2eTest` — **passed**, exercising all four requested tasks against the final source state:
 
@@ -63,3 +63,5 @@ Final verification command: `./gradlew --no-daemon check bootJar integrationTest
 Initial verification exposed an oversized-integer exception outside Jackson's databinding subtype and Boot's higher-priority default Problem Details handler. The implementation catches the appropriate Jackson base exception and orders Q&A advice before Boot's handler. Advice is scoped to `QuestionController`, preserving MCP transport-level parsing behavior; final tests cover both boundaries. Intermediate failures are not counted as passing verification.
 
 Reports remain untracked under `backend/build/reports/tests`, `backend/build/test-results`, and `backend/build/e2e`. Tests used disposable fixtures and did not mutate the development database or Keycloak state. No schema migration, product-data reset, deployment, merge, or goal 003 implementation was performed. Actual Codex/MCP Jam client login was not rerun for this cleanup; no additional client-compatibility claim is made beyond goal 002's existing evidence. Local results do not imply a Linux CI result.
+
+Implementation commit: `cc4a47179332719458a08b36d22d348b77a22aa2`. Pull request: [#4 — Generate Kotlin jOOQ bindings and use typed backend payloads](https://github.com/functionaldude/aso/pull/4), targeting `master`, open and unmerged. This publication-evidence update follows on the same branch.
