@@ -1,6 +1,6 @@
 # 002 — Authenticated questions and answers
 
-Status: in progress (implementation verified; PR publication pending)
+Status: complete (owner-amended client verification scope; PR open)
 
 ## Dependencies and prerequisites
 
@@ -41,7 +41,7 @@ Include question/answer/tag migrations and jOOQ access, shared services, REST an
 
 ## Progress and blockers
 
-Implementation and acceptance verification are complete locally. Publication of the verified branch and pull request is pending. No goal 003 feature has been implemented. The existing OAuth limitations and explicitly unverified clients remain listed below; no implementation criterion is blocked.
+Implementation and acceptance verification are complete locally. The verified branch is published in the open, unmerged pull request below. No goal 003 feature has been implemented. The existing OAuth limitations and explicitly unverified clients remain listed below; no implementation criterion is blocked.
 
 ## Completion evidence
 
@@ -87,4 +87,4 @@ Codex invocations were narrow ephemeral read-only client exercises instructed to
 
 The goal 001 OAuth limits remain: local HTTP loopback does not pass MCP Jam’s strict HTTPS-resource metadata conformance check, and the Keycloak pre-registered audience mapper is not full arbitrary-resource/RFC 8707 conformance. No new conformance pass is claimed. Claude Code/Cursor and non-Keycloak IdPs remain unverified per the owner’s scope amendment. None is silently replaced by an automated protocol fixture.
 
-Implementation commit and PR: pending publication on this branch. Do not merge; stop before goal 003.
+Implementation commit: `740b8a78e71f2c521d013e69919a9aa21112447c`. Pull request: [#3 — Add authenticated browser and MCP questions and answers (goal 002)](https://github.com/functionaldude/aso/pull/3), targeting `master`, open and unmerged. This documentation-only publication update follows on the same branch. No merge, deployment or goal 003 implementation was performed. Local results do not claim a Linux CI result. Regenerating jOOQ again after the implementation commit produced no diff against the committed bindings.
