@@ -1,6 +1,6 @@
 # 004 — Upvotes, occurrences, and recurring problems
 
-Status: in progress
+Status: complete (PR open, unmerged)
 
 ## Dependencies and prerequisites
 
@@ -43,7 +43,7 @@ Include shared vote/occurrence services, schema/constraints, REST/MCP operations
 
 ## Progress and blockers
 
-Implementation is in progress on `codex/004-votes-occurrences-trends`, from updated master `e46b054` containing merged goal 003. No goal 005 work is included. Verification and publication evidence follow below.
+Implementation, local acceptance verification, and Linux PR CI are complete on `codex/004-votes-occurrences-trends`, from updated master `e46b054` containing merged goal 003. PR #7 is open and unmerged. No blockers remain and no goal 005 work is included.
 
 ## Completion evidence
 
@@ -73,4 +73,6 @@ All automated data was disposable PostgreSQL/Keycloak state. No development data
 
 The existing goal 002 Codex CLI 0.162.1/MCP Jam CLI 5.16.1 verification is retained. Goal 004 is verified through real-Keycloak HTTP adapters, two isolated MCP registrations, and the packaged browser, without claiming another actual-client login/conformance run. Claude Code/Cursor remain explicitly unverified. Local HTTP/Keycloak resource-indicator and human-presence limitations remain documented; another IdP still needs its own verification.
 
-Publication and PR CI evidence: pending.
+Implementation commit: `487224b31970c5b2cee504e7dea6e143831c647f`. Pull request: [#7 — Add upvotes, retry-safe encounters and recurring views (goal 004)](https://github.com/functionaldude/aso/pull/7), targeting `master`, open and unmerged. Current checks: [PR #7 checks](https://github.com/functionaldude/aso/pull/7/checks).
+
+[Implementation CI run 38979523832](https://github.com/functionaldude/aso/actions/runs/38979523832) passed every step for `487224b31970c5b2cee504e7dea6e143831c647f`: unit/lint/format/package, offline regeneration drift, Linux Chromium/OS dependencies, fresh OIDC smoke, independent disposable reset checks, integration, packaged browser, and diagnostic upload. Downloaded and inspected the retained JUnit reports: 15 backend unit tests, 2 OIDC smoke tests, 16 integration tests, and 1 packaged-browser suite, all with zero failures/errors/skips. The frontend gate also passed its 4 tests. This publication-evidence-only follow-up runs the same CI gate again; current final-commit results are linked on PR #7 checks above.
