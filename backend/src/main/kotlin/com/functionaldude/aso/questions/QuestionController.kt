@@ -56,7 +56,7 @@ class QuestionController(
     ) = questions.createAnswer(authentication, id, input)
 }
 
-@RestControllerAdvice(assignableTypes = [QuestionController::class])
+@RestControllerAdvice(assignableTypes = [QuestionController::class, LifecycleController::class])
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class ContentErrors {
     @ExceptionHandler(HttpMessageNotReadableException::class)

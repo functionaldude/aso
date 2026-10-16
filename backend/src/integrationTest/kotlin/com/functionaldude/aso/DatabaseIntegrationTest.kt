@@ -32,7 +32,7 @@ class DatabaseIntegrationTest {
     @Test
     fun `startup applies Flyway migrations and vector operations work`() {
         assertEquals(
-            3,
+            4,
             jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Int::class.java),
         )
         assertTrue(jdbc.queryForObject("SELECT extversion FROM pg_extension WHERE extname = 'vector'", String::class.java)!!.isNotBlank())
@@ -66,10 +66,62 @@ class DatabaseIntegrationTest {
         )
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM upgrade_check.question", Int::class.java))
         assertEquals(
-            3,
+            4,
             jdbc.queryForObject(
                 "SELECT count(*) FROM upgrade_check.flyway_schema_history WHERE success AND version IS NOT NULL",
                 Int::class.java,
+            ),
+        )
+    }
+
+    @Test
+    fun `V4 preserves populated V3 content and retry reservations`() {
+        fun migration() =
+            Flyway
+                .configure()
+                .dataSource(database.jdbcUrl, database.username, database.password)
+                .schemas("lifecycle_upgrade")
+                .defaultSchema("lifecycle_upgrade")
+        migration().target("3").load().migrate()
+        val actor = java.util.UUID.randomUUID()
+        val question = java.util.UUID.randomUUID()
+        val answer = java.util.UUID.randomUUID()
+        val request = java.util.UUID.randomUUID()
+        jdbc.update(
+            "INSERT INTO lifecycle_upgrade.app_user(id,issuer,subject,display_name) VALUES (?, 'https://fixture.invalid', 'owner', 'Owner')",
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO lifecycle_upgrade.question(id,title,body,author_id,channel) VALUES (?, 'Retained', 'Problem', ?, 'mcp')",
+            question,
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO lifecycle_upgrade.answer(id,question_id,body,author_id,channel) VALUES (?, ?, 'Fix', ?, 'web')",
+            answer,
+            question,
+            actor,
+        )
+        jdbc.update(
+            "INSERT INTO lifecycle_upgrade.content_request VALUES (?, 'create_question', ?, ?, ?)",
+            actor,
+            request,
+            "a".repeat(64),
+            question,
+        )
+        migration().load().migrate()
+        assertEquals(
+            "Retained",
+            jdbc.queryForObject("SELECT title FROM lifecycle_upgrade.question WHERE id = ?", String::class.java, question),
+        )
+        assertEquals(1, jdbc.queryForObject("SELECT version FROM lifecycle_upgrade.question WHERE id = ?", Int::class.java, question))
+        assertEquals(false, jdbc.queryForObject("SELECT hidden FROM lifecycle_upgrade.answer WHERE id = ?", Boolean::class.java, answer))
+        assertEquals(
+            question,
+            jdbc.queryForObject(
+                "SELECT result_id FROM lifecycle_upgrade.content_request WHERE request_id = ?",
+                java.util.UUID::class.java,
+                request,
             ),
         )
     }

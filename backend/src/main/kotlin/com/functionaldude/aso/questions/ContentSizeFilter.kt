@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream
 @Component
 class ContentSizeFilter : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest) =
-        request.method != "POST" || !(request.requestURI == "/mcp" || request.requestURI.startsWith("/api/v1/questions"))
+        request.method != "POST" || !(request.requestURI == "/mcp" || request.requestURI.startsWith("/api/v1/"))
 
     override fun doFilterInternal(
         request: HttpServletRequest,

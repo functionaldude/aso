@@ -82,6 +82,7 @@ class PackagedApplicationE2ETest {
                                 assertEquals(3, persisted.toSet().size)
                                 loginFailure(browser, baseUrl)
                                 questions(browser, baseUrl, issuer, login, artifacts)
+                                lifecycle(browser, baseUrl, artifacts)
                             }
                         }
                     } finally {
@@ -414,6 +415,460 @@ class PackagedApplicationE2ETest {
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Previous page")).click()
             assertThat(page.locator(".question-row")).hasCount(20)
             assertTrue(errors.isEmpty(), errors.joinToString("\n"))
+        }
+    }
+
+    private fun lifecycle(
+        browser: Browser,
+        base: String,
+        artifacts: Path,
+    ) {
+        fun signedIn(username: String): com.microsoft.playwright.BrowserContext {
+            val context = browser.newContext(Browser.NewContextOptions().setViewportSize(1440, 1100))
+            val page = context.newPage()
+            page.navigate("$base/oauth2/authorization/oidc")
+            page.locator("#username").fill(username)
+            page.locator("#password").fill("$username-local-only")
+            page.locator("#kc-login").click()
+            page.waitForURL("$base/")
+            return context
+        }
+        signedIn("alice").use { alice ->
+            signedIn("bob").use { bob ->
+                signedIn("aso-admin").use { admin ->
+                    val owner = alice.pages().first()
+                    val member = bob.pages().first()
+                    val moderator = admin.pages().first()
+                    val errors = mutableListOf<String>()
+                    listOf(owner, member, moderator).forEach { page -> page.onPageError { errors.add(it) } }
+                    owner.navigate("$base/questions/new")
+                    owner.getByLabel("Title", Page.GetByLabelOptions().setExact(true)).fill("Lifecycle browser fixture")
+                    owner.getByLabel("Problem description (Markdown)").fill("A focused reproducible problem.")
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Publish question"),
+                        ).click()
+                    owner.waitForURL("$base/questions/*")
+                    assertThat(
+                        owner
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.HEADING,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Lifecycle browser fixture"),
+                            ),
+                    ).isVisible()
+                    val id = owner.url().substringAfterLast('/')
+                    val q = json.readTree(alice.request().get("$base/api/v1/questions/$id").text())["question"]
+                    // A real concurrent update while the first editor retains its unsaved draft.
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Edit question")
+                                .setExact(true),
+                        ).click()
+                    owner.getByLabel("Edit body (Markdown)").fill("My preserved browser draft")
+                    val csrf = json.readTree(alice.request().get("$base/api/v1/csrf").text())["token"].asString()
+                    assertEquals(
+                        200,
+                        alice
+                            .request()
+                            .post(
+                                "$base/api/v1/questions/$id/edit",
+                                RequestOptions
+                                    .create()
+                                    .setHeader("X-CSRF-TOKEN", csrf)
+                                    .setData(
+                                        mapOf(
+                                            "expectedVersion" to q["version"].asInt(),
+                                            "title" to "Lifecycle browser fixture",
+                                            "body" to "Concurrent saved version",
+                                        ),
+                                    ),
+                            ).status(),
+                    )
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Save question")
+                                .setExact(true),
+                        ).click()
+                    assertThat(owner.locator("body").getByRole(AriaRole.ALERT)).containsText("Content changed")
+                    assertThat(owner.getByLabel("Edit body (Markdown)")).hasValue("My preserved browser draft")
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Load latest content"),
+                        ).click()
+                    assertThat(owner.locator(".latest-content")).containsText("Concurrent saved version")
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Use latest version with my draft"),
+                        ).click()
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Save question")
+                                .setExact(true),
+                        ).click()
+                    assertThat(owner.locator("article").first()).containsText("My preserved browser draft")
+                    val ownerComments = owner.locator("app-content-comments").first()
+                    ownerComments.getByLabel("Add context (Markdown)").fill("Question **context** from owner")
+                    ownerComments
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Publish context"),
+                        ).click()
+                    assertThat(ownerComments.locator(".comment")).containsText("Question context from owner")
+                    ownerComments
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Edit comment"),
+                        ).click()
+                    ownerComments.getByLabel("Edit body (Markdown)").fill("Corrected question context")
+                    ownerComments
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Save comment"),
+                        ).click()
+                    assertThat(ownerComments.locator(".comment")).containsText("Corrected question context")
+                    member.navigate("$base/questions/$id")
+                    assertThat(
+                        member
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Edit question")
+                                    .setExact(true),
+                            ),
+                    ).hasCount(0)
+                    assertThat(
+                        member
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Accept answer")
+                                    .setExact(true),
+                            ),
+                    ).hasCount(0)
+                    member.getByLabel("Answer (Markdown)").fill("First proposed fix")
+                    member
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Publish answer"),
+                        ).click()
+                    assertThat(member.locator(".answer")).containsText("First proposed fix")
+                    val firstAnswer = member.locator(".answer").first()
+                    firstAnswer
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Edit answer")
+                                .setExact(true),
+                        ).click()
+                    firstAnswer.getByLabel("Edit body (Markdown)").fill("Edited proposed fix")
+                    firstAnswer
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Save answer"),
+                        ).click()
+                    assertThat(firstAnswer).containsText("Edited proposed fix")
+                    firstAnswer.getByLabel("Add context (Markdown)").fill("Answer context from Bob")
+                    firstAnswer
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Publish context"),
+                        ).click()
+                    assertThat(firstAnswer.locator(".comment")).containsText("Answer context from Bob")
+                    member.getByLabel("Answer (Markdown)").fill("Second proposed fix")
+                    member
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Publish answer"),
+                        ).click()
+                    assertThat(member.locator(".answer")).hasCount(2)
+                    owner.reload()
+                    owner
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Accept answer")
+                                .setExact(true),
+                        ).click()
+                    assertThat(owner.locator(".eyebrow")).containsText("Resolved question")
+                    assertThat(owner.locator(".answer").first()).containsText("Accepted answer")
+                    owner
+                        .locator(".answer")
+                        .nth(1)
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Accept answer")
+                                .setExact(true),
+                        ).click()
+                    assertThat(owner.locator(".answer").nth(1)).containsText("Accepted answer")
+                    owner
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Reopen question"),
+                        ).click()
+                    assertThat(owner.locator(".eyebrow")).containsText("Open question")
+                    owner
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Accept answer")
+                                .setExact(true),
+                        ).click()
+                    assertThat(owner.locator(".eyebrow")).containsText("Resolved question")
+                    moderator.navigate("$base/moderation")
+                    moderator
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.LINK,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Lifecycle browser fixture"),
+                        ).click()
+                    moderator.waitForURL("$base/moderation/$id")
+                    moderator.reload()
+                    assertThat(
+                        moderator
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.HEADING,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Lifecycle browser fixture"),
+                            ),
+                    ).isVisible()
+                    moderator
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Hide answer")
+                                .setExact(true),
+                        ).click()
+                    assertThat(moderator.locator(".eyebrow")).containsText("Open question")
+                    member.reload()
+                    assertThat(member.locator(".answer")).hasCount(1)
+                    moderator
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Restore answer")
+                                .setExact(true),
+                        ).click()
+                    assertThat(
+                        moderator.locator(".answer").first().getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Hide answer")
+                                .setExact(true),
+                        ),
+                    ).isVisible()
+                    assertThat(moderator.locator(".accepted")).hasCount(0)
+                    moderator
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Edit answer")
+                                .setExact(true),
+                        ).click()
+                    moderator
+                        .locator(".answer")
+                        .first()
+                        .getByLabel("Edit body (Markdown)")
+                        .fill("Admin corrected fix")
+                    moderator
+                        .locator(".answer")
+                        .first()
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Save answer"),
+                        ).click()
+                    assertThat(moderator.locator(".answer").first()).containsText("Admin corrected fix")
+                    moderator
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Hide comment")
+                                .setExact(true),
+                        ).first()
+                        .click()
+                    assertThat(
+                        moderator
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Restore comment")
+                                    .setExact(true),
+                            ),
+                    ).hasCount(1)
+                    owner.reload()
+                    assertThat(owner.locator("app-content-comments").first().locator(".comment")).hasCount(0)
+                    moderator
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Restore comment")
+                                .setExact(true),
+                        ).click()
+                    assertThat(
+                        moderator
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Restore comment")
+                                    .setExact(true),
+                            ),
+                    ).hasCount(0)
+                    moderator
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Hide question")
+                                .setExact(true),
+                        ).click()
+                    assertThat(
+                        moderator
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Restore question")
+                                    .setExact(true),
+                            ),
+                    ).isVisible()
+                    owner.reload()
+                    assertThat(owner.locator("body").getByRole(AriaRole.ALERT)).containsText("Question not found")
+                    moderator.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("moderation-desktop.png")).setFullPage(true))
+                    moderator
+                        .locator(
+                            "body",
+                        ).getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Restore question")
+                                .setExact(true),
+                        ).click()
+                    assertThat(
+                        moderator
+                            .locator(
+                                "body",
+                            ).getByRole(
+                                AriaRole.BUTTON,
+                                com.microsoft.playwright.Locator
+                                    .GetByRoleOptions()
+                                    .setName("Hide question")
+                                    .setExact(true),
+                            ),
+                    ).isVisible()
+                    owner.reload()
+                    assertThat(owner.locator(".eyebrow")).containsText("Open question")
+                    assertThat(owner.locator(".answer")).hasCount(2)
+                    owner.setViewportSize(390, 844)
+                    assertTrue(owner.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
+                    owner.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("lifecycle-mobile.png")).setFullPage(true))
+                    assertTrue(errors.isEmpty(), errors.joinToString("\n"))
+                }
+            }
         }
     }
 

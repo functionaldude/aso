@@ -57,7 +57,8 @@ import { Question, QuestionsApi, contentError } from './questions-api';
         @for (question of items(); track question.id) {
           <article class="question-row">
             <p class="metadata">
-              Open · {{ question.author.displayName }} · {{ question.createdAt | date: 'medium' }} ·
+              {{ question.state === 'resolved' ? 'Resolved' : 'Open' }} ·
+              {{ question.author.displayName }} · {{ question.createdAt | date: 'medium' }} ·
               {{ question.channel }}
             </p>
             <h2>

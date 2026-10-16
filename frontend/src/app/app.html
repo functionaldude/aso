@@ -19,6 +19,9 @@
     <a mat-button routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page"
       >About</a
     >
+    @if (session.identity()?.admin) {
+      <a mat-button routerLink="/moderation">Moderation</a>
+    }
   </nav>
 </header>
 <section class="identity-panel" aria-label="Your account">

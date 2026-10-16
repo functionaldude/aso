@@ -22,8 +22,15 @@ export interface Question {
   channel: string;
   createdAt: string;
   state: string;
+  acceptedAnswerId: string | null;
+  version: number;
+  updatedAt: string;
+  hidden: boolean;
 }
 export interface Answer {
+  version: number;
+  updatedAt: string;
+  hidden: boolean;
   id: string;
   questionId: string;
   body: string;
@@ -34,6 +41,21 @@ export interface Answer {
   channel: string;
   createdAt: string;
 }
+export interface Comment {
+  id: string;
+  questionId: string;
+  answerId: string | null;
+  body: string;
+  bodyHtml: string;
+  author: Author;
+  channel: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  hidden: boolean;
+}
+export type Content = Question | Answer | Comment;
+export type ContentKind = 'question' | 'answer' | 'comment';
 export interface ContentPage<T> {
   items: T[];
   nextCursor: string | null;
@@ -47,7 +69,7 @@ export function contentError(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
     if (error.status === 401 || error.status === 403)
       return 'Your session expired or workspace access is unavailable. Sign in again.';
-    if (error.status === 404) return 'Question not found.';
+    if (error.status === 404) return error.error?.detail ?? 'Content not found.';
     if (error.status === 400 || error.status === 409 || error.status === 413)
       return error.error?.detail ?? 'Check your input and try again.';
   }
@@ -81,12 +103,24 @@ export class QuestionsApi {
     if (cursor) params = params.set('cursor', cursor);
     return firstValueFrom(this.http.get<ContentPage<Question>>('/api/v1/questions', { params }));
   }
-  detail(id: string) {
-    return firstValueFrom(this.http.get<Detail>(`/api/v1/questions/${id}`));
+  detail(id: string, moderation = false) {
+    return this.get<Detail>(`${moderation ? '/admin' : ''}/questions/${id}`);
   }
-  answers(id: string, cursor: string) {
+  answers(id: string, cursor: string, moderation = false) {
     return firstValueFrom(
-      this.http.get<ContentPage<Answer>>(`/api/v1/questions/${id}/answers`, { params: { cursor } }),
+      this.http.get<ContentPage<Answer>>(
+        `/api/v1/${moderation ? 'admin/' : ''}questions/${id}/answers`,
+        { params: { cursor } },
+      ),
+    );
+  }
+  get<T>(path: string, params: Record<string, string> = {}) {
+    return firstValueFrom(this.http.get<T>(`/api/v1${path}`, { params }));
+  }
+  async post<T>(path: string, content: object): Promise<T> {
+    const csrf = await firstValueFrom(this.http.get<{ token: string }>('/api/v1/csrf'));
+    return firstValueFrom(
+      this.http.post<T>(`/api/v1${path}`, content, { headers: { 'X-CSRF-TOKEN': csrf.token } }),
     );
   }
   async create<T>(path: string, content: object): Promise<T> {

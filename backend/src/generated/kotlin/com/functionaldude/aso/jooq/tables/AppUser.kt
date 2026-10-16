@@ -8,9 +8,13 @@ import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.keys.APP_USER_IDENTITY
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_4
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_5
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D14
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_ABC
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_BA
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_FFF
 import com.functionaldude.aso.jooq.tables.Answer.AnswerPath
+import com.functionaldude.aso.jooq.tables.ContentAudit.ContentAuditPath
+import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.ContentRequest.ContentRequestPath
 import com.functionaldude.aso.jooq.tables.Question.QuestionPath
 import com.functionaldude.aso.jooq.tables.records.AppUserRecord
@@ -121,6 +125,18 @@ open class AppUser(
     val contentRequest: ContentRequestPath
         get(): ContentRequestPath = contentRequest()
 
+    private lateinit var _contentComment: ContentCommentPath
+
+    fun contentComment(): ContentCommentPath {
+        if (!this::_contentComment.isInitialized)
+            _contentComment = ContentCommentPath(this, null, CONSTRAINT_51D14.inverseKey)
+
+        return _contentComment;
+    }
+
+    val contentComment: ContentCommentPath
+        get(): ContentCommentPath = contentComment()
+
     private lateinit var _answer: AnswerPath
 
     fun answer(): AnswerPath {
@@ -144,6 +160,18 @@ open class AppUser(
 
     val question: QuestionPath
         get(): QuestionPath = question()
+
+    private lateinit var _contentAudit: ContentAuditPath
+
+    fun contentAudit(): ContentAuditPath {
+        if (!this::_contentAudit.isInitialized)
+            _contentAudit = ContentAuditPath(this, null, CONSTRAINT_FFF.inverseKey)
+
+        return _contentAudit;
+    }
+
+    val contentAudit: ContentAuditPath
+        get(): ContentAuditPath = contentAudit()
     override fun `as`(alias: String): AppUser = AppUser(DSL.name(alias), this)
     override fun `as`(alias: Name): AppUser = AppUser(alias, this)
     override fun `as`(alias: Table<*>): AppUser = AppUser(alias.qualifiedName, this)

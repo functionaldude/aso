@@ -6,12 +6,16 @@ package com.functionaldude.aso.jooq.tables
 
 import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.indexes.QUESTION_RECENT
-import com.functionaldude.aso.jooq.keys.CONSTRAINT_AB
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_B
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_BA
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_F
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_FFFC349
+import com.functionaldude.aso.jooq.keys.QUESTION_ACCEPTED_ANSWER
 import com.functionaldude.aso.jooq.tables.Answer.AnswerPath
 import com.functionaldude.aso.jooq.tables.AppUser.AppUserPath
+import com.functionaldude.aso.jooq.tables.ContentAudit.ContentAuditPath
+import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.QuestionTag.QuestionTagPath
 import com.functionaldude.aso.jooq.tables.Tag.TagPath
 import com.functionaldude.aso.jooq.tables.records.QuestionRecord
@@ -95,6 +99,14 @@ open class Question(
 
     val CREATED_AT: TableField<QuestionRecord, OffsetDateTime?> = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "")
 
+    val VERSION: TableField<QuestionRecord, Int?> = createField(DSL.name("version"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.INTEGER)), this, "")
+
+    val UPDATED_AT: TableField<QuestionRecord, OffsetDateTime?> = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "")
+
+    val HIDDEN: TableField<QuestionRecord, Boolean?> = createField(DSL.name("hidden"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("FALSE"), SQLDataType.BOOLEAN)), this, "")
+
+    val ACCEPTED_ANSWER_ID: TableField<QuestionRecord, UUID?> = createField(DSL.name("accepted_answer_id"), SQLDataType.UUID, this, "")
+
     private constructor(alias: Name, aliased: Table<QuestionRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<QuestionRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
     private constructor(alias: Name, aliased: Table<QuestionRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
@@ -117,22 +129,25 @@ open class Question(
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
     override fun getIndexes(): List<Index> = listOf(QUESTION_RECENT)
     override fun getPrimaryKey(): UniqueKey<QuestionRecord> = CONSTRAINT_B
-    override fun getReferences(): List<ForeignKey<QuestionRecord, *>> = listOf(CONSTRAINT_BA)
+    override fun getReferences(): List<ForeignKey<QuestionRecord, *>> = listOf(CONSTRAINT_BA, QUESTION_ACCEPTED_ANSWER)
 
     fun appUser(): AppUserPath = appUser
     val appUser: AppUserPath by lazy { AppUserPath(this, CONSTRAINT_BA, null) }
 
-    private lateinit var _answer: AnswerPath
+    fun answer(): AnswerPath = answer
+    val answer: AnswerPath by lazy { AnswerPath(this, QUESTION_ACCEPTED_ANSWER, null) }
 
-    fun answer(): AnswerPath {
-        if (!this::_answer.isInitialized)
-            _answer = AnswerPath(this, null, CONSTRAINT_AB.inverseKey)
+    private lateinit var _contentComment: ContentCommentPath
 
-        return _answer;
+    fun contentComment(): ContentCommentPath {
+        if (!this::_contentComment.isInitialized)
+            _contentComment = ContentCommentPath(this, null, CONSTRAINT_51D.inverseKey)
+
+        return _contentComment;
     }
 
-    val answer: AnswerPath
-        get(): AnswerPath = answer()
+    val contentComment: ContentCommentPath
+        get(): ContentCommentPath = contentComment()
 
     private lateinit var _questionTag: QuestionTagPath
 
@@ -146,11 +161,24 @@ open class Question(
     val questionTag: QuestionTagPath
         get(): QuestionTagPath = questionTag()
 
+    private lateinit var _contentAudit: ContentAuditPath
+
+    fun contentAudit(): ContentAuditPath {
+        if (!this::_contentAudit.isInitialized)
+            _contentAudit = ContentAuditPath(this, null, CONSTRAINT_FFFC349.inverseKey)
+
+        return _contentAudit;
+    }
+
+    val contentAudit: ContentAuditPath
+        get(): ContentAuditPath = contentAudit()
+
     val tag: TagPath
         get(): TagPath = questionTag().tag()
     override fun getChecks(): List<Check<QuestionRecord>> = listOf(
         Internal.createCheck(this, DSL.name("CONSTRAINT_BA8"), "\"channel\" IN('web', 'mcp')", true),
-        Internal.createCheck(this, DSL.name("CONSTRAINT_BA82"), "CHAR_LENGTH(\"body\") BETWEEN 1 AND 20000", true)
+        Internal.createCheck(this, DSL.name("CONSTRAINT_BA82"), "CHAR_LENGTH(\"body\") BETWEEN 1 AND 20000", true),
+        Internal.createCheck(this, DSL.name("CONSTRAINT_BA823"), "\"version\" > 0", true)
     )
     override fun `as`(alias: String): Question = Question(DSL.name(alias), this)
     override fun `as`(alias: Name): Question = Question(alias, this)

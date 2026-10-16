@@ -6,6 +6,8 @@ package com.functionaldude.aso.jooq
 
 import com.functionaldude.aso.jooq.tables.Answer
 import com.functionaldude.aso.jooq.tables.AppUser
+import com.functionaldude.aso.jooq.tables.ContentAudit
+import com.functionaldude.aso.jooq.tables.ContentComment
 import com.functionaldude.aso.jooq.tables.ContentRequest
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
@@ -30,6 +32,10 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
 
     val APP_USER: AppUser get() = AppUser.APP_USER
 
+    val CONTENT_AUDIT: ContentAudit get() = ContentAudit.CONTENT_AUDIT
+
+    val CONTENT_COMMENT: ContentComment get() = ContentComment.CONTENT_COMMENT
+
     val CONTENT_REQUEST: ContentRequest get() = ContentRequest.CONTENT_REQUEST
 
     val QUESTION: Question get() = Question.QUESTION
@@ -43,6 +49,8 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
     override fun getTables(): List<Table<*>> = listOf(
         Answer.ANSWER,
         AppUser.APP_USER,
+        ContentAudit.CONTENT_AUDIT,
+        ContentComment.CONTENT_COMMENT,
         ContentRequest.CONTENT_REQUEST,
         Question.QUESTION,
         QuestionTag.QUESTION_TAG,

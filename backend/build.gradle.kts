@@ -164,7 +164,7 @@ tasks.register<Test>("oidcSmokeTest") {
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }
 
-// Parse the identity and Q&A Flyway DDL offline; never inspect a developer database.
+// Parse the deliberately selected identity, Q&A and lifecycle DDL offline; never inspect a developer database.
 val jooqCodegen by configurations.creating
 configurations[jooqCodegen.name].extendsFrom(configurations.implementation.get())
 dependencies {
@@ -173,7 +173,7 @@ dependencies {
 }
 tasks.register<JavaExec>("generateJooq") {
     group = "build"
-    description = "Regenerate checked-in jOOQ identity and Q&A sources from Flyway DDL without a database."
+    description = "Regenerate checked-in jOOQ identity, Q&A and lifecycle sources from Flyway DDL without a database."
     classpath = jooqCodegen
     mainClass = "org.jooq.codegen.GenerationTool"
     workingDir = projectDir

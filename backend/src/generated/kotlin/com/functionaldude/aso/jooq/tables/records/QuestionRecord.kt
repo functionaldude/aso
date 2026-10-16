@@ -56,13 +56,29 @@ open class QuestionRecord() : UpdatableRecordImpl<QuestionRecord>(Question.QUEST
         set(value): Unit = set(9, value)
         get(): OffsetDateTime? = get(9) as OffsetDateTime?
 
+    open var version: Int?
+        set(value): Unit = set(10, value)
+        get(): Int? = get(10) as Int?
+
+    open var updatedAt: OffsetDateTime?
+        set(value): Unit = set(11, value)
+        get(): OffsetDateTime? = get(11) as OffsetDateTime?
+
+    open var hidden: Boolean?
+        set(value): Unit = set(12, value)
+        get(): Boolean? = get(12) as Boolean?
+
+    open var acceptedAnswerId: UUID?
+        set(value): Unit = set(13, value)
+        get(): UUID? = get(13) as UUID?
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
 
     override fun key(): Record1<UUID?> = super.key() as Record1<UUID?>
 
-    constructor(id: UUID? = null, title: String? = null, body: String? = null, errorText: String? = null, dependencies: String? = null, versions: String? = null, repository: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null): this() {
+    constructor(id: UUID? = null, title: String? = null, body: String? = null, errorText: String? = null, dependencies: String? = null, versions: String? = null, repository: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null, version: Int? = null, updatedAt: OffsetDateTime? = null, hidden: Boolean? = null, acceptedAnswerId: UUID? = null): this() {
         this.id = id
         this.title = title
         this.body = body
@@ -73,6 +89,10 @@ open class QuestionRecord() : UpdatableRecordImpl<QuestionRecord>(Question.QUEST
         this.authorId = authorId
         this.channel = channel
         this.createdAt = createdAt
+        this.version = version
+        this.updatedAt = updatedAt
+        this.hidden = hidden
+        this.acceptedAnswerId = acceptedAnswerId
         resetTouchedOnNotNull()
     }
 }
