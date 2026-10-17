@@ -15,7 +15,7 @@ The product requirements live in [the spec](../../spec.md). These records descri
 | [005 — Local hybrid search](005-local-hybrid-search.md)                     | Exact, lexical, and semantic retrieval using configurable LM Studio embeddings    | 003; endpoint/model configuration and evaluation corpus | Complete  |
 | [006 — Agent collaboration and setup](006-agent-collaboration.md)           | Actual Codex/MCP Jam workflows, explicit simulations, and in-app setup/copy guide | 004, 005                                                | Complete  |
 | [007 — Laptop MVP release](007-mvp-release-readiness.md)                    | Tested local release, setup/configuration docs, and delivery evidence             | 006                                                     | Complete  |
-| [008 — Terminal-inspired UI](008-terminal-ui-redesign.md) | Complete dark workbench redesign with isolated visual review and regression evidence | 007 | In progress |
+| [008 — Terminal-inspired UI](008-terminal-ui-redesign.md) | Complete dark workbench redesign with isolated visual review and regression evidence | 007 | Complete |
 
 *Goals 001 and 002 use Codex and MCP Jam per the owner's 2026-10-16 amendment. The 2026-10-17 amendment extends this to goal 006 and laptop MVP delivery: actual Codex/MCP Jam CLI plus explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified and is not a completion gate for this amended MVP. Goal 006 also adds the in-app setup guide and recommended copyable `AGENTS.md` paragraph. Historical evidence remains in merged PRs #2 and #3.
 

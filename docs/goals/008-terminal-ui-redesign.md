@@ -1,6 +1,6 @@
 # 008 — Terminal-inspired UI redesign
 
-Status: locally verified — commit/push and PR handoff in progress
+Status: Complete — visually approved, locally and CI verified; PR #11 open for review
 
 ## Dependencies and prerequisites
 
@@ -64,10 +64,10 @@ Sanitized, real packaged-app fixture captures are retained locally under ignored
 - `before/`: unchanged frontend with the same corpus, desktop/mobile list/detail and accepted-answer captures.
 - `review/`: owner-approved pilot, `questions-{desktop,mobile}.png`, `question-{desktop,mobile}.png`, accepted answers and full-page variants.
 - `after/`: final list/detail/Home/About/setup/creation/moderation desktop/mobile captures; drawer, account/select overlays, long code, empty/loading/missing/unavailable/denied/account recovery, conflicts, rate limits, signed-out state and 200%/400% equivalent reflow.
-- `after/pilot-checks.txt` and `after/application-checks.txt`: compact successful browser evidence; HTML/JUnit reports are in `backend/build/reports/tests/` and `backend/build/test-results/`.
+- `after/pilot-checks.txt` and `after/application-checks.txt`: compact successful browser evidence; `after/{check-bootJar,integrationTest,e2eTest}.log` retain actual local command output; HTML/JUnit reports are in `backend/build/reports/tests/` and `backend/build/test-results/`.
 
 Desktop is 1440×1000; mobile is 390×844 or a 1000px-tall full-page capture. Screenshots were visually inspected after the owner checkpoint, including corrected mobile navigation, aligned overlays, long identifiers/code, validation/conflict notices and accepted-answer hierarchy. Existing CI diagnostic upload includes the generated screenshots/reports; screenshots are not committed or published to an external image host.
 
 ## Completion and handoff
 
-Branch `codex/goal-008-terminal-ui` is based on completed goal 007 master `d8e37f8`. Commit, push, PR and available CI status are recorded at handoff. No owner data, `.env`, Keycloak state, embedding settings or service configuration was changed. No merge, deployment or image publication occurred.
+Branch `codex/goal-008-terminal-ui` is based on completed goal 007 master `d8e37f8`. Implementation commit `3abf2a2d2cad1a0f2af395c17416e05f9b3cdc56` is pushed and [PR #11](https://github.com/functionaldude/aso/pull/11) is open against master. The self-hosted [CI run 39040789740](https://github.com/functionaldude/aso/actions/runs/39040789740) passed on that implementation commit, including check/packaging, reproducible jOOQ generation, Chromium dependencies, OIDC smoke tests, service reset isolation, integration tests, packaged browser tests and diagnostics upload. [Verification reports and final screenshots](https://github.com/functionaldude/aso/actions/runs/39040789740/artifacts/12104352971) are available in its `verification-reports` artifact. No owner data, `.env`, Keycloak state, embedding settings or service configuration was changed. No merge, deployment or image publication occurred. The post-CI completion commit changes only goal status, PR links and verification documentation; current follow-up checks are visible on [PR #11](https://github.com/functionaldude/aso/pull/11/checks).
