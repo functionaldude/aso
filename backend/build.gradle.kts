@@ -74,6 +74,7 @@ tasks.withType<Test>().configureEach { useJUnitPlatform() }
 tasks.processResources {
     dependsOn(rootProject.tasks.named("frontendBuild"))
     from(rootProject.layout.projectDirectory.dir("frontend/dist/aso/browser")) { into("static") }
+    from(rootProject.file("docs/agent-setup.md")) { into("agent-setup") }
     filesMatching("application.yaml") {
         filter<ReplaceTokens>("tokens" to mapOf("projectVersion" to project.version.toString()))
     }
@@ -115,6 +116,7 @@ tasks.register<Test>("e2eTest") {
     testClassesDirs = e2eTest.output.classesDirs
     classpath = e2eTest.runtimeClasspath
     systemProperty("aso.test.database-image", databaseImage)
+    systemProperty("aso.test.agent-guide", rootProject.file("docs/agent-setup.md").absolutePath)
     systemProperty(
         "aso.test.jar",
         bootJar

@@ -50,7 +50,7 @@ docker compose up -d --wait database keycloak
 SPRING_PROFILES_ACTIVE=development java -jar backend/build/libs/aso.jar
 ```
 
-Open http://127.0.0.1:8080. Direct navigation and refresh work for `/about`, `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}`. `/api/v1/info` returns application name/version; `/actuator/health` returns minimal health. Protected APIs return 401 without a browser session. Authenticated unknown API routes return JSON problem responses rather than the frontend.
+Open http://127.0.0.1:8080. Direct navigation and refresh work for `/about`, `/agent-setup`, `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}`. `/api/v1/info` returns application name/version; `/actuator/health` returns minimal health. Protected APIs return 401 without a browser session. Authenticated unknown API routes return JSON problem responses rather than the frontend.
 
 Build one local OCI application image with `./gradlew bootBuildImage` (Docker required). No image registry publication or deployment runs automatically. Running it needs explicit reachable database/IdP settings and the public callback URL; the host JVM commands above are the verified laptop topology. An issuer containing `127.0.0.1` addresses the container itself from inside a container, so do not copy the host-JVM development profile into that topology unchanged.
 
@@ -95,12 +95,12 @@ The provider bootstrap account is `idp-admin` / `idp-admin-local-only`. Override
 
 The checked-in [realm fixture](dev/keycloak/aso-dev-realm.json) uses **intentionally public fictitious development credentials**, never production defaults:
 
-| User | Password | Subject suffix | `groups` claim |
-| --- | --- | --- | --- |
-| `alice` | `alice-local-only` | `000000000001` | `aso-members` |
-| `bob` | `bob-local-only` | `000000000002` | `aso-members` |
+| User        | Password               | Subject suffix | `groups` claim              |
+| ----------- | ---------------------- | -------------- | --------------------------- |
+| `alice`     | `alice-local-only`     | `000000000001` | `aso-members`               |
+| `bob`       | `bob-local-only`       | `000000000002` | `aso-members`               |
 | `aso-admin` | `aso-admin-local-only` | `000000000003` | `aso-members`, `aso-admins` |
-| `outsider` | `outsider-local-only` | `000000000004` | absent (no membership) |
+| `outsider`  | `outsider-local-only`  | `000000000004` | absent (no membership)      |
 
 All subjects use prefix `00000000-0000-4000-8000-`. Accounts require no initial password change or MFA. Startup imports `aso-dev` only if it is absent; restarting preserves changes and subjects. To apply fixture changes deliberately, use the confirmed Keycloak reset above. It deletes only Keycloak's local state, then imports the fixture again. Database reset similarly deletes only the database volume and preserves Keycloak. Stop ASO before resetting its database.
 
@@ -116,20 +116,20 @@ This smoke task verifies the IdP fixture. Separate application integration/E2E c
 
 Only `application-development.yaml` supplies the intentionally public local issuer/client secret and group defaults. Select it explicitly with `SPRING_PROFILES_ACTIVE=development`; do not select it for a non-development runtime. Without this profile **all eight settings below are required** and startup fails when they are absent/empty. Standard Spring Security OIDC discovery, code/PKCE, ID-token validation, JWT/JWKS signature/issuer/time/audience validation, and RP-initiated logout are used; there is no Keycloak application library or authentication bypass.
 
-| Setting | Explicit development profile value | Meaning |
-| --- | --- | --- |
-| `ASO_OIDC_ISSUER` | `http://127.0.0.1:8180/realms/aso-dev` | Exact validated issuer/discovery source |
-| `ASO_OIDC_WEB_CLIENT_ID` | `aso-web` | Confidential OIDC browser registration; ID-token audience |
-| `ASO_OIDC_WEB_CLIENT_SECRET` | `aso-web-secret-local-only` | Fictitious development client secret |
-| `ASO_PUBLIC_URL` | `http://127.0.0.1:8080` | Canonical URL, no trailing slash; callback/logout and MCP metadata |
-| `ASO_MCP_AUDIENCE` | `http://127.0.0.1:8080/mcp` | Required API access-token audience |
-| `ASO_OIDC_GROUPS_CLAIM` | `groups` | Signed token claim containing a list of group strings |
-| `ASO_OIDC_MEMBER_GROUP` | `aso-members` | Required private workspace membership, including admins |
-| `ASO_OIDC_ADMIN_GROUP` | `aso-admins` | Admin privilege; membership is also required |
+| Setting                      | Explicit development profile value     | Meaning                                                            |
+| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| `ASO_OIDC_ISSUER`            | `http://127.0.0.1:8180/realms/aso-dev` | Exact validated issuer/discovery source                            |
+| `ASO_OIDC_WEB_CLIENT_ID`     | `aso-web`                              | Confidential OIDC browser registration; ID-token audience          |
+| `ASO_OIDC_WEB_CLIENT_SECRET` | `aso-web-secret-local-only`            | Fictitious development client secret                               |
+| `ASO_PUBLIC_URL`             | `http://127.0.0.1:8080`                | Canonical URL, no trailing slash; callback/logout and MCP metadata |
+| `ASO_MCP_AUDIENCE`           | `http://127.0.0.1:8080/mcp`            | Required API access-token audience                                 |
+| `ASO_OIDC_GROUPS_CLAIM`      | `groups`                               | Signed token claim containing a list of group strings              |
+| `ASO_OIDC_MEMBER_GROUP`      | `aso-members`                          | Required private workspace membership, including admins            |
+| `ASO_OIDC_ADMIN_GROUP`       | `aso-admins`                           | Admin privilege; membership is also required                       |
 
 Issuer/public URLs require HTTPS except for loopback development. Configure the provider to include the chosen group claim in **both signed ID tokens and access tokens**. Names/email update attributes; they never identify or merge people. Roles are derived on each protected operation from current validated credentials and are not stored as self-editable user flags. Browser authorization ends when the signed ID token expires even if its servlet session still exists. Sign in again to recover/refresh trusted claims; there is no indefinite cached browser authorization. Logout submits a CSRF-protected POST, clears the ASO session, and uses the provider's discovered end-session endpoint. An IdP without standard RP-initiated logout requires its own compatibility work.
 
-Public routes are `/`, `/about`, the `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}` shells, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
+Public routes are `/`, `/about`, `/agent-setup`, the `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}` shells, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/agent-setup`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
 
 `/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and fifteen tools: `identity`, `search_questions`, `list_questions`, `get_question`, `list_answers`, `create_question`, `create_answer`, `list_comments`, `create_comment`, `edit_question`, `edit_answer`, `edit_comment`, `set_vote`, `list_votes`, and `report_occurrence`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
 
@@ -152,7 +152,7 @@ The helper changes only the dedicated MCP client registrations and `aso-web`'s l
 
 The development fixture has public, S256-PKCE-only `aso-codex`, `aso-mcpjam`, and `aso-mcp-test` registrations, separate from `aso-web` and the wrong-audience probe. They disable password, implicit, and service-account grants. Each issues an access token with the exact ASO resource URL audience through a dedicated mapper; ID tokens do not get that resource audience. Pre-registration is the supported mechanism: no anonymous dynamic-registration policy is opened. The current local Keycloak processes its audience mapper rather than the `resource` parameter (the experimental resource-indicators feature is not enabled). Both tested clients send the resource URL and ASO enforces its intended audience. Do not claim full RFC 8707 conformance or arbitrary-resource support from this setup.
 
-Verified on 2026-10-16: **Codex CLI 0.162.1** and **MCP Jam CLI 5.16.1**, each with Alice and Bob, real login/discovery/PKCE and successful `identity` calls matching the browser IDs. The owner explicitly replaced this goal's Claude Code/Cursor checks with MCP Jam; those two clients remain unverified and are not claimed compatible. This does not substitute an inspector for actual Claude Code/Cursor evidence in a later client milestone.
+Verified on 2026-10-16: **Codex CLI 0.162.1** and **MCP Jam CLI 5.16.1**, each with Alice and Bob, real login/discovery/PKCE and successful `identity` calls matching the browser IDs. The owner initially replaced goal 001's Claude Code/Cursor checks with MCP Jam. On 2026-10-17 they extended this to goal 006/laptop MVP delivery: use actual Codex and MCP Jam CLI with explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified; actual native testing is deferred beyond this amended MVP.
 
 Codex configuration (individual user's private config, not committed token headers):
 
@@ -185,6 +185,8 @@ Use a fresh IdP browser session or sign out before testing the second person; an
 
 MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conformance command rejects an HTTP `resource` URI at metadata validation even on loopback; the separate real OAuth login/tool checks succeed. This local HTTP result is not reported as an OAuth conformance pass. Production resource metadata requires HTTPS.
 
+The **Agent setup** page is linked from the web navigation and remains readable before sign-in. It obtains the configured backend MCP URL from `/api/v1/agent-setup`, so Angular on port 4200 still shows port 8080 by default. The [canonical guide](docs/agent-setup.md) supplies the exact recommended paragraph embedded in the jar. Set `ASO_CODEX_CLIENT_ID`, `ASO_CODEX_CALLBACK_URL`, `ASO_MCP_JAM_CLIENT_ID`, and `ASO_MCP_JAM_CALLBACK_URL` for registered clients in a non-development installation; until configured, the page asks users for their exact public registration instead of showing local fixture settings. The development profile supplies its seeded registration values and accepts overrides. These are public client details, never the confidential browser client secret. Native Claude Code/Cursor compatibility remains unverified; the named workflow replays in [goal 006 evidence](docs/goals/006-agent-collaboration.md) used MCP Jam CLI.
+
 ### Reproducible schema generation
 
 ```bash
@@ -200,22 +202,22 @@ Use **Search problems and solutions** in Questions, authenticated `GET /api/v1/s
 
 Development explicitly enables local embeddings. Ordinary runtime defaults to disabled until `ASO_EMBEDDING_ENABLED=true`; search then visibly retains exact/lexical retrieval. The verified endpoint is **http://127.0.0.1:1234/v1**, model **text-embedding-qwen3-embedding-0.6b**, **1,024** actual dimensions. LM Studio 0.4.26+4 ignored a `dimensions: 32` probe; ASO sends no dimension override and validates every returned vector. Configure only locally hosted infrastructure: the endpoint host must be explicitly allowed and resolve exclusively to loopback/private/link-local addresses. Public addresses and redirects are rejected. There is no cloud fallback.
 
-| Environment variable | Default / meaning |
-| --- | --- |
-| `ASO_EMBEDDING_ENABLED` | `false`; explicitly `true` in development |
-| `ASO_EMBEDDING_BASE_URL`, `ASO_EMBEDDING_ALLOWED_HOSTS` | `http://127.0.0.1:1234/v1`; `127.0.0.1,localhost,::1` |
-| `ASO_EMBEDDING_MODEL`, `ASO_EMBEDDING_DIMENSIONS` | Qwen model above; `1024` |
-| `ASO_EMBEDDING_API_KEY` | Optional private Bearer token; never commit it |
-| `ASO_EMBEDDING_PREPARATION_VERSION` | `qwen3-retrieval-v1`; change when runtime preprocessing changes |
-| `ASO_EMBEDDING_QUERY_PREFIX`, `ASO_EMBEDDING_QUERY_SUFFIX` | `Instruct: Given a technical problem, retrieve related engineering questions and solutions.` plus newline plus `Query: `; empty suffix |
-| `ASO_EMBEDDING_DOCUMENT_PREFIX`, `ASO_EMBEDDING_DOCUMENT_SUFFIX` | Both empty; retrieval documents are plain text |
-| `ASO_EMBEDDING_MAX_INPUT_CHARACTERS`, `ASO_EMBEDDING_MAX_QUERY_CHARACTERS` | `4000`, `1000` UTF-16 units including preparation for model input |
-| `ASO_EMBEDDING_MAX_DOCUMENT_CHUNKS`, `ASO_EMBEDDING_BATCH_SIZE` | `64` chunks per question, `8` inputs per request |
-| `ASO_EMBEDDING_MAX_RESPONSE_BYTES` | `4000000`; bounded response consumption |
-| `ASO_EMBEDDING_CONNECT_TIMEOUT`, `ASO_EMBEDDING_REQUEST_TIMEOUT` | `300ms`, `1200ms` for connection/query |
-| `ASO_EMBEDDING_INDEXING_TIMEOUT` | `30s` per document batch |
-| `ASO_EMBEDDING_WORKER_BATCH_SIZE`, `ASO_EMBEDDING_POLL_MILLIS` | `10` questions, `1000` milliseconds |
-| `ASO_EMBEDDING_RETRY_DELAY`, `ASO_SEARCH_MIN_SIMILARITY` | `5s` initial exponential retry (cap 64×); `0.45` cosine threshold |
+| Environment variable                                                       | Default / meaning                                                                                                                      |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `ASO_EMBEDDING_ENABLED`                                                    | `false`; explicitly `true` in development                                                                                              |
+| `ASO_EMBEDDING_BASE_URL`, `ASO_EMBEDDING_ALLOWED_HOSTS`                    | `http://127.0.0.1:1234/v1`; `127.0.0.1,localhost,::1`                                                                                  |
+| `ASO_EMBEDDING_MODEL`, `ASO_EMBEDDING_DIMENSIONS`                          | Qwen model above; `1024`                                                                                                               |
+| `ASO_EMBEDDING_API_KEY`                                                    | Optional private Bearer token; never commit it                                                                                         |
+| `ASO_EMBEDDING_PREPARATION_VERSION`                                        | `qwen3-retrieval-v1`; change when runtime preprocessing changes                                                                        |
+| `ASO_EMBEDDING_QUERY_PREFIX`, `ASO_EMBEDDING_QUERY_SUFFIX`                 | `Instruct: Given a technical problem, retrieve related engineering questions and solutions.` plus newline plus `Query: `; empty suffix |
+| `ASO_EMBEDDING_DOCUMENT_PREFIX`, `ASO_EMBEDDING_DOCUMENT_SUFFIX`           | Both empty; retrieval documents are plain text                                                                                         |
+| `ASO_EMBEDDING_MAX_INPUT_CHARACTERS`, `ASO_EMBEDDING_MAX_QUERY_CHARACTERS` | `4000`, `1000` UTF-16 units including preparation for model input                                                                      |
+| `ASO_EMBEDDING_MAX_DOCUMENT_CHUNKS`, `ASO_EMBEDDING_BATCH_SIZE`            | `64` chunks per question, `8` inputs per request                                                                                       |
+| `ASO_EMBEDDING_MAX_RESPONSE_BYTES`                                         | `4000000`; bounded response consumption                                                                                                |
+| `ASO_EMBEDDING_CONNECT_TIMEOUT`, `ASO_EMBEDDING_REQUEST_TIMEOUT`           | `300ms`, `1200ms` for connection/query                                                                                                 |
+| `ASO_EMBEDDING_INDEXING_TIMEOUT`                                           | `30s` per document batch                                                                                                               |
+| `ASO_EMBEDDING_WORKER_BATCH_SIZE`, `ASO_EMBEDDING_POLL_MILLIS`             | `10` questions, `1000` milliseconds                                                                                                    |
+| `ASO_EMBEDDING_RETRY_DELAY`, `ASO_SEARCH_MIN_SIMILARITY`                   | `5s` initial exponential retry (cap 64×); `0.45` cosine threshold                                                                      |
 
 Use normal Spring configuration files for multiline prefixes, or export a quoted value, e.g. `export ASO_EMBEDDING_QUERY_PREFIX=$'Instruct: Retrieve related engineering questions.\nQuery: '`. Direct Gradle commands never load `.env`; export required embedding settings first. The optional local `.env` is only loaded by development helper scripts.
 
@@ -256,7 +258,7 @@ JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/t
 
 ## Next milestones
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity, Q&A, content lifecycle, engagement, and local hybrid search (goal 005) are implemented. Goal 006 and subsequent features remain planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–006 are implemented; goal 007 remains planned.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 

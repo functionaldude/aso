@@ -1,0 +1,180 @@
+<article>
+  <p class="eyebrow">Private workspace · Agent connection</p>
+  <h1>Agent setup</h1>
+  <p class="intro">
+    Connect an MCP client with your own account, confirm its identity, then add the recommended
+    paragraph to the repository where your coding agent works.
+  </p>
+
+  @if (error()) {
+    <p role="alert">Setup details are unavailable. Check the application connection and retry.</p>
+    <button mat-stroked-button (click)="load()">Retry setup details</button>
+  } @else if (setup(); as value) {
+    <section aria-labelledby="connection-title">
+      <h2 id="connection-title">1. Connection details</h2>
+      <p>Use this backend MCP resource URL, including when Angular runs on port 4200:</p>
+      <div class="copy-block">
+        <label for="mcp-url">Configured MCP URL</label>
+        <textarea #mcpUrlField id="mcp-url" readonly rows="1" [value]="value.mcpUrl"></textarea>
+        <button mat-stroked-button (click)="copy('url', value.mcpUrl, mcpUrlField)">
+          Copy MCP URL
+        </button>
+        <span role="status" aria-live="polite">{{ copied()['url'] }}</span>
+      </div>
+      <dl>
+        <dt>OIDC issuer</dt>
+        <dd>{{ value.issuer }}</dd>
+        <dt>Scopes</dt>
+        <dd>{{ value.scopes.join(' ') }}</dd>
+      </dl>
+      <p>
+        Use the exact registered callback and client ID for your installation. Each person signs in
+        separately. Browser sign-in does not authenticate an MCP client.
+      </p>
+    </section>
+
+    <section aria-labelledby="codex-title">
+      <h2 id="codex-title">2. Codex <span class="badge">Actual client verified</span></h2>
+      @if (value.codex) {
+        <p>
+          Add this to your private Codex configuration. The callback must match the provider
+          registration.
+        </p>
+        <div class="copy-block">
+          <label for="codex-config">Codex configuration</label>
+          <textarea
+            #codexField
+            id="codex-config"
+            readonly
+            rows="8"
+            [value]="codexConfig(value)"
+          ></textarea>
+          <button mat-stroked-button (click)="copy('codex', codexConfig(value), codexField)">
+            Copy Codex configuration
+          </button>
+          <span role="status" aria-live="polite">{{ copied()['codex'] }}</span>
+        </div>
+        <div class="copy-block">
+          <label for="codex-login">Login and logout</label>
+          <textarea
+            #codexLoginField
+            id="codex-login"
+            readonly
+            rows="3"
+            [value]="codexLogin(value)"
+          ></textarea>
+          <button
+            mat-stroked-button
+            (click)="copy('codex-login', codexLogin(value), codexLoginField)"
+          >
+            Copy Codex commands
+          </button>
+          <span role="status" aria-live="polite">{{ copied()['codex-login'] }}</span>
+        </div>
+      } @else {
+        <p>
+          Ask your administrator for the public Codex client ID and exact registered callback before
+          connecting.
+        </p>
+      }
+    </section>
+
+    <section aria-labelledby="jam-title">
+      <h2 id="jam-title">3. MCP Jam CLI <span class="badge">Actual client verified</span></h2>
+      @if (value.mcpJam) {
+        <p>
+          Complete the browser login with your own account. Keep the resulting credentials file
+          private and out of Git.
+        </p>
+        <div class="copy-block">
+          <label for="jam-commands">MCP Jam login and identity check</label>
+          <textarea
+            #jamField
+            id="jam-commands"
+            readonly
+            rows="11"
+            [value]="jamCommands(value)"
+          ></textarea>
+          <button mat-stroked-button (click)="copy('jam', jamCommands(value), jamField)">
+            Copy MCP Jam commands
+          </button>
+          <span role="status" aria-live="polite">{{ copied()['jam'] }}</span>
+        </div>
+      } @else {
+        <p>
+          Ask your administrator for the public MCP Jam client ID and exact registered callback
+          before connecting.
+        </p>
+      }
+      <p>
+        Call <code>identity</code> and confirm it names the expected person. List tools, then try
+        <code>search_questions</code> with sanitized text and <code>state: "all"</code> to include
+        resolved problems.
+      </p>
+    </section>
+
+    <section aria-labelledby="paragraph-title">
+      <h2 id="paragraph-title">4. Add to your repository’s AGENTS.md</h2>
+      <p>
+        Copy this plain Markdown paragraph into the consuming repository’s <code>AGENTS.md</code>.
+        Connecting MCP makes tools available; this paragraph guides their use during development.
+      </p>
+      <div class="copy-block">
+        <label for="recommended-paragraph">Recommended AGENTS.md paragraph</label>
+        <textarea
+          #paragraphField
+          id="recommended-paragraph"
+          readonly
+          rows="14"
+          [value]="value.recommendedParagraph"
+        ></textarea>
+        <button
+          mat-flat-button
+          (click)="copy('paragraph', value.recommendedParagraph, paragraphField)"
+        >
+          Copy recommended paragraph
+        </button>
+        <span role="status" aria-live="polite">{{ copied()['paragraph'] }}</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="troubleshooting-title">
+      <h2 id="troubleshooting-title">Troubleshooting and compatibility</h2>
+      <ul>
+        <li>
+          <strong>Cannot connect:</strong> check the backend URL and server. Port 4200 serves
+          Angular; it is not the configured MCP resource.
+        </li>
+        <li>
+          <strong>Login or redirect fails:</strong> check the exact callback, listener port, issuer,
+          client ID and resource audience. Local registrations use code flow and PKCE.
+        </li>
+        <li>
+          <strong>Wrong identity or expired login:</strong> log out of the MCP client and IdP
+          session, then sign in again and call <code>identity</code>. Do not share tokens or browser
+          cookies. If Codex reports <code>invalid_scope</code> during local token refresh, run its
+          login command again and recheck <code>identity</code>.
+        </li>
+        <li>
+          <strong>Search degraded:</strong> use available exact and keyword matches without claiming
+          semantic coverage. If ASO is unavailable, say so and continue local work.
+        </li>
+        <li>
+          <strong>Uncertain write:</strong> retain the original request or event ID, read current
+          state, and follow the error before retrying.
+        </li>
+      </ul>
+      <p>
+        <strong>Simulated workflows:</strong> Claude Code-style and Cursor-style sequences are
+        replayed with MCP Jam CLI. Native Claude Code and Cursor compatibility is unverified.
+      </p>
+      <p>
+        <strong>OAuth limit:</strong> local HTTP loopback and Keycloak’s audience mapper are
+        verified for the stated clients; they do not establish strict HTTPS or RFC 8707 conformance.
+        Verify another IdP separately.
+      </p>
+    </section>
+  } @else {
+    <p role="status">Loading public setup details…</p>
+  }
+</article>

@@ -4,6 +4,10 @@ export const routes: Routes = [
   { path: '', loadComponent: () => import('./home/home').then((m) => m.Home) },
   { path: 'about', loadComponent: () => import('./about/about').then((m) => m.About) },
   {
+    path: 'agent-setup',
+    loadComponent: () => import('./agent-setup/agent-setup').then((m) => m.AgentSetup),
+  },
+  {
     path: 'questions',
     loadComponent: () => import('./questions/question-list').then((m) => m.QuestionList),
   },
