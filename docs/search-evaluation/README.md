@@ -118,3 +118,42 @@ This small relevance set is separate from the goal's latency corpus of at least
 1,000 questions and 100 warmed searches at concurrency five. It does not replace
 authorization, hidden-content, outage/recovery, or index-lifecycle integration
 tests. Static fixture validation does not establish measured relevance or latency.
+
+## Measured results — 2026-10-17
+
+Owner approval for this fixed version 2 corpus is recorded in commit `cb2ae685a3460a469c8d1ae03077fc107d242cca`, before evaluation/tuning. Corpus SHA-256: `9edc56db9bb7a41cd521a0eaa47abe54abda97c9f3f6a01b241529b0e47594eb`. Neither query text nor scoring metadata was indexed.
+
+Both root commands passed against the actual local Qwen3 0.6B Q8_0 / 1,024-dimensional model in LM Studio 0.4.26+4. The [14-question relevance report](searchRelevance.json) passes all 218 hybrid assertions; the [1,000-question relevance and latency report](searchLatency.json) passes all 247 hybrid assertions. Both include the full lexical baseline, every ordered result/excerpt, source evidence, acceptance state, pagination and negative outcomes.
+
+| Query | Target | Lexical rank | Hybrid rank |
+| --- | --- | --- | --- |
+| exact-1 | variant | 1 | 1 |
+| exact-2 | class | 1 | 1 |
+| exact-3 | lock | 1 | 1 |
+| exact-4 | angular | 1 | 1 |
+| exact-5 | cpp | 1 | 1 |
+| exact-6 | csharp | 1 | 1 |
+| exact-7 | variant-old | 1 | 1 |
+| exact-8 | csharp | 1 | 1 |
+| exact-9 | class | 1 | 1 |
+| exact-10 | issuer | 1 | 1 |
+| semantic-1 | variant | 4 | 1 |
+| semantic-2 | class | 2 | 1 |
+| semantic-3 | pool | 1 | 1 |
+| semantic-4 | race | absent | 1 |
+| semantic-5 | csrf | 1 | 1 |
+| semantic-6 | issuer | 1 | 1 |
+| semantic-7 | lock | 1 | 1 |
+| semantic-8 | angular | 1 | 1 |
+| semantic-9 | pagination | 1 | 1 |
+| semantic-10 | hidden | 1 | 1 |
+
+All ten exact targets rank first, including reciprocal version/language cases and answer/context-only identifiers. Hybrid ranks all ten paraphrases first on the 1,000-question corpus; the lexical baseline has nine top-five hits and misses `semantic-4` entirely. The baseline remains visible in the reports rather than being treated as a passing semantic result.
+
+In both modes, negative cases 1–3 return no questions; negative case 4 returns only `version` at rank one. All negative allowlist/required-result/identifier/claim assertions pass. Source acceptance remains faithfully labelled. The packaged browser asserts the neutral related-evidence notice, absence of an accepted answer for the unaccepted fixture, semantic explanation and outage state. Desktop/mobile screenshots were visually inspected at `backend/build/e2e/search-desktop.png` and `search-mobile-degraded.png`; they stay in build/CI diagnostics rather than Git.
+
+The 1,000-question run indexes in **98.75 s**. After ten extra warmups, **100 authenticated MCP searches at concurrency five**, requesting 20 results, measure **p50 187.56 ms**, **p95 217.87 ms**, **max 238.38 ms**. The first application query after indexing is **740.77 ms**. This exceeds the required sample/dataset minima and meets the unchanged p95 ≤2 s gate.
+
+Hardware: Apple M4 Max, 16 CPU cores (12 performance/4 efficiency), 64 GiB unified memory, macOS 27.0.1; Java 25.0.4.1 / Gradle 9.2.1. Selected local GGUF runtime: llama.cpp Metal 2.59.0. Model SHA-256: `06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439`.
+
+Cold evidence is a first application query with the model already loaded, not an unload/load benchmark. The latency seed adds 986 short synthetic inventory distractors; this is reproducible laptop evidence, not a production-sized diagnostic corpus or capacity guarantee. No development database, persistent realm, volumes or model loading state were reset.

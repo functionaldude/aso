@@ -4,6 +4,10 @@ import com.functionaldude.aso.jooq.tables.references.CONTENT_REQUEST
 import com.functionaldude.aso.jooq.tables.references.QUESTION
 import com.functionaldude.aso.oidc.KeycloakFixture
 import com.functionaldude.aso.oidc.OidcBrowserLogin
+import com.functionaldude.aso.search.EmbeddingClient
+import com.functionaldude.aso.search.EmbeddingFixture
+import com.functionaldude.aso.search.EmbeddingSettings
+import com.functionaldude.aso.search.SearchIndex
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserContext
 import com.microsoft.playwright.BrowserType
@@ -41,6 +45,14 @@ class QuestionIntegrationTest {
     @Autowired private lateinit var lifecycle: com.functionaldude.aso.questions.LifecycleService
 
     @Autowired private lateinit var decoder: org.springframework.security.oauth2.jwt.JwtDecoder
+
+    @Autowired private lateinit var searchIndex: SearchIndex
+
+    @Autowired private lateinit var transactions: org.springframework.transaction.support.TransactionTemplate
+
+    @Autowired private lateinit var embeddingSettings: EmbeddingSettings
+
+    @Autowired private lateinit var embeddingClient: EmbeddingClient
     private val json = JsonMapper.builder().build()
     private val http = HttpClient.newHttpClient()
 
@@ -257,7 +269,7 @@ class QuestionIntegrationTest {
             assertEquals(400, web(alice, "/api/v1/questions?limit=51").status)
             assertEquals(400, web(alice, "/api/v1/questions?cursor=garbage").status)
             assertEquals(413, web(alice, "/api/v1/questions", question() + ("body" to "x".repeat(262145))).status)
-            assertEquals(0, web(alice, "/api/v1/questions?state=resolved").body["items"].size())
+            assertTrue(web(alice, "/api/v1/questions?state=resolved").body["items"].none { it["id"].asString() == id })
             repeat(4) { assertEquals(200, web(alice, "/api/v1/questions", question(title = "Page $it")).status) }
             database.update(QUESTION).set(QUESTION.CREATED_AT, java.time.OffsetDateTime.parse("2026-10-16T00:00:00Z")).execute()
             val first = web(bob, "/api/v1/questions?tag=kotlin&limit=2").body
@@ -316,7 +328,7 @@ class QuestionIntegrationTest {
             assertEquals("2025-11-25", initialized["protocolVersion"].asString())
             assertFalse(initialized["capabilities"]["tools"]["listChanged"].asBoolean())
             val tools = rpc(alice, request("tools/list")).body["result"]["tools"]
-            assertEquals(14, tools.size())
+            assertEquals(15, tools.size())
             val identity = tools.first { it["name"].asString() == "identity" }
             assertEquals(setOf("readOnlyHint", "openWorldHint"), identity["annotations"].propertyNames().toSet())
             assertEquals(0, identity["inputSchema"]["properties"].size())
@@ -703,6 +715,7 @@ class QuestionIntegrationTest {
             assertEquals(
                 setOf(
                     "identity",
+                    "search_questions",
                     "list_questions",
                     "get_question",
                     "list_answers",
@@ -1423,7 +1436,255 @@ class QuestionIntegrationTest {
             }
         }
 
+    @Test
+    fun `search shares adapters survives outages rebuilds and excludes stale hidden answer matches`() =
+        withActors { alice, bob ->
+            val tag = "search-" + UUID.randomUUID().toString().take(8)
+
+            fun create(
+                title: String,
+                body: String,
+            ) = web(
+                alice,
+                "/api/v1/questions",
+                mapOf(
+                    "requestId" to UUID.randomUUID().toString(),
+                    "title" to title,
+                    "body" to body,
+                    "tags" to listOf(tag),
+                ),
+            ).also { assertEquals(200, it.status) }.body["id"].asString()
+
+            fun search(
+                query: String,
+                cursor: String? = null,
+                limit: Int = 20,
+            ): Result =
+                mcp(
+                    bob,
+                    "search_questions",
+                    buildMap {
+                        put("query", query)
+                        put("tag", tag)
+                        put("limit", limit)
+                        if (cursor != null) put("cursor", cursor)
+                    },
+                )
+
+            fun drain(index: SearchIndex = searchIndex) {
+                val deadline =
+                    System.nanoTime() +
+                        java.time.Duration
+                            .ofSeconds(60)
+                            .toNanos()
+                while (index.status().pending > 0 && System.nanoTime() < deadline) index.tick()
+                assertEquals(0, index.status().pending)
+            }
+            val water = create("Water connection", "Aqua supply needs attention in org.example:water:2.0")
+            val other = create("Build connection", "Compiler setup in org.example:water:1.0")
+            val answer =
+                web(
+                    bob,
+                    "/api/v1/questions/$other/answers",
+                    mapOf(
+                        "requestId" to UUID.randomUUID().toString(),
+                        "body" to "UniqueAnswerCode:7 water",
+                    ),
+                )
+            assertEquals(200, answer.status)
+            drain()
+            val edited =
+                web(
+                    alice,
+                    "/api/v1/questions/$water/edit",
+                    mapOf(
+                        "expectedVersion" to 1,
+                        "title" to "Water connection revised",
+                        "body" to "Aqua supply needs attention in org.example:water:2.0 EditSentinel:3",
+                        "tags" to listOf(tag),
+                    ),
+                )
+            assertEquals(200, edited.status)
+            val answerId = answer.body["id"].asString()
+            assertEquals(
+                200,
+                web(
+                    bob,
+                    "/api/v1/answers/$answerId/edit",
+                    mapOf(
+                        "expectedVersion" to 1,
+                        "body" to "UniqueAnswerCode:8 water",
+                    ),
+                ).status,
+            )
+            assertEquals(0, search("UniqueAnswerCode:7").body["items"].size())
+            drain()
+            assertEquals(water, search("EditSentinel:3").body["items"][0]["question"]["id"].asString())
+            assertEquals(other, search("UniqueAnswerCode:8").body["items"][0]["question"]["id"].asString())
+            assertTrue(embeddings.inputs.any { "Water connection revised" in it && "EditSentinel:3" in it })
+            assertEquals(200, web(bob, "/api/v1/content/question/$water/vote", mapOf("active" to true)).status)
+            assertEquals(200, web(bob, "/api/v1/questions/$water/occurrences", mapOf("eventId" to UUID.randomUUID().toString())).status)
+            val semantic = search("hydration")
+            assertEquals(200, semantic.status)
+            assertFalse(semantic.body["degraded"].asBoolean())
+            assertTrue(semantic.body["items"].any { it["question"]["id"].asString() == water })
+            assertEquals(water, search("org.example:water:2.0").body["items"][0]["question"]["id"].asString())
+            val rest = web(bob, "/api/v1/search?query=hydration&tag=$tag")
+            assertEquals(semantic.body, rest.body)
+            assertEquals(401, web(null, "/api/v1/search?query=hydration").status)
+            assertEquals(400, mcp(bob, "search_questions", mapOf("query" to "x", "limit" to "20")).status)
+            val first = search("connection", limit = 1)
+            val second = search("connection", first.body["nextCursor"].asString(), 1)
+            assertNotEquals(first.body["items"][0]["question"]["id"], second.body["items"][0]["question"]["id"])
+            assertEquals(400, search("changed", first.body["nextCursor"].asString(), 1).status)
+            embeddings.failure = true
+            val outage = search("org.example:water:2.0")
+            assertTrue(outage.body["degraded"].asBoolean())
+            assertTrue(outage.body["reasons"].any { it.asString() == "embeddings_unavailable" })
+            assertEquals(water, outage.body["items"][0]["question"]["id"].asString())
+            assertEquals(1, outage.body["items"][0]["question"]["votes"]["upvotes"].asInt())
+            assertEquals(1, outage.body["items"][0]["question"]["occurrences"]["allTime"]["encounters"].asInt())
+            val pending = create("Water after outage", "water request still creates successfully")
+            searchIndex.tick()
+            assertTrue(searchIndex.status().failed > 0)
+            assertEquals(200, web(alice, "/api/v1/questions/$pending").status)
+            val restarted =
+                com.functionaldude.aso.search
+                    .SearchIndex(database, embeddingSettings, embeddingClient, transactions)
+            assertEquals(searchIndex.status().pending, restarted.status().pending)
+            database.execute(
+                "update search_work set lease_until = current_timestamp - interval '1 second' where question_id = ?",
+                UUID.fromString(pending),
+            )
+            embeddings.failure = false
+            restarted.retry()
+            drain(restarted)
+            assertFalse(search("hydration").body["degraded"].asBoolean())
+            Playwright.create().use { pw ->
+                pw.chromium().launch().use { browser ->
+                    val contexts = mutableListOf<BrowserContext>()
+                    try {
+                        val admin = actor(browser, "aso-admin", contexts)
+                        val accepted =
+                            web(
+                                alice,
+                                "/api/v1/questions/$other/acceptance",
+                                mapOf(
+                                    "expectedVersion" to 1,
+                                    "answerId" to answer.body["id"].asString(),
+                                ),
+                            )
+                        assertEquals(200, accepted.status)
+                        drain()
+                        assertEquals("resolved", search("UniqueAnswerCode:8").body["items"][0]["question"]["state"].asString())
+                        val hidden =
+                            web(
+                                admin,
+                                "/api/v1/admin/content/answer/${answer.body["id"].asString()}/visibility",
+                                mapOf("expectedVersion" to 2, "hidden" to true),
+                            )
+                        assertEquals(200, hidden.status)
+                        val immediate = search("UniqueAnswerCode:8")
+                        assertFalse(immediate.body.toString().contains("UniqueAnswerCode:8"))
+                        assertEquals("open", web(alice, "/api/v1/questions/$other").body["question"]["state"].asString())
+                        assertEquals(
+                            200,
+                            web(
+                                admin,
+                                "/api/v1/admin/content/question/$water/visibility",
+                                mapOf(
+                                    "expectedVersion" to 2,
+                                    "hidden" to true,
+                                ),
+                            ).status,
+                        )
+                        assertTrue(search("hydration").body["items"].none { it["question"]["id"].asString() == water })
+                        assertEquals(404, web(alice, "/api/v1/questions/$water").status)
+                        assertEquals(403, web(bob, "/api/v1/admin/search/index").status)
+                        assertEquals(200, web(admin, "/api/v1/admin/search/index").status)
+                    } finally {
+                        contexts.forEach { it.close() }
+                    }
+                }
+            }
+            val changed =
+                EmbeddingSettings(
+                    enabled = true,
+                    baseUrl = embeddings.baseUrl,
+                    model = "fixture-other",
+                    dimensions = 4,
+                    documentPrefix = "passage: ",
+                )
+            val replacement =
+                SearchIndex(
+                    database,
+                    changed,
+                    com.functionaldude.aso.search
+                        .EmbeddingClient(changed),
+                    transactions,
+                )
+            assertFalse(replacement.status().compatible)
+            replacement.tick()
+            assertFalse(replacement.status().compatible)
+            val productCount = database.fetchCount(QUESTION)
+            embeddings.dimensions = 4
+            replacement.rebuild()
+            drain(replacement)
+            assertEquals(productCount, database.fetchCount(QUESTION))
+            assertEquals(
+                setOf(4),
+                database
+                    .fetch("select distinct cardinality(embedding) size from search_document")
+                    .map {
+                        it.get("size", Int::class.java)
+                    }.toSet(),
+            )
+            assertTrue(search("connection").body["reasons"].any { it.asString() == "rebuild_required" })
+            embeddings.dimensions = 3
+            searchIndex.rebuild()
+            drain()
+            val concurrent = Executors.newFixedThreadPool(5)
+            try {
+                val operations =
+                    (0 until 12).map { number ->
+                        Callable {
+                            if (number % 3 == 0) {
+                                searchIndex.rebuild()
+                                null
+                            } else {
+                                create("Concurrent water $number", "org.example:concurrent:$number water")
+                            }
+                        }
+                    } +
+                        Callable<String?> {
+                            repeat(4) { searchIndex.tick() }
+                            null
+                        }
+                val created = concurrent.invokeAll(operations).mapNotNull { it.get() }
+                drain()
+                created.forEach { id ->
+                    assertEquals(
+                        1,
+                        database
+                            .resultQuery(
+                                """
+                                select 1 from search_document d join question q on q.id=d.question_id
+                                where q.id=? and d.generation_id=? and d.revision=q.search_revision and d.answer_id is null
+                                """.trimIndent(),
+                                UUID.fromString(id),
+                                embeddingSettings.generation,
+                            ).fetch()
+                            .size,
+                    )
+                }
+            } finally {
+                concurrent.shutdownNow()
+            }
+        }
+
     companion object {
+        private val embeddings =
+            EmbeddingFixture()
         private val port = ServerSocket(0).use { it.localPort }
         private val base = "http://127.0.0.1:$port"
         private val login = OidcBrowserLogin()
@@ -1445,6 +1706,10 @@ class QuestionIntegrationTest {
 
         @JvmStatic @DynamicPropertySource
         fun properties(registry: DynamicPropertyRegistry) {
+            registry.add("aso.embedding.enabled") { true }
+            registry.add("aso.embedding.base-url") { embeddings.baseUrl }
+            registry.add("aso.embedding.dimensions") { 3 }
+            registry.add("aso.embedding.poll-millis") { 3600000 }
             registry.add("server.port") { port }
             registry.add("spring.datasource.url", db::getJdbcUrl)
             registry.add("spring.datasource.username", db::getUsername)
@@ -1465,6 +1730,7 @@ class QuestionIntegrationTest {
 
         @JvmStatic @AfterAll
         fun cleanup() {
+            embeddings.close()
             keycloak.close()
             db.close()
             login.close()

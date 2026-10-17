@@ -83,6 +83,18 @@ export interface Detail {
   question: Question;
   answers: ContentPage<Answer>;
 }
+export interface SearchResult {
+  question: Question;
+  snippet: string;
+  match: { identifiers: string[]; lexical: boolean; semantic: boolean; explanation: string };
+}
+export interface SearchPage {
+  items: SearchResult[];
+  nextCursor: string | null;
+  degraded: boolean;
+  reasons: string[];
+  notice: string;
+}
 
 export function contentError(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
@@ -116,6 +128,12 @@ export class CreateRequest {
 @Injectable({ providedIn: 'root' })
 export class QuestionsApi {
   private readonly http = inject(HttpClient);
+  search(query: string, tag: string, state: string, cursor?: string) {
+    let params = new HttpParams().set('query', query).set('state', state);
+    if (tag.trim()) params = params.set('tag', tag.trim());
+    if (cursor) params = params.set('cursor', cursor);
+    return firstValueFrom(this.http.get<SearchPage>('/api/v1/search', { params }));
+  }
   list(tag: string, state: string, cursor?: string, view = 'recent') {
     let params = new HttpParams().set('state', state).set('view', view);
     if (tag.trim()) params = params.set('tag', tag.trim());

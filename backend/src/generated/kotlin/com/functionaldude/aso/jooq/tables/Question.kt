@@ -8,9 +8,11 @@ import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.indexes.QUESTION_RECENT
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_31
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_51DB7
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_64
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_B
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_BA
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_DF
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_F
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_FFFC349
 import com.functionaldude.aso.jooq.keys.QUESTION_ACCEPTED_ANSWER
@@ -21,6 +23,8 @@ import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.ContentVote.ContentVotePath
 import com.functionaldude.aso.jooq.tables.Occurrence.OccurrencePath
 import com.functionaldude.aso.jooq.tables.QuestionTag.QuestionTagPath
+import com.functionaldude.aso.jooq.tables.SearchDocument.SearchDocumentPath
+import com.functionaldude.aso.jooq.tables.SearchWork.SearchWorkPath
 import com.functionaldude.aso.jooq.tables.Tag.TagPath
 import com.functionaldude.aso.jooq.tables.records.QuestionRecord
 
@@ -111,6 +115,8 @@ open class Question(
 
     val ACCEPTED_ANSWER_ID: TableField<QuestionRecord, UUID?> = createField(DSL.name("accepted_answer_id"), SQLDataType.UUID, this, "")
 
+    val SEARCH_REVISION: TableField<QuestionRecord, Long?> = createField(DSL.name("search_revision"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.BIGINT)), this, "")
+
     private constructor(alias: Name, aliased: Table<QuestionRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<QuestionRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
     private constructor(alias: Name, aliased: Table<QuestionRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
@@ -165,6 +171,18 @@ open class Question(
     val contentComment: ContentCommentPath
         get(): ContentCommentPath = contentComment()
 
+    private lateinit var _searchDocument: SearchDocumentPath
+
+    fun searchDocument(): SearchDocumentPath {
+        if (!this::_searchDocument.isInitialized)
+            _searchDocument = SearchDocumentPath(this, null, CONSTRAINT_51DB7.inverseKey)
+
+        return _searchDocument;
+    }
+
+    val searchDocument: SearchDocumentPath
+        get(): SearchDocumentPath = searchDocument()
+
     private lateinit var _occurrence: OccurrencePath
 
     fun occurrence(): OccurrencePath {
@@ -176,6 +194,18 @@ open class Question(
 
     val occurrence: OccurrencePath
         get(): OccurrencePath = occurrence()
+
+    private lateinit var _searchWork: SearchWorkPath
+
+    fun searchWork(): SearchWorkPath {
+        if (!this::_searchWork.isInitialized)
+            _searchWork = SearchWorkPath(this, null, CONSTRAINT_DF.inverseKey)
+
+        return _searchWork;
+    }
+
+    val searchWork: SearchWorkPath
+        get(): SearchWorkPath = searchWork()
 
     private lateinit var _questionTag: QuestionTagPath
 

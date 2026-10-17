@@ -72,13 +72,17 @@ open class QuestionRecord() : UpdatableRecordImpl<QuestionRecord>(Question.QUEST
         set(value): Unit = set(13, value)
         get(): UUID? = get(13) as UUID?
 
+    open var searchRevision: Long?
+        set(value): Unit = set(14, value)
+        get(): Long? = get(14) as Long?
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
 
     override fun key(): Record1<UUID?> = super.key() as Record1<UUID?>
 
-    constructor(id: UUID? = null, title: String? = null, body: String? = null, errorText: String? = null, dependencies: String? = null, versions: String? = null, repository: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null, version: Int? = null, updatedAt: OffsetDateTime? = null, hidden: Boolean? = null, acceptedAnswerId: UUID? = null): this() {
+    constructor(id: UUID? = null, title: String? = null, body: String? = null, errorText: String? = null, dependencies: String? = null, versions: String? = null, repository: String? = null, authorId: UUID? = null, channel: String? = null, createdAt: OffsetDateTime? = null, version: Int? = null, updatedAt: OffsetDateTime? = null, hidden: Boolean? = null, acceptedAnswerId: UUID? = null, searchRevision: Long? = null): this() {
         this.id = id
         this.title = title
         this.body = body
@@ -93,6 +97,7 @@ open class QuestionRecord() : UpdatableRecordImpl<QuestionRecord>(Question.QUEST
         this.updatedAt = updatedAt
         this.hidden = hidden
         this.acceptedAnswerId = acceptedAnswerId
+        this.searchRevision = searchRevision
         resetTouchedOnNotNull()
     }
 }

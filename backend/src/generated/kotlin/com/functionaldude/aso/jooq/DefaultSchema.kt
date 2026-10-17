@@ -13,6 +13,9 @@ import com.functionaldude.aso.jooq.tables.ContentVote
 import com.functionaldude.aso.jooq.tables.Occurrence
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
+import com.functionaldude.aso.jooq.tables.SearchDocument
+import com.functionaldude.aso.jooq.tables.SearchGeneration
+import com.functionaldude.aso.jooq.tables.SearchWork
 import com.functionaldude.aso.jooq.tables.Tag
 
 import kotlin.collections.List
@@ -48,6 +51,12 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
 
     val QUESTION_TAG: QuestionTag get() = QuestionTag.QUESTION_TAG
 
+    val SEARCH_DOCUMENT: SearchDocument get() = SearchDocument.SEARCH_DOCUMENT
+
+    val SEARCH_GENERATION: SearchGeneration get() = SearchGeneration.SEARCH_GENERATION
+
+    val SEARCH_WORK: SearchWork get() = SearchWork.SEARCH_WORK
+
     val TAG: Tag get() = Tag.TAG
 
     override fun getCatalog(): Catalog = DefaultCatalog.DEFAULT_CATALOG
@@ -62,6 +71,9 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
         Occurrence.OCCURRENCE,
         Question.QUESTION,
         QuestionTag.QUESTION_TAG,
+        SearchDocument.SEARCH_DOCUMENT,
+        SearchGeneration.SEARCH_GENERATION,
+        SearchWork.SEARCH_WORK,
         Tag.TAG
     )
 }

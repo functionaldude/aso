@@ -14,6 +14,9 @@ import com.functionaldude.aso.jooq.tables.ContentVote
 import com.functionaldude.aso.jooq.tables.Occurrence
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
+import com.functionaldude.aso.jooq.tables.SearchDocument
+import com.functionaldude.aso.jooq.tables.SearchGeneration
+import com.functionaldude.aso.jooq.tables.SearchWork
 import com.functionaldude.aso.jooq.tables.Tag
 import com.functionaldude.aso.jooq.tables.records.AnswerRecord
 import com.functionaldude.aso.jooq.tables.records.AppUserRecord
@@ -24,6 +27,9 @@ import com.functionaldude.aso.jooq.tables.records.ContentVoteRecord
 import com.functionaldude.aso.jooq.tables.records.OccurrenceRecord
 import com.functionaldude.aso.jooq.tables.records.QuestionRecord
 import com.functionaldude.aso.jooq.tables.records.QuestionTagRecord
+import com.functionaldude.aso.jooq.tables.records.SearchDocumentRecord
+import com.functionaldude.aso.jooq.tables.records.SearchGenerationRecord
+import com.functionaldude.aso.jooq.tables.records.SearchWorkRecord
 import com.functionaldude.aso.jooq.tables.records.TagRecord
 
 import org.jooq.ForeignKey
@@ -50,6 +56,9 @@ val CONSTRAINT_3195BA: UniqueKey<ContentVoteRecord> = Internal.createUniqueKey(C
 val CONSTRAINT_649A: UniqueKey<OccurrenceRecord> = Internal.createUniqueKey(Occurrence.OCCURRENCE, DSL.name("CONSTRAINT_649A"), arrayOf(Occurrence.OCCURRENCE.REPORTER_ID, Occurrence.OCCURRENCE.EVENT_ID), true)
 val CONSTRAINT_B: UniqueKey<QuestionRecord> = Internal.createUniqueKey(Question.QUESTION, DSL.name("CONSTRAINT_B"), arrayOf(Question.QUESTION.ID), true)
 val CONSTRAINT_F5C: UniqueKey<QuestionTagRecord> = Internal.createUniqueKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F5C"), arrayOf(QuestionTag.QUESTION_TAG.QUESTION_ID, QuestionTag.QUESTION_TAG.TAG_NAME), true)
+val CONSTRAINT_51DB79D: UniqueKey<SearchDocumentRecord> = Internal.createUniqueKey(SearchDocument.SEARCH_DOCUMENT, DSL.name("CONSTRAINT_51DB79D"), arrayOf(SearchDocument.SEARCH_DOCUMENT.GENERATION_ID, SearchDocument.SEARCH_DOCUMENT.QUESTION_ID, SearchDocument.SEARCH_DOCUMENT.ORDINAL), true)
+val CONSTRAINT_8: UniqueKey<SearchGenerationRecord> = Internal.createUniqueKey(SearchGeneration.SEARCH_GENERATION, DSL.name("CONSTRAINT_8"), arrayOf(SearchGeneration.SEARCH_GENERATION.ID), true)
+val CONSTRAINT_D: UniqueKey<SearchWorkRecord> = Internal.createUniqueKey(SearchWork.SEARCH_WORK, DSL.name("CONSTRAINT_D"), arrayOf(SearchWork.SEARCH_WORK.QUESTION_ID), true)
 val CONSTRAINT_1: UniqueKey<TagRecord> = Internal.createUniqueKey(Tag.TAG, DSL.name("CONSTRAINT_1"), arrayOf(Tag.TAG.NAME), true)
 
 // -------------------------------------------------------------------------
@@ -73,3 +82,7 @@ val CONSTRAINT_BA: ForeignKey<QuestionRecord, AppUserRecord> = Internal.createFo
 val QUESTION_ACCEPTED_ANSWER: ForeignKey<QuestionRecord, AnswerRecord> = Internal.createForeignKey(Question.QUESTION, DSL.name("question_accepted_answer"), arrayOf(Question.QUESTION.ID, Question.QUESTION.ACCEPTED_ANSWER_ID), com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID, arrayOf(Answer.ANSWER.QUESTION_ID, Answer.ANSWER.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_F: ForeignKey<QuestionTagRecord, QuestionRecord> = Internal.createForeignKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F"), arrayOf(QuestionTag.QUESTION_TAG.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
 val CONSTRAINT_F5: ForeignKey<QuestionTagRecord, TagRecord> = Internal.createForeignKey(QuestionTag.QUESTION_TAG, DSL.name("CONSTRAINT_F5"), arrayOf(QuestionTag.QUESTION_TAG.TAG_NAME), com.functionaldude.aso.jooq.keys.CONSTRAINT_1, arrayOf(Tag.TAG.NAME), true, ForeignKeyRule.NO_ACTION, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51DB: ForeignKey<SearchDocumentRecord, SearchGenerationRecord> = Internal.createForeignKey(SearchDocument.SEARCH_DOCUMENT, DSL.name("CONSTRAINT_51DB"), arrayOf(SearchDocument.SEARCH_DOCUMENT.GENERATION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_8, arrayOf(SearchGeneration.SEARCH_GENERATION.ID), true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51DB7: ForeignKey<SearchDocumentRecord, QuestionRecord> = Internal.createForeignKey(SearchDocument.SEARCH_DOCUMENT, DSL.name("CONSTRAINT_51DB7"), arrayOf(SearchDocument.SEARCH_DOCUMENT.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_51DB79: ForeignKey<SearchDocumentRecord, AnswerRecord> = Internal.createForeignKey(SearchDocument.SEARCH_DOCUMENT, DSL.name("CONSTRAINT_51DB79"), arrayOf(SearchDocument.SEARCH_DOCUMENT.ANSWER_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_A, arrayOf(Answer.ANSWER.ID), true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION)
+val CONSTRAINT_DF: ForeignKey<SearchWorkRecord, QuestionRecord> = Internal.createForeignKey(SearchWork.SEARCH_WORK, DSL.name("CONSTRAINT_DF"), arrayOf(SearchWork.SEARCH_WORK.QUESTION_ID), com.functionaldude.aso.jooq.keys.CONSTRAINT_B, arrayOf(Question.QUESTION.ID), true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION)

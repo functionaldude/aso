@@ -1,0 +1,3402 @@
+{
+  "recordedAt" : "2026-10-17T09:36:24.938785Z",
+  "corpusVersion" : 2,
+  "corpusGitRevision" : "cb2ae685a3460a469c8d1ae03077fc107d242cca",
+  "corpusSha256" : "9edc56db9bb7a41cd521a0eaa47abe54abda97c9f3f6a01b241529b0e47594eb",
+  "command" : "./gradlew --no-daemon searchLatency",
+  "ownerReview" : "approved by owner on 2026-10-17 for evaluation and tuning",
+  "questions" : 1000,
+  "model" : "text-embedding-qwen3-embedding-0.6b",
+  "dimensions" : 1024,
+  "generation" : "d793688cf7e5adb73a45ab6ccc1b61ce9b94c55d12abd59b7ef8d1f47be99d22",
+  "preparation" : "qwen3-retrieval-v1",
+  "indexSeconds" : 98.748568541,
+  "exactTop3" : 10,
+  "semanticTop5" : 10,
+  "lexicalExactTop3" : 10,
+  "lexicalSemanticTop5" : 9,
+  "queries" : [ {
+    "id" : "exact-1",
+    "kind" : "exact",
+    "query" : "org.example:client:2.1.0",
+    "target" : "variant",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "variant",
+        "snippet" : "Gradle cannot select org.example:client:2.1.0 for Java 25\nNo matching variant of org.example:client:2.1.0 was found. The consumer requires Java 25 but the published variant targets Java 26.\ngradle java variants",
+        "identifiers" : [ "org.example:client:2.1.0" ],
+        "explanation" : "Exact identifiers: org.example:client:2.1.0; Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [variant]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant rank=1 maximum=3"
+      }, {
+        "name" : "target_before:variant-old",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "variant",
+        "snippet" : "Gradle cannot select org.example:client:2.1.0 for Java 25\nNo matching variant of org.example:client:2.1.0 was found. The consumer requires Java 25 but the published variant targets Java 26.\ngradle java variants",
+        "identifiers" : [ "org.example:client:2.1.0" ],
+        "explanation" : "Exact identifiers: org.example:client:2.1.0; Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [variant]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant rank=1 maximum=3"
+      }, {
+        "name" : "target_before:variant-old",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-2",
+    "kind" : "exact",
+    "query" : "java.lang.NoClassDefFoundError",
+    "target" : "class",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\njava.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.\nclasspath java",
+        "identifiers" : [ "java.lang.NoClassDefFoundError" ],
+        "explanation" : "Exact identifiers: java.lang.NoClassDefFoundError; Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\njava.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.\nclasspath java",
+        "identifiers" : [ "java.lang.NoClassDefFoundError" ],
+        "explanation" : "Exact identifiers: java.lang.NoClassDefFoundError; Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-3",
+    "kind" : "exact",
+    "query" : "SQLSTATE 40P01",
+    "target" : "lock",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "lock",
+        "snippet" : "PostgreSQL SQLSTATE 40P01 during opposite row updates\nConcurrent transactions update parent and child rows in opposite order and PostgreSQL detects a deadlock.\npostgresql transactions",
+        "identifiers" : [ "SQLSTATE", "40P01" ],
+        "explanation" : "Exact identifiers: SQLSTATE, 40P01; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [lock]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=lock rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:lock",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:dce7c417-4ce9-3239-84a9-34a486c41288",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "lock",
+        "snippet" : "PostgreSQL SQLSTATE 40P01 during opposite row updates\nAcquire parent locks in one consistent order across mutations; retry the entire aborted transaction.",
+        "identifiers" : [ "SQLSTATE", "40P01" ],
+        "explanation" : "Exact identifiers: SQLSTATE, 40P01; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [lock]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=lock rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:lock",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:dce7c417-4ce9-3239-84a9-34a486c41288",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-4",
+    "kind" : "exact",
+    "query" : "NG0100",
+    "target" : "angular",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "angular",
+        "snippet" : "Angular NG0100 after changing state during view checking\nExpressionChangedAfterItHasBeenCheckedError NG0100 appears after modifying component state in a checked lifecycle hook.\nangular signals",
+        "identifiers" : [ "NG0100" ],
+        "explanation" : "Exact identifiers: NG0100; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [angular]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=angular rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:angular",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:d18b8624-a0f5-3721-9a7b-82365fc562dd",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "angular",
+        "snippet" : "Angular NG0100 after changing state during view checking\nExpressionChangedAfterItHasBeenCheckedError NG0100 appears after modifying component state in a checked lifecycle hook.\nangular signals",
+        "identifiers" : [ "NG0100" ],
+        "explanation" : "Exact identifiers: NG0100; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [angular]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=angular rank=1 maximum=3"
+      }, {
+        "name" : "accepted_state:angular",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:d18b8624-a0f5-3721-9a7b-82365fc562dd",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-5",
+    "kind" : "exact",
+    "query" : "C++",
+    "target" : "cpp",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "cpp",
+        "snippet" : "C++ linker undefined reference in native parser\nC++ parser fails during native linking because the object file is omitted from target sources.\ncpp linker",
+        "identifiers" : [ "C++" ],
+        "explanation" : "Exact identifiers: C++; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [cpp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=cpp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:csharp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:cpp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2c5f2cba-9af7-3929-86d3-de1e753f3faa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "cpp",
+        "snippet" : "C++ linker undefined reference in native parser\nC++ parser fails during native linking because the object file is omitted from target sources.\ncpp linker",
+        "identifiers" : [ "C++" ],
+        "explanation" : "Exact identifiers: C++; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [cpp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=cpp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:csharp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:cpp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2c5f2cba-9af7-3929-86d3-de1e753f3faa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-6",
+    "kind" : "exact",
+    "query" : "C# CS8602",
+    "target" : "csharp",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ "C#", "CS8602" ],
+        "explanation" : "Exact identifiers: C#, CS8602; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csharp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csharp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:cpp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ "C#", "CS8602" ],
+        "explanation" : "Exact identifiers: C#, CS8602; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csharp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csharp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:cpp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-7",
+    "kind" : "exact",
+    "query" : "org.example:client:1.9.0",
+    "target" : "variant-old",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCould not find org.example:client:1.9.0 in the repository. This release has never been published.\ndependencies gradle",
+        "identifiers" : [ "org.example:client:1.9.0" ],
+        "explanation" : "Exact identifiers: org.example:client:1.9.0; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [variant-old]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant-old rank=1 maximum=3"
+      }, {
+        "name" : "target_before:variant",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCould not find org.example:client:1.9.0 in the repository. This release has never been published.\ndependencies gradle",
+        "identifiers" : [ "org.example:client:1.9.0" ],
+        "explanation" : "Exact identifiers: org.example:client:1.9.0; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [variant-old]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant-old rank=1 maximum=3"
+      }, {
+        "name" : "target_before:variant",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-8",
+    "kind" : "exact",
+    "query" : "C#",
+    "target" : "csharp",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ "C#" ],
+        "explanation" : "Exact identifiers: C#; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csharp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csharp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:cpp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ "C#" ],
+        "explanation" : "Exact identifiers: C#; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csharp]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csharp rank=1 maximum=3"
+      }, {
+        "name" : "target_before:cpp",
+        "passed" : true,
+        "detail" : "Target rank=1, distractor rank=null"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-9",
+    "kind" : "exact",
+    "query" : "runtimeClasspath",
+    "target" : "class",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ "runtimeClasspath" ],
+        "explanation" : "Exact identifiers: runtimeClasspath; Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=1 maximum=3"
+      }, {
+        "name" : "source_isolation",
+        "passed" : true,
+        "detail" : "Literal source locations: [(class, answer:class-answer), (class, answer:class-runtime-exclusions)]"
+      }, {
+        "name" : "source_evidence",
+        "passed" : true,
+        "detail" : "Returned source evidence: NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.; identifiers=[runtimeClasspath]"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ "runtimeClasspath" ],
+        "explanation" : "Exact identifiers: runtimeClasspath; Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=1 maximum=3"
+      }, {
+        "name" : "source_isolation",
+        "passed" : true,
+        "detail" : "Literal source locations: [(class, answer:class-answer), (class, answer:class-runtime-exclusions)]"
+      }, {
+        "name" : "source_evidence",
+        "passed" : true,
+        "detail" : "Returned source evidence: NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.; identifiers=[runtimeClasspath]"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "exact-10",
+    "kind" : "exact",
+    "query" : "org.example:token-validator:3.4.1",
+    "target" : "issuer",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "issuer",
+        "snippet" : " service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ "org.example:token-validator:3.4.1" ],
+        "explanation" : "Exact identifiers: org.example:token-validator:3.4.1; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [issuer]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=issuer rank=1 maximum=3"
+      }, {
+        "name" : "source_isolation",
+        "passed" : true,
+        "detail" : "Literal source locations: [(issuer, context:dependencies)]"
+      }, {
+        "name" : "source_evidence",
+        "passed" : true,
+        "detail" : "Returned source evidence:  service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc; identifiers=[org.example:token-validator:3.4.1]"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "issuer",
+        "snippet" : " service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ "org.example:token-validator:3.4.1" ],
+        "explanation" : "Exact identifiers: org.example:token-validator:3.4.1; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [issuer]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=issuer rank=1 maximum=3"
+      }, {
+        "name" : "source_isolation",
+        "passed" : true,
+        "detail" : "Literal source locations: [(issuer, context:dependencies)]"
+      }, {
+        "name" : "source_evidence",
+        "passed" : true,
+        "detail" : "Returned source evidence:  service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc; identifiers=[org.example:token-validator:3.4.1]"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-1",
+    "kind" : "semantic",
+    "query" : "The build rejects my library because it needs a newer JVM than my application uses",
+    "target" : "variant",
+    "lexical" : {
+      "rank" : 4,
+      "results" : [ {
+        "id" : "pool",
+        "snippet" : "Database connection pool exhausted after requests\nUse try-with-resources or Kotlin use to close borrowed connections on every path. Measure active connections after failures.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "issuer",
+        "snippet" : "DC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "ng.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.\nclasspath java",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "variant",
+        "snippet" : "or Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      }, {
+        "id" : "pagination",
+        "snippet" : "Repeated rows across pages with equal creation times\nUse a stable compound keyset cursor with createdAt and UUID as a unique tie breaker.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [pool, issuer, class, variant, pagination]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant rank=4 maximum=5"
+      }, {
+        "name" : "accepted_state:pool",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:b10a8c0b-ede9-3b4e-a771-b04db3149f28",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "variant",
+        "snippet" : "or Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      }, {
+        "id" : "class",
+        "snippet" : "rser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "pool",
+        "snippet" : "Database connection pool exhausted after requests\nUse try-with-resources or Kotlin use to close borrowed connections on every path. Measure active connections after failures.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "issuer",
+        "snippet" : "DC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCorrect the coordinate or publish that artifact. A toolchain change does not fix a missing artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "pagination",
+        "snippet" : "Repeated rows across pages with equal creation times\nUse a stable compound keyset cursor with createdAt and UUID as a unique tie breaker.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [variant, class, pool, issuer, variant-old, pagination]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=variant rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pool",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:b10a8c0b-ede9-3b4e-a771-b04db3149f28",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-2",
+    "kind" : "semantic",
+    "query" : "My program compiles but a type disappears when I launch it",
+    "target" : "class",
+    "lexical" : {
+      "rank" : 2,
+      "results" : [ {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\njava.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.\nclasspath java",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "variant",
+        "snippet" : "Gradle cannot select org.example:client:2.1.0 for Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csharp, class, variant]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=2 maximum=5"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\njava.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.\nclasspath java",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "cpp",
+        "snippet" : "C++ linker undefined reference in native parser\nC++ parser fails during native linking because the object file is omitted from target sources.\ncpp linker",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nC# parser reports CS8602 possible null reference dereference.\ncompiler csharp",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "variant",
+        "snippet" : "Gradle cannot select org.example:client:2.1.0 for Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      }, {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCorrect the coordinate or publish that artifact. A toolchain change does not fix a missing artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [class, cpp, csharp, variant, variant-old]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=class rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:cpp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2c5f2cba-9af7-3929-86d3-de1e753f3faa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-3",
+    "kind" : "semantic",
+    "query" : "After enough failed web requests every database operation waits for a free slot",
+    "target" : "pool",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "pool",
+        "snippet" : "Database connection pool exhausted after requests\nRequests eventually wait forever for a database connection. Borrowed JDBC connections are never returned after exceptions.\njdbc postgresql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csrf",
+        "snippet" : "te fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "cpp",
+        "snippet" : "C++ linker undefined reference in native parser\nC++ parser fails during native linking because the object file is omitted from target sources.\ncpp linker",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "issuer",
+        "snippet" : "JWT issuer mismatch inside Docker\nOIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [pool, csrf, cpp, issuer]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=pool rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:pool",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:b10a8c0b-ede9-3b4e-a771-b04db3149f28",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:cpp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2c5f2cba-9af7-3929-86d3-de1e753f3faa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "pool",
+        "snippet" : "Database connection pool exhausted after requests\nRequests eventually wait forever for a database connection. Borrowed JDBC connections are never returned after exceptions.\njdbc postgresql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csrf",
+        "snippet" : "te fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "race",
+        "snippet" : "Duplicate payment rows when clients retry after a timeout\nA payment succeeds on the server but the client loses the response. Retrying creates a second payment.\napi concurrency",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "cpp",
+        "snippet" : "C++ linker undefined reference in native parser\nC++ parser fails during native linking because the object file is omitted from target sources.\ncpp linker",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "issuer",
+        "snippet" : "JWT issuer mismatch inside Docker\nOIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "lock",
+        "snippet" : "PostgreSQL SQLSTATE 40P01 during opposite row updates\nAcquire parent locks in one consistent order across mutations; retry the entire aborted transaction.",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "pagination",
+        "snippet" : "Repeated rows across pages with equal creation times\nSorting only by createdAt produces missing or repeated results when timestamps tie.\npagination sql",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [pool, csrf, race, cpp, issuer, lock, pagination]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=pool rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:pool",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:b10a8c0b-ede9-3b4e-a771-b04db3149f28",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:race",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2e2a7a2e-57d1-378b-b33a-559b20c463f6",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:cpp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2c5f2cba-9af7-3929-86d3-de1e753f3faa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:lock",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:dce7c417-4ce9-3239-84a9-34a486c41288",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-4",
+    "kind" : "semantic",
+    "query" : "A lost HTTP response causes the same financial operation to happen twice",
+    "target" : "race",
+    "lexical" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : false,
+        "detail" : "Target=race rank=null maximum=5"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "race",
+        "snippet" : "ws when clients retry after a timeout\nA payment succeeds on the server but the client loses the response. Retrying creates a second payment.\napi concurrency",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csrf",
+        "snippet" : "Browser write fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [race, csrf]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=race rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:race",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2e2a7a2e-57d1-378b-b33a-559b20c463f6",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-5",
+    "kind" : "semantic",
+    "query" : "Reading pages works but submitting a form with my login cookie is forbidden",
+    "target" : "csrf",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csrf",
+        "snippet" : "Browser write fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "pagination",
+        "snippet" : "Repeated rows across pages with equal creation times\nSorting only by createdAt produces missing or repeated results when timestamps tie.\npagination sql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csrf, pagination]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csrf rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "csrf",
+        "snippet" : "Browser write fails with Invalid CSRF token\nFetch the masked CSRF token and send X-CSRF-TOKEN with the session cookie.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "pagination",
+        "snippet" : "Repeated rows across pages with equal creation times\nSorting only by createdAt produces missing or repeated results when timestamps tie.\npagination sql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [csrf, pagination]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=csrf rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-6",
+    "kind" : "semantic",
+    "query" : "Signing in works on my laptop but token validation breaks in a container network",
+    "target" : "issuer",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "issuer",
+        "snippet" : "JWT issuer mismatch inside Docker\nOIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csrf",
+        "snippet" : "Browser write fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [issuer, csrf, class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=issuer rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "issuer",
+        "snippet" : "JWT issuer mismatch inside Docker\nOIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.\nAUTH-ISSUER-017\norg.example:token-validator:3.4.1\nJava 25\nexample/identity-service\ndocker oidc",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csrf",
+        "snippet" : "Browser write fails with Invalid CSRF token\nSession-authenticated POST requests return 403 Invalid CSRF token while GET requests work.\nsecurity spring",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [issuer, csrf, class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=issuer rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:issuer",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:3e6c2bc1-e7f7-35e8-8450-394c747a8e9f",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csrf",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:ca969a1b-c977-32d9-bb1e-88ce8396c216",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-7",
+    "kind" : "semantic",
+    "query" : "Two writers grab the same records in reverse sequence and one transaction aborts",
+    "target" : "lock",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "lock",
+        "snippet" : "E 40P01 during opposite row updates\nAcquire parent locks in one consistent order across mutations; retry the entire aborted transaction.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "snippet" : "Synthetic catalog entry 356\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "snippet" : "Synthetic catalog entry 231\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "snippet" : "Synthetic catalog entry 960\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "snippet" : "Synthetic catalog entry 527\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "snippet" : "Synthetic catalog entry 407\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "snippet" : "Synthetic catalog entry 518\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "snippet" : "Synthetic catalog entry 855\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "snippet" : "Synthetic catalog entry 933\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "snippet" : "Synthetic catalog entry 867\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "snippet" : "Synthetic catalog entry 805\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "snippet" : "Synthetic catalog entry 145\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "snippet" : "Synthetic catalog entry 441\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "snippet" : "Synthetic catalog entry 160\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "snippet" : "Synthetic catalog entry 436\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0670066a-fa21-31c5-adad-e261041675db",
+        "snippet" : "Synthetic catalog entry 691\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06946153-635e-3a11-8430-1841f225460d",
+        "snippet" : "Synthetic catalog entry 863\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "snippet" : "Synthetic catalog entry 703\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "snippet" : "Synthetic catalog entry 422\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "snippet" : "Synthetic catalog entry 511\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [lock, synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee, synthetic:012e80a2-585b-3701-b92d-ced1a9a49918, synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c, synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7, synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38, synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa, synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc, synthetic:04046433-392e-3f0e-abc4-63b91024cbf2, synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d, synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32, synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c, synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a, synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b, synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d, synthetic:0670066a-fa21-31c5-adad-e261041675db, synthetic:06946153-635e-3a11-8430-1841f225460d, synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c, synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126, synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=lock rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:lock",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:dce7c417-4ce9-3239-84a9-34a486c41288",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0670066a-fa21-31c5-adad-e261041675db",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06946153-635e-3a11-8430-1841f225460d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "lock",
+        "snippet" : "E 40P01 during opposite row updates\nAcquire parent locks in one consistent order across mutations; retry the entire aborted transaction.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "race",
+        "snippet" : "stable idempotency key with a unique database constraint in the same transaction as the payment.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "snippet" : "Synthetic catalog entry 356\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "snippet" : "Synthetic catalog entry 231\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "snippet" : "Synthetic catalog entry 960\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "snippet" : "Synthetic catalog entry 527\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "snippet" : "Synthetic catalog entry 407\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "snippet" : "Synthetic catalog entry 518\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "snippet" : "Synthetic catalog entry 855\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "snippet" : "Synthetic catalog entry 933\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "snippet" : "Synthetic catalog entry 867\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "snippet" : "Synthetic catalog entry 805\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "snippet" : "Synthetic catalog entry 145\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "snippet" : "Synthetic catalog entry 441\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "snippet" : "Synthetic catalog entry 160\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "snippet" : "Synthetic catalog entry 436\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0670066a-fa21-31c5-adad-e261041675db",
+        "snippet" : "Synthetic catalog entry 691\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06946153-635e-3a11-8430-1841f225460d",
+        "snippet" : "Synthetic catalog entry 863\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "snippet" : "Synthetic catalog entry 703\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "snippet" : "Synthetic catalog entry 422\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [lock, race, synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee, synthetic:012e80a2-585b-3701-b92d-ced1a9a49918, synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c, synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7, synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38, synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa, synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc, synthetic:04046433-392e-3f0e-abc4-63b91024cbf2, synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d, synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32, synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c, synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a, synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b, synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d, synthetic:0670066a-fa21-31c5-adad-e261041675db, synthetic:06946153-635e-3a11-8430-1841f225460d, synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c, synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=lock rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:lock",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:dce7c417-4ce9-3239-84a9-34a486c41288",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:race",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2e2a7a2e-57d1-378b-b33a-559b20c463f6",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0670066a-fa21-31c5-adad-e261041675db",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06946153-635e-3a11-8430-1841f225460d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-8",
+    "kind" : "semantic",
+    "query" : "My bound UI value changes while Angular is checking the view",
+    "target" : "angular",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "angular",
+        "snippet" : "Angular NG0100 after changing state during view checking\nMove initialization before the checked view phase and avoid changing bound values during checking.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nCheck nullable values before dereferencing.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "rser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "variant",
+        "snippet" : "or Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      }, {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCorrect the coordinate or publish that artifact. A toolchain change does not fix a missing artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [angular, csharp, class, variant, variant-old]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=angular rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:angular",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:d18b8624-a0f5-3721-9a7b-82365fc562dd",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "angular",
+        "snippet" : "Angular NG0100 after changing state during view checking\nMove initialization before the checked view phase and avoid changing bound values during checking.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "csharp",
+        "snippet" : "C# nullable reference warning in parser\nCheck nullable values before dereferencing.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "rser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      }, {
+        "id" : "variant",
+        "snippet" : "or Java 25\nUse a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "11a54c03-3469-3fd8-bf31-e897409e6257"
+      }, {
+        "id" : "variant-old",
+        "snippet" : "Gradle org.example:client:1.9.0 missing artifact\nCorrect the coordinate or publish that artifact. A toolchain change does not fix a missing artifact.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [angular, csharp, class, variant, variant-old]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=angular rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:angular",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:d18b8624-a0f5-3721-9a7b-82365fc562dd",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:csharp",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a20d785d-bacb-3f41-a3b7-392aa7d03b78",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:aa7ac8cd-5e0a-3993-a177-746279cc00d2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:variant-old",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:f0946741-9c40-31b6-88a1-a5ab791d514d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-9",
+    "kind" : "semantic",
+    "query" : "Paging drops items when several records share the same timestamp",
+    "target" : "pagination",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "pagination",
+        "snippet" : "ting only by createdAt produces missing or repeated results when timestamps tie.\npagination sql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "snippet" : "Synthetic catalog entry 356\nFictitious inventory shelf item catalog 356. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "snippet" : "Synthetic catalog entry 231\nFictitious inventory shelf item catalog 231. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "snippet" : "Synthetic catalog entry 960\nFictitious inventory shelf item catalog 960. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "snippet" : "Synthetic catalog entry 527\nFictitious inventory shelf item catalog 527. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "snippet" : "Synthetic catalog entry 407\nFictitious inventory shelf item catalog 407. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "snippet" : "Synthetic catalog entry 518\nFictitious inventory shelf item catalog 518. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "snippet" : "Synthetic catalog entry 855\nFictitious inventory shelf item catalog 855. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "snippet" : "Synthetic catalog entry 933\nFictitious inventory shelf item catalog 933. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "snippet" : "Synthetic catalog entry 867\nFictitious inventory shelf item catalog 867. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "snippet" : "Synthetic catalog entry 805\nFictitious inventory shelf item catalog 805. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "snippet" : "Synthetic catalog entry 145\nFictitious inventory shelf item catalog 145. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "snippet" : "Synthetic catalog entry 441\nFictitious inventory shelf item catalog 441. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "snippet" : "Synthetic catalog entry 160\nFictitious inventory shelf item catalog 160. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "snippet" : "Synthetic catalog entry 436\nFictitious inventory shelf item catalog 436. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0670066a-fa21-31c5-adad-e261041675db",
+        "snippet" : "Synthetic catalog entry 691\nFictitious inventory shelf item catalog 691. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06946153-635e-3a11-8430-1841f225460d",
+        "snippet" : "Synthetic catalog entry 863\nFictitious inventory shelf item catalog 863. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "snippet" : "Synthetic catalog entry 703\nFictitious inventory shelf item catalog 703. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "snippet" : "Synthetic catalog entry 422\nFictitious inventory shelf item catalog 422. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "snippet" : "Synthetic catalog entry 511\nFictitious inventory shelf item catalog 511. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [pagination, synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee, synthetic:012e80a2-585b-3701-b92d-ced1a9a49918, synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c, synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7, synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38, synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa, synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc, synthetic:04046433-392e-3f0e-abc4-63b91024cbf2, synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d, synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32, synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c, synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a, synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b, synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d, synthetic:0670066a-fa21-31c5-adad-e261041675db, synthetic:06946153-635e-3a11-8430-1841f225460d, synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c, synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126, synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=pagination rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0670066a-fa21-31c5-adad-e261041675db",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06946153-635e-3a11-8430-1841f225460d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "pagination",
+        "snippet" : "ting only by createdAt produces missing or repeated results when timestamps tie.\npagination sql",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "snippet" : "Synthetic catalog entry 356\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "snippet" : "Synthetic catalog entry 231\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "snippet" : "Synthetic catalog entry 960\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "snippet" : "Synthetic catalog entry 527\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "snippet" : "Synthetic catalog entry 407\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "snippet" : "Synthetic catalog entry 518\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "snippet" : "Synthetic catalog entry 855\nFictitious inventory shelf item catalog 855. Storage location and packaging details.\nsynthetic",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "snippet" : "Synthetic catalog entry 933\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "snippet" : "Synthetic catalog entry 867\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "snippet" : "Synthetic catalog entry 805\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "snippet" : "Synthetic catalog entry 145\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "snippet" : "Synthetic catalog entry 441\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "snippet" : "Synthetic catalog entry 160\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "snippet" : "Synthetic catalog entry 436\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0670066a-fa21-31c5-adad-e261041675db",
+        "snippet" : "Synthetic catalog entry 691\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06946153-635e-3a11-8430-1841f225460d",
+        "snippet" : "Synthetic catalog entry 863\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "snippet" : "Synthetic catalog entry 703\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "snippet" : "Synthetic catalog entry 422\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "snippet" : "Synthetic catalog entry 511\nInventory metadata only; no engineering solution is recorded.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [pagination, synthetic:002342a5-d4f5-33be-8fa8-a1875a0688ee, synthetic:012e80a2-585b-3701-b92d-ced1a9a49918, synthetic:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c, synthetic:01df94ce-c81c-37d6-bda9-7f5a52af5bc7, synthetic:01e3ed38-df3a-33b6-92c1-150f3daa3c38, synthetic:025f96f8-c675-3b34-b7d5-25eedf180dfa, synthetic:039b38a5-5988-3975-8f9e-5ccf52d130fc, synthetic:04046433-392e-3f0e-abc4-63b91024cbf2, synthetic:043179b8-abb0-3187-9413-014bf1a1ad5d, synthetic:057d7cab-9a19-3c13-a010-005f1bb77c32, synthetic:05c71a99-4b2c-3fed-9945-d24e3d6f883c, synthetic:05f3f1ee-7452-3c0a-b672-dbad0230968a, synthetic:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b, synthetic:064f8db2-d891-3fc5-b70e-f6be864cc52d, synthetic:0670066a-fa21-31c5-adad-e261041675db, synthetic:06946153-635e-3a11-8430-1841f225460d, synthetic:0699dc37-e957-3571-ae09-f8ca8b5b548c, synthetic:06ff1b2f-40e0-3103-8d83-ca37fb9b5126, synthetic:0708c257-63ea-31e9-9532-cf65e5d8f019]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=pagination rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:pagination",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:fe7cd4d1-bf3f-3a9a-8d92-1e224b3fa24c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:002342a5-d4f5-33be-8fa8-a1875a0688ee",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:012e80a2-585b-3701-b92d-ced1a9a49918",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01d9e094-a4d8-3dbf-98cf-fa9a3181a83c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01df94ce-c81c-37d6-bda9-7f5a52af5bc7",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:01e3ed38-df3a-33b6-92c1-150f3daa3c38",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:025f96f8-c675-3b34-b7d5-25eedf180dfa",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:039b38a5-5988-3975-8f9e-5ccf52d130fc",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:04046433-392e-3f0e-abc4-63b91024cbf2",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:043179b8-abb0-3187-9413-014bf1a1ad5d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:057d7cab-9a19-3c13-a010-005f1bb77c32",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05c71a99-4b2c-3fed-9945-d24e3d6f883c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:05f3f1ee-7452-3c0a-b672-dbad0230968a",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06425f1f-92f7-35a9-b9f7-0c7ab0925c3b",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:064f8db2-d891-3fc5-b70e-f6be864cc52d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0670066a-fa21-31c5-adad-e261041675db",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06946153-635e-3a11-8430-1841f225460d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0699dc37-e957-3571-ae09-f8ca8b5b548c",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:06ff1b2f-40e0-3103-8d83-ca37fb9b5126",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "source_snippet:0708c257-63ea-31e9-9532-cf65e5d8f019",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "semantic-10",
+    "kind" : "semantic",
+    "query" : "A removed answer is still visible in search snippets until the index catches up",
+    "target" : "hidden",
+    "lexical" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "hidden",
+        "snippet" : "Stale search index reveals moderated answers\nSearch results expose answer excerpts after a moderator hides the answer; background cleanup has not finished.\nmoderation search",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "rser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [hidden, class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=hidden rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:hidden",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:662f707d-5491-39bc-a823-8a6c0be92190",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    },
+    "hybrid" : {
+      "rank" : 1,
+      "results" : [ {
+        "id" : "hidden",
+        "snippet" : "Stale search index reveals moderated answers\nSearch results expose answer excerpts after a moderator hides the answer; background cleanup has not finished.\nmoderation search",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      }, {
+        "id" : "class",
+        "snippet" : "rser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "identifiers" : [ ],
+        "explanation" : "Lexical text match",
+        "state" : "resolved",
+        "acceptedAnswerId" : "7c851c04-a459-3b80-855b-9a1dddb600c7"
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [hidden, class]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "target_rank",
+        "passed" : true,
+        "detail" : "Target=hidden rank=1 maximum=5"
+      }, {
+        "name" : "accepted_state:hidden",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:662f707d-5491-39bc-a823-8a6c0be92190",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "accepted_state:class",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:a2f2ed4f-8ebc-3cbb-8c21-a29dc40ab61d",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      } ]
+    }
+  }, {
+    "id" : "negative-1",
+    "kind" : "negative",
+    "query" : "org.example:client:9.9.9 has a verified fix",
+    "target" : null,
+    "lexical" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[variant, variant-old]; returned=[]"
+      }, {
+        "name" : "negative_identifier:org.example:client:9.9.9",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    },
+    "hybrid" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[variant, variant-old]; returned=[]"
+      }, {
+        "name" : "negative_identifier:org.example:client:9.9.9",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    }
+  }, {
+    "id" : "negative-2",
+    "kind" : "negative",
+    "query" : "SQLSTATE 23505 unique violation during account signup",
+    "target" : null,
+    "lexical" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[lock, race]; returned=[]"
+      }, {
+        "name" : "negative_identifier:23505",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    },
+    "hybrid" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[lock, race]; returned=[]"
+      }, {
+        "name" : "negative_identifier:23505",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    }
+  }, {
+    "id" : "negative-3",
+    "kind" : "negative",
+    "query" : "Quantum flux regulator error QZ-991 on a lunar database",
+    "target" : null,
+    "lexical" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[]; returned=[]"
+      }, {
+        "name" : "negative_identifier:QZ-991",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    },
+    "hybrid" : {
+      "rank" : null,
+      "results" : [ ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: []"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[]; returned=[]"
+      }, {
+        "name" : "negative_identifier:QZ-991",
+        "passed" : true,
+        "detail" : "Unsupported identifier is absent from source match evidence"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    }
+  }, {
+    "id" : "negative-4",
+    "kind" : "negative",
+    "query" : "Does PostgreSQL 15 guarantee PostgreSQL 18 extension compatibility?",
+    "target" : null,
+    "lexical" : {
+      "rank" : null,
+      "results" : [ {
+        "id" : "version",
+        "snippet" : "PostgreSQL 18 versus PostgreSQL 15 upgrade plan\nThe test environment runs PostgreSQL 18; another project remains on PostgreSQL 15. No upgrade compatibility evidence is provided.\npostgresql versions",
+        "identifiers" : [ "PostgreSQL", "15", "18" ],
+        "explanation" : "Exact identifiers: PostgreSQL, 15, 18; Lexical text match",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [version]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "accepted_state:version",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2af72f10-0c35-3273-9462-84f6fd1dfc08",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[version]; returned=[version]"
+      }, {
+        "name" : "negative_required:version",
+        "passed" : true,
+        "detail" : "Required rank=1, maximum=5"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:cross-version-compatibility-guarantee",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    },
+    "hybrid" : {
+      "rank" : null,
+      "results" : [ {
+        "id" : "version",
+        "snippet" : "PostgreSQL 18 versus PostgreSQL 15 upgrade plan\nThe test environment runs PostgreSQL 18; another project remains on PostgreSQL 15. No upgrade compatibility evidence is provided.\npostgresql versions",
+        "identifiers" : [ "PostgreSQL", "15", "18" ],
+        "explanation" : "Exact identifiers: PostgreSQL, 15, 18; Lexical text match; Semantic similarity",
+        "state" : "open",
+        "acceptedAnswerId" : null
+      } ],
+      "assertions" : [ {
+        "name" : "unique_questions",
+        "passed" : true,
+        "detail" : "Ordered results: [version]"
+      }, {
+        "name" : "pagination_order",
+        "passed" : true,
+        "detail" : "Two-item pages reproduce the first 20 ordered results"
+      }, {
+        "name" : "pagination_unique",
+        "passed" : true,
+        "detail" : "No repeated question IDs across pages"
+      }, {
+        "name" : "accepted_state:version",
+        "passed" : true,
+        "detail" : "Source acceptance is preserved"
+      }, {
+        "name" : "source_snippet:2af72f10-0c35-3273-9462-84f6fd1dfc08",
+        "passed" : true,
+        "detail" : "Snippet is an excerpt of current visible source content"
+      }, {
+        "name" : "negative_allowlist",
+        "passed" : true,
+        "detail" : "Allowed=[version]; returned=[version]"
+      }, {
+        "name" : "negative_required:version",
+        "passed" : true,
+        "detail" : "Required rank=1, maximum=5"
+      }, {
+        "name" : "negative_claim:verified-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:applicable-fix-for-query",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      }, {
+        "name" : "negative_claim:cross-version-compatibility-guarantee",
+        "passed" : true,
+        "detail" : "Source evidence has neutral retrieval labels and no fix guarantee. The browser notice is checked by e2eTest."
+      } ]
+    }
+  } ],
+  "latency" : {
+    "samples" : 100,
+    "concurrency" : 5,
+    "firstSearchMs" : 740.772875,
+    "p50Ms" : 187.560167,
+    "p95Ms" : 217.868,
+    "maxMs" : 238.381666
+  },
+  "limitations" : [ "First search is a cold application query after indexing, not a model unload/load measurement.", "Negative queries have no expected verified solution; suggested neighbors are recorded without claiming a fix.", "All product and IdP state is disposable. No development state is read or mutated.", "Latency distractors are short synthetic inventory records, not production-sized engineering diagnostics." ]
+}

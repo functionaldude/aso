@@ -88,6 +88,7 @@ tasks.register<Test>("integrationTest") {
     classpath = integrationTest.runtimeClasspath
     systemProperty("aso.test.database-image", databaseImage)
     shouldRunAfter(tasks.test)
+    exclude("**/SearchEvaluationTest.class")
 }
 
 val bootJar =
@@ -193,4 +194,41 @@ kotlin.sourceSets.named("main") { kotlin.srcDir("src/generated/kotlin") }
 tasks.named<Test>("integrationTest") {
     dependsOn(playwrightInstall)
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+}
+
+listOf("searchRelevance", "searchLatency").forEach { taskName ->
+    tasks.register<Test>(taskName) {
+        group = "verification"
+        description = "Evaluate actual local embeddings against a committed corpus using disposable PostgreSQL and Keycloak."
+        dependsOn(playwrightInstall)
+        testClassesDirs = integrationTest.output.classesDirs
+        classpath = integrationTest.runtimeClasspath
+        include("**/SearchEvaluationTest.class")
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+        systemProperty("aso.test.database-image", databaseImage)
+        systemProperty("aso.test.keycloak-image", keycloakImage)
+        systemProperty("aso.test.realm", rootProject.file("dev/keycloak/aso-dev-realm.json").absolutePath)
+        systemProperty("aso.search.corpus", rootProject.file("docs/search-evaluation/corpus.json").absolutePath)
+        val revision =
+            providers
+                .exec {
+                    commandLine("git", "log", "-1", "--format=%H", "--", "docs/search-evaluation/corpus.json")
+                    workingDir(rootProject.projectDir)
+                }.standardOutput.asText
+                .get()
+                .trim()
+        systemProperty("aso.search.corpus-revision", revision)
+        systemProperty("aso.search.command", "./gradlew --no-daemon $taskName")
+        systemProperty("aso.search.questions", if (taskName == "searchLatency") 1000 else 14)
+        systemProperty("aso.search.latency", taskName == "searchLatency")
+        systemProperty(
+            "aso.search.report",
+            layout.buildDirectory
+                .file("search-evaluation/$taskName.json")
+                .get()
+                .asFile.absolutePath,
+        )
+        testLogging.showStandardStreams = true
+    }
 }
