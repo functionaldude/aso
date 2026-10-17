@@ -1,0 +1,409 @@
+{
+  "version": 2,
+  "ownerReview": "approved by owner on 2026-10-17 for evaluation and tuning",
+  "description": "Fictitious sanitized engineering examples. Targets denote relevant questions, not independently verified fixes. Negative expectations distinguish permitted related results from unsupported applicability claims.",
+  "evaluation": {
+    "state": "all",
+    "resultLimit": 20,
+    "paginationPageSize": 2,
+    "exactMaxRank": 3,
+    "semanticMaxRank": 5,
+    "semanticMinHits": 8,
+    "requireUniqueQuestions": true
+  },
+  "documents": [
+    {
+      "id": "variant",
+      "title": "Gradle cannot select org.example:client:2.1.0 for Java 25",
+      "body": "No matching variant of org.example:client:2.1.0 was found. The consumer requires Java 25 but the published variant targets Java 26.",
+      "tags": ["gradle", "java", "variants"],
+      "answers": [
+        {
+          "id": "variant-answer",
+          "body": "Use a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact."
+        }
+      ],
+      "acceptedAnswerId": "variant-answer"
+    },
+    {
+      "id": "class",
+      "title": "NoClassDefFoundError for com.example.codec.Parser",
+      "body": "java.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.",
+      "tags": ["java", "classpath"],
+      "answers": [
+        {
+          "id": "class-answer",
+          "body": "Add the missing codec runtime dependency, rather than compileOnly; inspect runtimeClasspath."
+        },
+        {
+          "id": "class-runtime-exclusions",
+          "body": "Inspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes."
+        }
+      ],
+      "acceptedAnswerId": "class-answer"
+    },
+    {
+      "id": "pool",
+      "title": "Database connection pool exhausted after requests",
+      "body": "Requests eventually wait forever for a database connection. Borrowed JDBC connections are never returned after exceptions.",
+      "tags": ["postgresql", "jdbc"],
+      "answers": [
+        {
+          "id": "pool-answer",
+          "body": "Use try-with-resources or Kotlin use to close borrowed connections on every path. Measure active connections after failures."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "race",
+      "title": "Duplicate payment rows when clients retry after a timeout",
+      "body": "A payment succeeds on the server but the client loses the response. Retrying creates a second payment.",
+      "tags": ["api", "concurrency"],
+      "answers": [
+        {
+          "id": "race-answer",
+          "body": "Reserve a stable idempotency key with a unique database constraint in the same transaction as the payment."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "csrf",
+      "title": "Browser write fails with Invalid CSRF token",
+      "body": "Session-authenticated POST requests return 403 Invalid CSRF token while GET requests work.",
+      "tags": ["spring", "security"],
+      "answers": [
+        {
+          "id": "csrf-answer",
+          "body": "Fetch the masked CSRF token and send X-CSRF-TOKEN with the session cookie."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "issuer",
+      "title": "JWT issuer mismatch inside Docker",
+      "body": "OIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.",
+      "tags": ["oidc", "docker"],
+      "answers": [
+        {
+          "id": "issuer-answer",
+          "body": "Use one advertised issuer reachable by the browser and backend. localhost inside a container addresses that container."
+        }
+      ],
+      "acceptedAnswerId": null,
+      "context": {
+        "errorText": "AUTH-ISSUER-017",
+        "dependencies": "org.example:token-validator:3.4.1",
+        "versions": "Java 25",
+        "repository": "example/identity-service"
+      }
+    },
+    {
+      "id": "lock",
+      "title": "PostgreSQL SQLSTATE 40P01 during opposite row updates",
+      "body": "Concurrent transactions update parent and child rows in opposite order and PostgreSQL detects a deadlock.",
+      "tags": ["postgresql", "transactions"],
+      "answers": [
+        {
+          "id": "lock-answer",
+          "body": "Acquire parent locks in one consistent order across mutations; retry the entire aborted transaction."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "angular",
+      "title": "Angular NG0100 after changing state during view checking",
+      "body": "ExpressionChangedAfterItHasBeenCheckedError NG0100 appears after modifying component state in a checked lifecycle hook.",
+      "tags": ["angular", "signals"],
+      "answers": [
+        {
+          "id": "angular-answer",
+          "body": "Move initialization before the checked view phase and avoid changing bound values during checking."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "pagination",
+      "title": "Repeated rows across pages with equal creation times",
+      "body": "Sorting only by createdAt produces missing or repeated results when timestamps tie.",
+      "tags": ["pagination", "sql"],
+      "answers": [
+        {
+          "id": "pagination-answer",
+          "body": "Use a stable compound keyset cursor with createdAt and UUID as a unique tie breaker."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "hidden",
+      "title": "Stale search index reveals moderated answers",
+      "body": "Search results expose answer excerpts after a moderator hides the answer; background cleanup has not finished.",
+      "tags": ["search", "moderation"],
+      "answers": [
+        {
+          "id": "hidden-answer",
+          "body": "Join search candidates against current product visibility and revision before constructing excerpts."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "variant-old",
+      "title": "Gradle org.example:client:1.9.0 missing artifact",
+      "body": "Could not find org.example:client:1.9.0 in the repository. This release has never been published.",
+      "tags": ["gradle", "dependencies"],
+      "answers": [
+        {
+          "id": "variant-old-answer",
+          "body": "Correct the coordinate or publish that artifact. A toolchain change does not fix a missing artifact."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "cpp",
+      "title": "C++ linker undefined reference in native parser",
+      "body": "C++ parser fails during native linking because the object file is omitted from target sources.",
+      "tags": ["cpp", "linker"],
+      "answers": [
+        {
+          "id": "cpp-answer",
+          "body": "Add the native object to the link target."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "csharp",
+      "title": "C# nullable reference warning in parser",
+      "body": "C# parser reports CS8602 possible null reference dereference.",
+      "tags": ["csharp", "compiler"],
+      "answers": [
+        {
+          "id": "csharp-answer",
+          "body": "Check nullable values before dereferencing."
+        }
+      ],
+      "acceptedAnswerId": null
+    },
+    {
+      "id": "version",
+      "title": "PostgreSQL 18 versus PostgreSQL 15 upgrade plan",
+      "body": "The test environment runs PostgreSQL 18; another project remains on PostgreSQL 15. No upgrade compatibility evidence is provided.",
+      "tags": ["postgresql", "versions"],
+      "answers": [
+        {
+          "id": "version-answer",
+          "body": "Evaluate extensions and upgrade requirements separately for each major version."
+        }
+      ],
+      "acceptedAnswerId": null
+    }
+  ],
+  "queries": [
+    {
+      "id": "exact-1",
+      "kind": "exact",
+      "query": "org.example:client:2.1.0",
+      "target": "variant",
+      "targetBefore": ["variant-old"]
+    },
+    {
+      "id": "exact-2",
+      "kind": "exact",
+      "query": "java.lang.NoClassDefFoundError",
+      "target": "class"
+    },
+    {
+      "id": "exact-3",
+      "kind": "exact",
+      "query": "SQLSTATE 40P01",
+      "target": "lock"
+    },
+    {
+      "id": "exact-4",
+      "kind": "exact",
+      "query": "NG0100",
+      "target": "angular"
+    },
+    {
+      "id": "exact-5",
+      "kind": "exact",
+      "query": "C++",
+      "target": "cpp",
+      "targetBefore": ["csharp"]
+    },
+    {
+      "id": "exact-6",
+      "kind": "exact",
+      "query": "C# CS8602",
+      "target": "csharp",
+      "targetBefore": ["cpp"]
+    },
+    {
+      "id": "exact-7",
+      "kind": "exact",
+      "query": "org.example:client:1.9.0",
+      "target": "variant-old",
+      "targetBefore": ["variant"]
+    },
+    {
+      "id": "exact-8",
+      "kind": "exact",
+      "query": "C#",
+      "target": "csharp",
+      "targetBefore": ["cpp"]
+    },
+    {
+      "id": "exact-9",
+      "kind": "exact",
+      "query": "runtimeClasspath",
+      "target": "class",
+      "sourceExpectation": {
+        "onlyIn": "answers",
+        "answerIds": ["class-answer", "class-runtime-exclusions"]
+      }
+    },
+    {
+      "id": "exact-10",
+      "kind": "exact",
+      "query": "org.example:token-validator:3.4.1",
+      "target": "issuer",
+      "sourceExpectation": {
+        "onlyIn": "context",
+        "contextFields": ["dependencies"]
+      }
+    },
+    {
+      "id": "semantic-1",
+      "kind": "semantic",
+      "query": "The build rejects my library because it needs a newer JVM than my application uses",
+      "target": "variant"
+    },
+    {
+      "id": "semantic-2",
+      "kind": "semantic",
+      "query": "My program compiles but a type disappears when I launch it",
+      "target": "class"
+    },
+    {
+      "id": "semantic-3",
+      "kind": "semantic",
+      "query": "After enough failed web requests every database operation waits for a free slot",
+      "target": "pool"
+    },
+    {
+      "id": "semantic-4",
+      "kind": "semantic",
+      "query": "A lost HTTP response causes the same financial operation to happen twice",
+      "target": "race"
+    },
+    {
+      "id": "semantic-5",
+      "kind": "semantic",
+      "query": "Reading pages works but submitting a form with my login cookie is forbidden",
+      "target": "csrf"
+    },
+    {
+      "id": "semantic-6",
+      "kind": "semantic",
+      "query": "Signing in works on my laptop but token validation breaks in a container network",
+      "target": "issuer"
+    },
+    {
+      "id": "semantic-7",
+      "kind": "semantic",
+      "query": "Two writers grab the same records in reverse sequence and one transaction aborts",
+      "target": "lock"
+    },
+    {
+      "id": "semantic-8",
+      "kind": "semantic",
+      "query": "My bound UI value changes while Angular is checking the view",
+      "target": "angular"
+    },
+    {
+      "id": "semantic-9",
+      "kind": "semantic",
+      "query": "Paging drops items when several records share the same timestamp",
+      "target": "pagination"
+    },
+    {
+      "id": "semantic-10",
+      "kind": "semantic",
+      "query": "A removed answer is still visible in search snippets until the index catches up",
+      "target": "hidden"
+    },
+    {
+      "id": "negative-1",
+      "kind": "negative",
+      "query": "org.example:client:9.9.9 has a verified fix",
+      "target": null,
+      "negativeExpectation": {
+        "allowedRelatedTargets": ["variant", "variant-old"],
+        "requiredRelatedTargets": [],
+        "forbiddenMatchedIdentifiers": ["org.example:client:9.9.9"],
+        "forbiddenClaims": [
+          "verified-fix-for-query",
+          "applicable-fix-for-query"
+        ],
+        "rationale": "The stored questions concern other versions and different failures. They may be related results but neither supplies evidence of a fix for 9.9.9."
+      }
+    },
+    {
+      "id": "negative-2",
+      "kind": "negative",
+      "query": "SQLSTATE 23505 unique violation during account signup",
+      "target": null,
+      "negativeExpectation": {
+        "allowedRelatedTargets": ["lock", "race"],
+        "requiredRelatedTargets": [],
+        "forbiddenMatchedIdentifiers": ["23505"],
+        "forbiddenClaims": [
+          "verified-fix-for-query",
+          "applicable-fix-for-query"
+        ],
+        "rationale": "The deadlock question concerns 40P01, not 23505. The payment question discusses a unique constraint for retry safety, not an account-signup fix. Either may appear only as related evidence."
+      }
+    },
+    {
+      "id": "negative-3",
+      "kind": "negative",
+      "query": "Quantum flux regulator error QZ-991 on a lunar database",
+      "target": null,
+      "negativeExpectation": {
+        "allowedRelatedTargets": [],
+        "requiredRelatedTargets": [],
+        "forbiddenMatchedIdentifiers": ["QZ-991"],
+        "forbiddenClaims": [
+          "verified-fix-for-query",
+          "applicable-fix-for-query"
+        ],
+        "rationale": "No document concerns this fictitious device or error. The empty allowed set requires an empty result list; a nearest vector alone must not force a match."
+      }
+    },
+    {
+      "id": "negative-4",
+      "kind": "negative",
+      "query": "Does PostgreSQL 15 guarantee PostgreSQL 18 extension compatibility?",
+      "target": null,
+      "negativeExpectation": {
+        "allowedRelatedTargets": ["version"],
+        "requiredRelatedTargets": ["version"],
+        "forbiddenMatchedIdentifiers": [],
+        "forbiddenClaims": [
+          "verified-fix-for-query",
+          "applicable-fix-for-query",
+          "cross-version-compatibility-guarantee"
+        ],
+        "rationale": "The version question is relevant and must be retrieved, but explicitly provides no evidence of extension compatibility or a guaranteed fix.",
+        "requiredRelatedMaxRank": 5
+      }
+    }
+  ]
+}

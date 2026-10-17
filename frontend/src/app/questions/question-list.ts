@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { IdentityService } from '../core/identity';
-import { Question, QuestionsApi, contentError } from './questions-api';
+import { Question, QuestionsApi, SearchResult, contentError } from './questions-api';
 
 @Component({
   selector: 'app-question-list',
@@ -35,12 +35,16 @@ import { Question, QuestionsApi, contentError } from './questions-api';
     @if (session.state() === 'member') {
       <form class="filters" (ngSubmit)="apply()">
         <mat-form-field
+          ><mat-label>Search problems and solutions</mat-label>
+          <input matInput name="query" [(ngModel)]="query" maxlength="1000" />
+        </mat-form-field>
+        <mat-form-field
           ><mat-label>Tag filter</mat-label
           ><input matInput name="tag" [(ngModel)]="tag" maxlength="40"
         /></mat-form-field>
         <mat-form-field
           ><mat-label>View</mat-label
-          ><mat-select name="view" [(ngModel)]="view"
+          ><mat-select name="view" [(ngModel)]="view" [disabled]="!!query.trim()"
             ><mat-option value="recent">Recent</mat-option
             ><mat-option value="unanswered">Unanswered</mat-option
             ><mat-option value="recurring">Recurring · 7 days</mat-option></mat-select
@@ -55,7 +59,15 @@ import { Question, QuestionsApi, contentError } from './questions-api';
         >
         <button mat-button [disabled]="loading()">Apply filters</button>
       </form>
-      @if (activeView === 'recurring') {
+      @if (activeQuery) {
+        <p>Related evidence, not a verified fix. Check versions, context and human acceptance.</p>
+        @if (degraded()) {
+          <p role="status">
+            Degraded search: exact and lexical retrieval remain available. {{ degraded() }}
+          </p>
+        }
+      }
+      @if (activeView === 'recurring' && !activeQuery) {
         <p>
           Last 7 days (UTC), through {{ asOf() | date: 'medium' : 'UTC' }} UTC. Ranked by distinct
           developers, encounters, then latest encounter.
@@ -78,6 +90,15 @@ import { Question, QuestionsApi, contentError } from './questions-api';
             <h2>
               <a [routerLink]="['/questions', question.id]">{{ question.title }}</a>
             </h2>
+            @if (matches()[question.id]; as result) {
+              <p class="search-snippet">{{ result.snippet }}</p>
+              <p class="metadata">{{ result.match.explanation }}</p>
+              <p>
+                {{
+                  question.acceptedAnswerId ? 'Has a human-accepted answer' : 'No accepted answer'
+                }}
+              </p>
+            }
             <p>
               {{ question.votes.upvotes }} upvotes · All time:
               {{ question.occurrences.allTime.encounters }} encounters ·
@@ -114,6 +135,10 @@ export class QuestionList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   tag = '';
+  query = '';
+  activeQuery = '';
+  readonly degraded = signal('');
+  readonly matches = signal<Record<string, SearchResult>>({});
   state = 'open';
   view = 'recent';
   activeView = 'recent';
@@ -130,7 +155,9 @@ export class QuestionList {
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.tag = params.get('tag') ?? '';
-      this.state = params.get('state') ?? 'open';
+      this.query = params.get('query') ?? '';
+      this.activeQuery = this.query.trim();
+      this.state = params.get('state') ?? (this.activeQuery ? 'all' : 'open');
       this.view = params.get('view') ?? 'recent';
       this.activeView = this.view;
       this.activeTag = this.tag;
@@ -150,7 +177,12 @@ export class QuestionList {
   }
   apply() {
     void this.router.navigate(['/questions'], {
-      queryParams: { tag: this.tag || null, state: this.state, view: this.view },
+      queryParams: {
+        query: this.query.trim() || null,
+        tag: this.tag || null,
+        state: this.state,
+        view: this.view,
+      },
     });
   }
   async load() {
@@ -158,6 +190,25 @@ export class QuestionList {
     this.loading.set(true);
     this.error.set('');
     try {
+      if (this.activeQuery) {
+        const page = await this.api.search(
+          this.activeQuery,
+          this.activeTag,
+          this.activeState,
+          this.current,
+        );
+        if (generation === this.generation) {
+          this.items.set(page.items.map((result) => result.question));
+          this.matches.set(
+            Object.fromEntries(page.items.map((result) => [result.question.id, result])),
+          );
+          this.degraded.set(page.degraded ? page.reasons.join(', ').replaceAll('_', ' ') : '');
+          this.next.set(page.nextCursor);
+        }
+        return;
+      }
+      this.matches.set({});
+      this.degraded.set('');
       const page = await this.api.list(
         this.activeTag,
         this.activeState,

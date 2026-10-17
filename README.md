@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, and encounter/recurring views are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
+A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, encounter/recurring views, and local hybrid search are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -66,7 +66,7 @@ The development helper works without a `.env` by explicitly selecting `developme
 | `ASO_PORT`        | `8080`                                 | Spring port; keep 8080 with the supplied Angular proxy |
 | `ASO_ADDRESS`     | `127.0.0.1`                            | Spring bind address; use `0.0.0.0` in a container      |
 
-PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. Flyway V4 adds content lifecycle and audit records; V5 adds votes and encounter events without resetting data. See [Q&A contracts](docs/questions-and-answers.md).
+PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. Flyway V4 adds content lifecycle and audit records; V5 adds votes and encounter events; V6–V7 add derived search state and durable indexing without resetting data. See [Q&A contracts](docs/questions-and-answers.md).
 
 Changing database credentials does not rewrite an initialized volume. For a deliberate, destructive reset, stop application processes, then run:
 
@@ -131,7 +131,7 @@ Issuer/public URLs require HTTPS except for loopback development. Configure the 
 
 Public routes are `/`, `/about`, the `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}` shells, shell JS/CSS/media/favicon, `/api/v1/info`, `/api/v1/csrf` (only a masked CSRF token), `/actuator/health` (minimal), login/callback/error routes, and `/.well-known/oauth-protected-resource[/mcp]`. They contain no private workspace data. `/api/v1/identity` requires a browser OIDC session; `/api/v1/admin/identity` additionally requires the configured admin group. Anonymous API requests return 401; authenticated non-members return 403. The UI has sign-in retry, membership/expired-authorization guidance, account retry, and lost-session recovery on reload/window focus. Protected APIs never redirect an API caller to an HTML login page.
 
-`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and fourteen tools: `identity`, `list_questions`, `get_question`, `list_answers`, `create_question`, `create_answer`, `list_comments`, `create_comment`, `edit_question`, `edit_answer`, `edit_comment`, `set_vote`, `list_votes`, and `report_occurrence`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
+`/mcp` accepts **only bearer access tokens** in the Authorization header. Cookies and ID tokens cannot authenticate it; bearer credentials cannot authenticate browser-only identity/admin routes. MCP supports stateless Streamable HTTP with JSON responses, protocol `2025-11-25`, `initialize`, `ping`, `tools/list`, and fifteen tools: `identity`, `search_questions`, `list_questions`, `get_question`, `list_answers`, `create_question`, `create_answer`, `list_comments`, `create_comment`, `edit_question`, `edit_answer`, `edit_comment`, `set_vote`, `list_votes`, and `report_occurrence`. GET returns 405 after authorization (no SSE stream); invalid credentials return 401 with RFC 9728 `resource_metadata`; non-members/untrusted Origins return 403. The shared identity service derives the person and channel (`web` or `mcp`) from the validated principal. Caller-provided identity/admin tool arguments are rejected.
 
 Human-only acceptance/moderation uses browser-session-only, CSRF-protected handlers and shared authorization services; it has no MCP tool. This is a transport/credential boundary, not proof of human presence. A claimed client name, user-agent, or role payload conveys no human/admin authority. The Q&A handlers retain this boundary and shared authorization; see [their contracts](docs/questions-and-answers.md).
 
@@ -192,7 +192,59 @@ MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conf
 git diff --exit-code -- backend/src/generated
 ```
 
-The Boot-managed jOOQ 3.21.7 DDLDatabase parses `V2__identity.sql`, `V3__questions_and_answers.sql`, `V4__content_lifecycle.sql`, and `V5__votes_and_occurrences.sql` offline and writes committed Kotlin bindings to `backend/src/generated/kotlin`. V1's pgvector extension is infrastructure and is not a table-generation input. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. The generator owns their formatting; Spotless applies only to handwritten Kotlin. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2–V5 additively; no existing migration or development data is rewritten.
+The Boot-managed jOOQ 3.21.7 DDLDatabase parses table migrations V2–V6 offline and writes committed Kotlin bindings to `backend/src/generated/kotlin`. V1's pgvector extension and V7's trigger functions are not table-generation inputs. No JDBC URL, developer database, Docker, IdP, or credentials are read by generation. Ordinary builds compile the committed sources. The generator owns their formatting; Spotless applies only to handwritten Kotlin. CI regenerates and checks for drift; adding future tables requires deliberately expanding the Flyway DDL inputs. Two independent runs produced byte-identical sources. Flyway applies V2–V7 additively; no existing migration or development data is rewritten.
+
+## Local hybrid search
+
+Use **Search problems and solutions** in Questions, authenticated `GET /api/v1/search?query=...&state=all`, or MCP `search_questions`. All use the same authorization, filters and ranking. The optional tag, state (`all`, `open`, `resolved`), limit (1–50, default 20), and cursor are shared. Clear the query to return to recent/unanswered/recurring browsing. Results contain one question per match, a source excerpt, retrieval explanation, human acceptance and the existing separate engagement counts. Related results never establish a verified or applicable fix.
+
+Development explicitly enables local embeddings. Ordinary runtime defaults to disabled until `ASO_EMBEDDING_ENABLED=true`; search then visibly retains exact/lexical retrieval. The verified endpoint is **http://127.0.0.1:1234/v1**, model **text-embedding-qwen3-embedding-0.6b**, **1,024** actual dimensions. LM Studio 0.4.26+4 ignored a `dimensions: 32` probe; ASO sends no dimension override and validates every returned vector. Configure only locally hosted infrastructure: the endpoint host must be explicitly allowed and resolve exclusively to loopback/private/link-local addresses. Public addresses and redirects are rejected. There is no cloud fallback.
+
+| Environment variable | Default / meaning |
+| --- | --- |
+| `ASO_EMBEDDING_ENABLED` | `false`; explicitly `true` in development |
+| `ASO_EMBEDDING_BASE_URL`, `ASO_EMBEDDING_ALLOWED_HOSTS` | `http://127.0.0.1:1234/v1`; `127.0.0.1,localhost,::1` |
+| `ASO_EMBEDDING_MODEL`, `ASO_EMBEDDING_DIMENSIONS` | Qwen model above; `1024` |
+| `ASO_EMBEDDING_API_KEY` | Optional private Bearer token; never commit it |
+| `ASO_EMBEDDING_PREPARATION_VERSION` | `qwen3-retrieval-v1`; change when runtime preprocessing changes |
+| `ASO_EMBEDDING_QUERY_PREFIX`, `ASO_EMBEDDING_QUERY_SUFFIX` | `Instruct: Given a technical problem, retrieve related engineering questions and solutions.` plus newline plus `Query: `; empty suffix |
+| `ASO_EMBEDDING_DOCUMENT_PREFIX`, `ASO_EMBEDDING_DOCUMENT_SUFFIX` | Both empty; retrieval documents are plain text |
+| `ASO_EMBEDDING_MAX_INPUT_CHARACTERS`, `ASO_EMBEDDING_MAX_QUERY_CHARACTERS` | `4000`, `1000` UTF-16 units including preparation for model input |
+| `ASO_EMBEDDING_MAX_DOCUMENT_CHUNKS`, `ASO_EMBEDDING_BATCH_SIZE` | `64` chunks per question, `8` inputs per request |
+| `ASO_EMBEDDING_MAX_RESPONSE_BYTES` | `4000000`; bounded response consumption |
+| `ASO_EMBEDDING_CONNECT_TIMEOUT`, `ASO_EMBEDDING_REQUEST_TIMEOUT` | `300ms`, `1200ms` for connection/query |
+| `ASO_EMBEDDING_INDEXING_TIMEOUT` | `30s` per document batch |
+| `ASO_EMBEDDING_WORKER_BATCH_SIZE`, `ASO_EMBEDDING_POLL_MILLIS` | `10` questions, `1000` milliseconds |
+| `ASO_EMBEDDING_RETRY_DELAY`, `ASO_SEARCH_MIN_SIMILARITY` | `5s` initial exponential retry (cap 64×); `0.45` cosine threshold |
+
+Use normal Spring configuration files for multiline prefixes, or export a quoted value, e.g. `export ASO_EMBEDDING_QUERY_PREFIX=$'Instruct: Retrieve related engineering questions.\nQuery: '`. Direct Gradle commands never load `.env`; export required embedding settings first. The optional local `.env` is only loaded by development helper scripts.
+
+Exact complete technical tokens constrain retrieval so another artifact version, error code, or language cannot substitute for the requested identifier. English stemming with partial-term lexical retrieval and local cosine similarity are fused by reciprocal rank (constant 60), with exact identifiers ranked first. Visibility and content revisions are checked against current product rows; stale vectors are suppressed. Excerpts come only from current visible content. Search holds shared parent locks while assembling results, following the existing moderation transaction boundary.
+
+Flyway V6 adds index generations, vectors as dimension-independent PostgreSQL arrays (cast to pgvector for cosine), and durable work; V7 supplies transactional content/answer/tag triggers. Offline jOOQ deliberately parses table DDL V2–V6; V7 contains no tables and is not a generation input. No migration/product-data reset is needed. An empty index initializes once. Model, dimensions, endpoint, document bounds or preparation changes create a different configuration fingerprint and require an **explicit rebuild**. Incompatible generations are never searched together. Rebuild switches to the selected generation, clears only derived index state and queues every product question; exact/lexical search remains available during rebuilding.
+
+Administrators use these browser-session endpoints (GET status; POST commands require the normal masked CSRF header):
+
+```bash
+# COOKIE_FILE is a private cookie jar from an authenticated admin browser session.
+curl --fail --cookie "$COOKIE_FILE" http://127.0.0.1:8080/api/v1/admin/search/index
+# CSRF_TOKEN comes from GET /api/v1/csrf using that same browser session.
+curl --fail --cookie "$COOKIE_FILE" -H "X-CSRF-TOKEN: $CSRF_TOKEN" \
+  -X POST http://127.0.0.1:8080/api/v1/admin/search/index/retry
+curl --fail --cookie "$COOKIE_FILE" -H "X-CSRF-TOKEN: $CSRF_TOKEN" \
+  -X POST http://127.0.0.1:8080/api/v1/admin/search/index/rebuild
+```
+
+Status exposes configured/active generation, pending work, failed work, and compatibility. Content commits queue work in their own database transaction, without contacting LM Studio. Failures persist, retry exponentially, and survive restarts. Claims have expiring leases; explicit retry clears leases for immediate recovery. A failed old claimant cannot overwrite a newer revision/claim. Changing model settings and restarting without a rebuild leaves search visibly degraded with `rebuild_required`. Query timeouts/failures return `embeddings_unavailable`; pending work reports `index_pending`. No diagnostics or credentials are reflected in failures. Very large answer collections use the configured semantic chunk cap; exact/lexical retrieval still covers all visible text. This laptop implementation scans current content and uses exact vector distances rather than an approximate index; larger-scale tuning needs separate measurement.
+
+Run the actual-model evaluations from the repository root:
+
+```bash
+./gradlew --no-daemon searchRelevance
+./gradlew --no-daemon searchLatency
+```
+
+These opt-in tasks call the configured **local** model, start disposable PostgreSQL and Keycloak, seed only the approved sanitized corpus, and exercise authenticated MCP search. Relevance loads all 14 fixture questions/15 answers; latency adds synthetic catalog distractors to reach 1,000 questions and measures 100 warmed requests at concurrency five, requesting 20 results. Lexical and hybrid reports include each query, full source/negative assertions, pagination/deduplication, corpus Git revision/SHA-256, and actual latency. No `.env`, development database, realm or volume is used. Reports are written under `backend/build/search-evaluation/`; sanitized retained evidence is in [search evaluation](docs/search-evaluation/README.md) and [goal 005](docs/goals/005-local-hybrid-search.md). Ordinary `check`, `integrationTest`, and `e2eTest` never execute these live-model tests; controlled local embedding fixtures cover ordinary search gates.
 
 ## CI and diagnostics
 
@@ -204,12 +256,12 @@ JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/t
 
 ## Next milestones
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity, Q&A, content lifecycle, and engagement (goal 004) are implemented; goal 005 and subsequent features remain planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Identity, Q&A, content lifecycle, engagement, and local hybrid search (goal 005) are implemented. Goal 006 and subsequent features remain planned.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 
-LM Studio configuration and representative search examples are inputs for the search goal. MVP delivery is a tested local release on the owner's laptop using Keycloak and LM Studio. Deployment and backup/restore functionality are deferred.
+LM Studio and the owner-approved sanitized search corpus have measured local evidence in goal 005. MVP delivery is a tested local release on the owner's laptop using Keycloak and LM Studio. Deployment and backup/restore functionality are deferred.
 
 Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
 
-The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 004](docs/goals/004-votes-occurrences-and-trends.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.
+The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 005](docs/goals/005-local-hybrid-search.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.

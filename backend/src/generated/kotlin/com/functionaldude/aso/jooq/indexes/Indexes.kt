@@ -12,6 +12,8 @@ import com.functionaldude.aso.jooq.tables.ContentVote
 import com.functionaldude.aso.jooq.tables.Occurrence
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
+import com.functionaldude.aso.jooq.tables.SearchGeneration
+import com.functionaldude.aso.jooq.tables.SearchWork
 
 import org.jooq.Index
 import org.jooq.impl.DSL
@@ -30,4 +32,6 @@ val OCCURRENCE_QUESTION_WINDOW: Index = Internal.createIndex(DSL.name("occurrenc
 val QUESTION_RECENT: Index = Internal.createIndex(DSL.name("question_recent"), Question.QUESTION, arrayOf(Question.QUESTION.CREATED_AT, Question.QUESTION.ID), false)
 val QUESTION_TAG_FILTER: Index = Internal.createIndex(DSL.name("question_tag_filter"), QuestionTag.QUESTION_TAG, arrayOf(QuestionTag.QUESTION_TAG.TAG_NAME, QuestionTag.QUESTION_TAG.QUESTION_ID), false)
 val QUESTION_VOTE_ACTOR: Index = Internal.createIndex(DSL.name("question_vote_actor"), ContentVote.CONTENT_VOTE, arrayOf(ContentVote.CONTENT_VOTE.QUESTION_ID, ContentVote.CONTENT_VOTE.ACTOR_ID), true)
+val SEARCH_ONE_ACTIVE_GENERATION: Index = Internal.createIndex(DSL.name("search_one_active_generation"), SearchGeneration.SEARCH_GENERATION, arrayOf(SearchGeneration.SEARCH_GENERATION.ACTIVE), true)
+val SEARCH_WORK_DUE: Index = Internal.createIndex(DSL.name("search_work_due"), SearchWork.SEARCH_WORK, arrayOf(SearchWork.SEARCH_WORK.NEXT_ATTEMPT_AT), false)
 val VOTE_TARGET_PAGE: Index = Internal.createIndex(DSL.name("vote_target_page"), ContentVote.CONTENT_VOTE, arrayOf(ContentVote.CONTENT_VOTE.QUESTION_ID, ContentVote.CONTENT_VOTE.ANSWER_ID, ContentVote.CONTENT_VOTE.CREATED_AT, ContentVote.CONTENT_VOTE.ID), false)

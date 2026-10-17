@@ -1,0 +1,38 @@
+{
+  "recordedAt": "2026-10-17T09:50:14.163874+00:00",
+  "endpoint": "http://127.0.0.1:1234/v1",
+  "model": "text-embedding-qwen3-embedding-0.6b",
+  "artifactSha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+  "loadCommand": [
+    "lms",
+    "load",
+    "text-embedding-qwen3-embedding-0.6b",
+    "--identifier",
+    "text-embedding-qwen3-embedding-0.6b",
+    "--context-length",
+    "32768",
+    "--yes"
+  ],
+  "modelLoadIncludingCliSeconds": 0.8278115420835093,
+  "firstEmbeddingAfterLoadSeconds": 0.08969337493181229,
+  "followingEmbeddingSeconds": [
+    0.036673666909337044,
+    0.03564595791976899,
+    0.03675433399621397
+  ],
+  "dimensions": 1024,
+  "restoredIdentifierPathContextTtlEngineMode": true,
+  "limitations": [
+    "One selected-model unload/reload sample; operating-system file caches were warm, not a reboot/disk-cold measurement.",
+    "Embedding API probe only; end-to-end authenticated search timing is recorded separately in searchLatency.json.",
+    "No product database, realm or other model was altered."
+  ],
+  "unloadCommand": [
+    "lms",
+    "unload",
+    "text-embedding-qwen3-embedding-0.6b"
+  ],
+  "preparedInput": [
+    "Instruct: Given a technical problem, retrieve related engineering questions and solutions.\nQuery: A lost HTTP response causes the same financial operation to happen twice"
+  ]
+}

@@ -2,6 +2,7 @@ package com.functionaldude.aso
 
 import com.functionaldude.aso.oidc.KeycloakFixture
 import com.functionaldude.aso.oidc.OidcBrowserLogin
+import com.functionaldude.aso.search.EmbeddingFixture
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
@@ -33,6 +34,8 @@ class PackagedApplicationE2ETest {
 
     @Test
     fun `packaged application authenticates browser users and protects the session bearer boundary`() {
+        val embeddings =
+            EmbeddingFixture()
         val artifacts = Path.of(System.getProperty("aso.test.artifacts"))
         Files.createDirectories(artifacts)
         // Authentication traces could contain credentials/callback codes. Keep only sanitized shell screenshots.
@@ -68,9 +71,12 @@ class PackagedApplicationE2ETest {
                             "ASO_DB_URL" to database.jdbcUrl,
                             "ASO_DB_USER" to database.username,
                             "ASO_DB_PASSWORD" to database.password,
+                            "ASO_EMBEDDING_ENABLED" to "true",
+                            "ASO_EMBEDDING_BASE_URL" to embeddings.baseUrl,
+                            "ASO_EMBEDDING_DIMENSIONS" to "3",
                         ),
                     )
-                    val application = builder.start()
+                    var application = builder.start()
                     try {
                         waitForApplication(baseUrl, application)
                         Playwright.create().use { playwright ->
@@ -85,14 +91,151 @@ class PackagedApplicationE2ETest {
                                 questions(browser, baseUrl, issuer, login, artifacts)
                                 lifecycle(browser, baseUrl, artifacts)
                                 engagement(browser, baseUrl, issuer, login, artifacts)
+                                search(browser, baseUrl, embeddings, artifacts)
+                                searchRestart(browser, baseUrl, embeddings) {
+                                    application.destroy()
+                                    if (!application.waitFor(10, TimeUnit.SECONDS)) application.destroyForcibly().waitFor()
+                                    embeddings.failure = false
+                                    application = builder.start()
+                                    waitForApplication(baseUrl, application)
+                                }
                             }
                         }
                     } finally {
                         application.destroy()
                         if (!application.waitFor(10, TimeUnit.SECONDS)) application.destroyForcibly().waitFor()
+                        embeddings.close()
                     }
                 }
             }
+        }
+    }
+
+    private fun search(
+        browser: Browser,
+        base: String,
+        embeddings: EmbeddingFixture,
+        artifacts: Path,
+    ) {
+        browser.newContext(Browser.NewContextOptions().setViewportSize(1440, 1100)).use { context ->
+            val page = context.newPage()
+            page.navigate("$base/oauth2/authorization/oidc")
+            page.locator("#username").fill("alice")
+            page.locator("#password").fill("alice-local-only")
+            page.locator("#kc-login").click()
+            page.waitForURL("$base/")
+            val csrf = json.readTree(context.request().get("$base/api/v1/csrf").text())["token"].asString()
+            val created =
+                context.request().post(
+                    "$base/api/v1/questions",
+                    RequestOptions.create().setHeader("X-CSRF-TOKEN", csrf).setData(
+                        mapOf(
+                            "requestId" to
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                            "title" to "Water fixture search",
+                            "body" to "Aqua retrieval and org.example:water:2.0",
+                            "tags" to listOf("search-browser"),
+                        ),
+                    ),
+                )
+            assertEquals(200, created.status())
+            val id = json.readTree(created.text())["id"].asString()
+            val deadline = System.nanoTime() + Duration.ofSeconds(60).toNanos()
+            while (System.nanoTime() < deadline) {
+                val result = json.readTree(context.request().get("$base/api/v1/search?query=hydration&tag=search-browser").text())
+                if (!result["degraded"].asBoolean()) break
+                Thread.sleep(100)
+            }
+            page.navigate("$base/questions?query=hydration&tag=search-browser&state=all")
+            assertThat(page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Water fixture search"))).isVisible()
+            assertThat(page.locator(".search-snippet")).containsText("Aqua")
+            assertThat(page.locator(".question-row")).containsText("Semantic similarity")
+            assertThat(page.locator(".question-row")).containsText("No accepted answer")
+            assertEquals(
+                "$base/questions/$id",
+                page.getByRole(AriaRole.LINK, Page.GetByRoleOptions().setName("Water fixture search")).getAttribute("href")?.let {
+                    base +
+                        it
+                },
+            )
+            page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("search-desktop.png")).setFullPage(true))
+            embeddings.failure = true
+            try {
+                page.getByLabel("Search problems and solutions").fill("org.example:water:2.0")
+                page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Apply filters")).click()
+                assertThat(page.getByRole(AriaRole.STATUS)).containsText("Degraded search")
+                assertThat(page.locator(".question-row")).containsText("Exact identifiers")
+                page.setViewportSize(390, 844)
+                assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
+                page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("search-mobile-degraded.png")).setFullPage(true))
+            } finally {
+                embeddings.failure = false
+            }
+        }
+    }
+
+    private fun searchRestart(
+        browser: Browser,
+        base: String,
+        embeddings: EmbeddingFixture,
+        restart: () -> Unit,
+    ) {
+        fun signIn(context: com.microsoft.playwright.BrowserContext) {
+            val page = context.newPage()
+            page.navigate("$base/oauth2/authorization/oidc")
+            page.locator("#username").fill("alice")
+            page.locator("#password").fill("alice-local-only")
+            page.locator("#kc-login").click()
+            page.waitForURL("$base/")
+        }
+        embeddings.failure = true
+        val id =
+            try {
+                browser.newContext().use { context ->
+                    signIn(context)
+                    val csrf = json.readTree(context.request().get("$base/api/v1/csrf").text())["token"].asString()
+                    val response =
+                        context.request().post(
+                            "$base/api/v1/questions",
+                            RequestOptions
+                                .create()
+                                .setHeader("X-CSRF-TOKEN", csrf)
+                                .setData(
+                                    mapOf(
+                                        "requestId" to
+                                            java.util.UUID
+                                                .randomUUID()
+                                                .toString(),
+                                        "title" to "Water after JVM restart",
+                                        "body" to "Aqua supply org.example:restart:1.0",
+                                        "tags" to listOf("search-restart"),
+                                    ),
+                                ),
+                        )
+                    assertEquals(200, response.status())
+                    val degraded = context.request().get("$base/api/v1/search?query=hydration&tag=search-restart")
+                    assertTrue(json.readTree(degraded.text())["degraded"].asBoolean())
+                    json.readTree(response.text())["id"].asString().also { restart() }
+                }
+            } finally {
+                embeddings.failure = false
+            }
+        browser.newContext().use { context ->
+            signIn(context)
+            val deadline = System.nanoTime() + Duration.ofSeconds(60).toNanos()
+            var recovered = false
+            while (System.nanoTime() < deadline) {
+                val result = json.readTree(context.request().get("$base/api/v1/search?query=hydration&tag=search-restart").text())
+                if (!result["degraded"].asBoolean() && result["items"].any { it["question"]["id"].asString() == id }) {
+                    recovered = true
+                    break
+                }
+                Thread.sleep(100)
+            }
+            assertTrue(recovered, "Persisted indexing work must recover after an actual executable-jar JVM restart")
+            assertEquals(200, context.request().get("$base/api/v1/questions/$id").status())
         }
     }
 

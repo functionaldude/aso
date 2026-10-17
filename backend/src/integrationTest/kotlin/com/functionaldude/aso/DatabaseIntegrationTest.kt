@@ -32,7 +32,7 @@ class DatabaseIntegrationTest {
     @Test
     fun `startup applies Flyway migrations and vector operations work`() {
         assertEquals(
-            5,
+            7,
             jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Int::class.java),
         )
         assertTrue(jdbc.queryForObject("SELECT extversion FROM pg_extension WHERE extname = 'vector'", String::class.java)!!.isNotBlank())
@@ -66,7 +66,7 @@ class DatabaseIntegrationTest {
         )
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM upgrade_check.question", Int::class.java))
         assertEquals(
-            5,
+            7,
             jdbc.queryForObject(
                 "SELECT count(*) FROM upgrade_check.flyway_schema_history WHERE success AND version IS NOT NULL",
                 Int::class.java,
@@ -212,6 +212,54 @@ class DatabaseIntegrationTest {
         assertEquals(200, response.statusCode())
         assertTrue(response.body().contains("\"UP\""))
         assertFalse(response.body().contains("components"))
+    }
+
+    @Test
+    fun `search upgrades populated V5 without resetting engagement and queues revisions transactionally`() {
+        fun migration() =
+            Flyway
+                .configure()
+                .dataSource(database.jdbcUrl, database.username, database.password)
+                .schemas("search_upgrade")
+                .defaultSchema("search_upgrade")
+        migration().target("5").load().migrate()
+        val actor = java.util.UUID.randomUUID()
+        val question = java.util.UUID.randomUUID()
+        jdbc.update(
+            "insert into search_upgrade.app_user(id,issuer,subject,display_name) values (?, 'https://fixture.invalid', 'owner', 'Owner')",
+            actor,
+        )
+        jdbc.update(
+            "insert into search_upgrade.question(id,title,body,author_id,channel) values (?, 'Retained', 'Problem', ?, 'web')",
+            question,
+            actor,
+        )
+        jdbc.update(
+            "insert into search_upgrade.occurrence(question_id,reporter_id,event_id,channel,created_at) values (?,?,?, 'web', current_timestamp)",
+            question,
+            actor,
+            java.util.UUID.randomUUID(),
+        )
+        migration().load().migrate()
+        assertEquals(1, jdbc.queryForObject("select count(*) from search_upgrade.occurrence", Int::class.java))
+        assertEquals(0, jdbc.queryForObject("select count(*) from search_upgrade.search_generation", Int::class.java))
+        jdbc.update("insert into search_upgrade.search_generation(id,profile,dimensions,active) values ('fixture', 'fixture', 3, true)")
+        jdbc.update("update search_upgrade.question set body='Updated' where id=?", question)
+        assertEquals(
+            2L,
+            jdbc.queryForObject("select revision from search_upgrade.search_work where question_id=?", Long::class.java, question),
+        )
+        assertEquals(1, jdbc.queryForObject("select version from search_upgrade.question where id=?", Int::class.java, question))
+        jdbc.update(
+            "insert into search_upgrade.answer(id,question_id,body,author_id,channel) values (?, ?, 'Answer', ?, 'web')",
+            java.util.UUID.randomUUID(),
+            question,
+            actor,
+        )
+        assertEquals(
+            3L,
+            jdbc.queryForObject("select revision from search_upgrade.search_work where question_id=?", Long::class.java, question),
+        )
     }
 
     companion object {

@@ -95,3 +95,9 @@ tasks.register("generateJooq") {
     group = "build"
     dependsOn(":backend:generateJooq")
 }
+listOf("searchRelevance", "searchLatency").forEach { taskName ->
+    tasks.register(taskName) {
+        group = "verification"
+        dependsOn(":backend:$taskName")
+    }
+}

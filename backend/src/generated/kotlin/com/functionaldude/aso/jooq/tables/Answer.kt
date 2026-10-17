@@ -9,6 +9,7 @@ import com.functionaldude.aso.jooq.indexes.ANSWER_QUESTION
 import com.functionaldude.aso.jooq.keys.ANSWER_PARENT_ID
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_3195B
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D14099
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_51DB79
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_A
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_AB
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_ABC
@@ -16,6 +17,7 @@ import com.functionaldude.aso.jooq.tables.AppUser.AppUserPath
 import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.ContentVote.ContentVotePath
 import com.functionaldude.aso.jooq.tables.Question.QuestionPath
+import com.functionaldude.aso.jooq.tables.SearchDocument.SearchDocumentPath
 import com.functionaldude.aso.jooq.tables.records.AnswerRecord
 
 import java.time.OffsetDateTime
@@ -153,6 +155,18 @@ open class Answer(
 
     val contentComment: ContentCommentPath
         get(): ContentCommentPath = contentComment()
+
+    private lateinit var _searchDocument: SearchDocumentPath
+
+    fun searchDocument(): SearchDocumentPath {
+        if (!this::_searchDocument.isInitialized)
+            _searchDocument = SearchDocumentPath(this, null, CONSTRAINT_51DB79.inverseKey)
+
+        return _searchDocument;
+    }
+
+    val searchDocument: SearchDocumentPath
+        get(): SearchDocumentPath = searchDocument()
     override fun getChecks(): List<Check<AnswerRecord>> = listOf(
         Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA"), "\"channel\" IN('web', 'mcp')", true),
         Internal.createCheck(this, DSL.name("CONSTRAINT_ABCA3"), "CHAR_LENGTH(\"body\") BETWEEN 1 AND 20000", true),

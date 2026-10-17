@@ -1,5 +1,6 @@
 package com.functionaldude.aso.questions
 
+import com.functionaldude.aso.search.SearchController
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.ProblemDetail
@@ -57,7 +58,12 @@ class QuestionController(
     ) = questions.createAnswer(authentication, id, input)
 }
 
-@RestControllerAdvice(assignableTypes = [QuestionController::class, LifecycleController::class, EngagementController::class])
+@RestControllerAdvice(
+    assignableTypes = [
+        QuestionController::class, LifecycleController::class, EngagementController::class,
+        SearchController::class,
+    ],
+)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class ContentErrors {
     @ExceptionHandler(HttpMessageNotReadableException::class)

@@ -1,5 +1,7 @@
 # Explicit opt-in only. Public fictitious fixture credentials; never select this profile in production.
 aso:
+  embedding:
+    enabled: ${ASO_EMBEDDING_ENABLED:true}
   identity:
     issuer: ${ASO_OIDC_ISSUER:http://127.0.0.1:8180/realms/aso-dev}
     web-client-id: ${ASO_OIDC_WEB_CLIENT_ID:aso-web}
