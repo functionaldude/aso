@@ -1,0 +1,87 @@
+<section
+  class="engagement"
+  [class.encounter-panel]="mode === 'encounters'"
+  [attr.aria-label]="kind + (mode === 'encounters' ? ' encounters' : ' usefulness')"
+>
+  @if (mode !== 'encounters') {
+    <div class="vote-toolbar">
+      <span class="metric-label">Usefulness</span
+      ><strong class="vote-count">{{ content.votes.upvotes }} <span>upvotes</span></strong>
+      @if (session.identity()?.id !== content.author.id) {
+        <button
+          mat-stroked-button
+          [disabled]="busy()"
+          [attr.aria-pressed]="content.votes.votedByYou"
+          (click)="vote()"
+        >
+          <span aria-hidden="true">↑ </span
+          >{{ content.votes.votedByYou ? 'Undo upvote' : 'Upvote' }}
+        </button>
+      }
+    </div>
+  }
+  @if (mode !== 'votes') {
+    @if (question; as q) {
+      <div class="section-heading">
+        <h2>Problem encounters</h2>
+        <span aria-hidden="true" class="encounter-symbol">↻</span>
+      </div>
+      <p class="encounter-intro">How often this problem happens.</p>
+      <div class="encounter-counts">
+        <p>
+          All time: {{ q.occurrences.allTime.encounters }} encounters ·
+          {{ q.occurrences.allTime.distinctDevelopers }} distinct developers
+        </p>
+        <p>
+          Last 7 days (UTC): {{ q.occurrences.sevenDay.encounters }} encounters ·
+          {{ q.occurrences.sevenDay.distinctDevelopers }} distinct developers
+        </p>
+      </div>
+      <p class="encounter-help">
+        An encounter records this problem happening to you. It does not endorse a fix.
+      </p>
+      @if (recorded()) {
+        <p class="notice" role="status">Encounter recorded. Retries of this incident count once.</p>
+        <button mat-button [disabled]="busy()" (click)="independent()">
+          Start a later independent encounter
+        </button>
+      } @else {
+        <button mat-stroked-button [disabled]="busy()" (click)="encounter()">
+          Record this encounter
+        </button>
+      }
+    }
+  }
+  @if (kind === 'answer') {
+    <button mat-button (click)="evidence()" [disabled]="evidenceBusy()">
+      Read upvote evidence
+    </button>
+    @if (evidencePage(); as page) {
+      <div class="evidence-panel">
+        <p class="metadata">
+          Caller-reported evidence · No independent server verification or human acceptance.
+        </p>
+        @for (vote of page.items; track vote.id) {
+          <p class="metadata">
+            {{ vote.voter.displayName }} · {{ vote.channel }} ·
+            {{ vote.createdAt | date: 'medium' }}
+          </p>
+          <pre class="context-value">{{
+            vote.callerReportedVerification ||
+              'No verification attestation supplied (browser upvote).'
+          }}</pre>
+        } @empty {
+          <p>No active upvotes.</p>
+        }
+        @if (page.nextCursor) {
+          <button mat-button [disabled]="evidenceBusy()" (click)="evidence(page.nextCursor)">
+            More upvote evidence
+          </button>
+        }
+      </div>
+    }
+  }
+  @if (error()) {
+    <p class="notice error" role="alert">{{ error() }}</p>
+  }
+</section>

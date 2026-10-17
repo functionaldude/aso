@@ -1,6 +1,6 @@
 # 007 — Tested laptop MVP release
 
-Status: Complete — tested laptop MVP release; PR open for review
+Status: Complete — tested laptop MVP release; merged through PR #10
 
 ## Dependencies and prerequisites
 
@@ -44,7 +44,7 @@ Include clean-checkout setup, packaged application verification, configuration/r
 
 ## Progress and blockers
 
-The [spec-to-evidence checklist and verification record](007-evidence.md) map all criteria, carry forward valid goals 005/006 results, and document clean setup, new throttling coverage, local two-user/model/outage/rebuild/restart smoke, local image operation, and resolved failed runs. [PR #10](https://github.com/functionaldude/aso/pull/10) is open, not merged. The self-hosted [CI run 39030409065](https://github.com/functionaldude/aso/actions/runs/39030409065) passed on implementation commit `0cda200603673fd45f4bf01dbc7404923c75a1b3`, including all deterministic gates and diagnostic upload. Completion does not mean production deployment or permission to enable Goal Mode.
+The [spec-to-evidence checklist and verification record](007-evidence.md) map all criteria, carry forward valid goals 005/006 results, and document clean setup, new throttling coverage, local two-user/model/outage/rebuild/restart smoke, local image operation, and resolved failed runs. [PR #10](https://github.com/functionaldude/aso/pull/10) merged on 2026-10-17 as `d8e37f8e1e5057d532c3fbfb55a5ed21d1b90962`. The self-hosted [CI run 39030409065](https://github.com/functionaldude/aso/actions/runs/39030409065) passed on implementation commit `0cda200603673fd45f4bf01dbc7404923c75a1b3`, including all deterministic gates and diagnostic upload. Completion does not mean production deployment or permission to enable Goal Mode.
 
 ## Completion evidence
 

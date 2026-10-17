@@ -1,5 +1,6 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { QuestionRow } from '../shared/question-row';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +16,7 @@ import { Question, QuestionsApi, SearchResult, contentError } from './questions-
   selector: 'app-question-list',
   imports: [
     DatePipe,
+    QuestionRow,
     FormsModule,
     RouterLink,
     MatButtonModule,
@@ -23,111 +25,7 @@ import { Question, QuestionsApi, SearchResult, contentError } from './questions-
     MatSelectModule,
     MatProgressSpinnerModule,
   ],
-  styleUrl: './questions.scss',
-  template: ` <section class="questions-page">
-    <div class="page-heading">
-      <div>
-        <p class="eyebrow">Private workspace</p>
-        <h1>Questions</h1>
-      </div>
-      <a mat-flat-button routerLink="/questions/new">Ask a question</a>
-    </div>
-    @if (session.state() === 'member') {
-      <form class="filters" (ngSubmit)="apply()">
-        <mat-form-field
-          ><mat-label>Search problems and solutions</mat-label>
-          <input matInput name="query" [(ngModel)]="query" maxlength="1000" />
-        </mat-form-field>
-        <mat-form-field
-          ><mat-label>Tag filter</mat-label
-          ><input matInput name="tag" [(ngModel)]="tag" maxlength="40"
-        /></mat-form-field>
-        <mat-form-field
-          ><mat-label>View</mat-label
-          ><mat-select name="view" [(ngModel)]="view" [disabled]="!!query.trim()"
-            ><mat-option value="recent">Recent</mat-option
-            ><mat-option value="unanswered">Unanswered</mat-option
-            ><mat-option value="recurring">Recurring · 7 days</mat-option></mat-select
-          ></mat-form-field
-        >
-        <mat-form-field
-          ><mat-label>State</mat-label
-          ><mat-select name="state" [(ngModel)]="state"
-            ><mat-option value="all">All</mat-option><mat-option value="open">Open</mat-option
-            ><mat-option value="resolved">Resolved</mat-option></mat-select
-          ></mat-form-field
-        >
-        <button mat-button [disabled]="loading()">Apply filters</button>
-      </form>
-      @if (activeQuery) {
-        <p>Related evidence, not a verified fix. Check versions, context and human acceptance.</p>
-        @if (degraded()) {
-          <p role="status">
-            Degraded search: exact and lexical retrieval remain available. {{ degraded() }}
-          </p>
-        }
-      }
-      @if (activeView === 'recurring' && !activeQuery) {
-        <p>
-          Last 7 days (UTC), through {{ asOf() | date: 'medium' : 'UTC' }} UTC. Ranked by distinct
-          developers, encounters, then latest encounter.
-        </p>
-      }
-      @if (error()) {
-        <p role="alert">{{ error() }}</p>
-        <button mat-button (click)="load()">Retry</button>
-      }
-      @if (loading()) {
-        <mat-spinner diameter="28" aria-label="Loading questions" />
-      } @else {
-        @for (question of items(); track question.id) {
-          <article class="question-row">
-            <p class="metadata">
-              {{ question.state === 'resolved' ? 'Resolved' : 'Open' }} ·
-              {{ question.author.displayName }} · {{ question.createdAt | date: 'medium' }} ·
-              {{ question.channel }}
-            </p>
-            <h2>
-              <a [routerLink]="['/questions', question.id]">{{ question.title }}</a>
-            </h2>
-            @if (matches()[question.id]; as result) {
-              <p class="search-snippet">{{ result.snippet }}</p>
-              <p class="metadata">{{ result.match.explanation }}</p>
-              <p>
-                {{
-                  question.acceptedAnswerId ? 'Has a human-accepted answer' : 'No accepted answer'
-                }}
-              </p>
-            }
-            <p>
-              {{ question.votes.upvotes }} upvotes · All time:
-              {{ question.occurrences.allTime.encounters }} encounters ·
-              {{ question.occurrences.allTime.distinctDevelopers }} distinct developers
-            </p>
-            <p>
-              Last 7 days (UTC): {{ question.occurrences.sevenDay.encounters }} encounters ·
-              {{ question.occurrences.sevenDay.distinctDevelopers }} distinct developers
-            </p>
-            <div class="tags">
-              @for (tag of question.tags; track tag) {
-                <a [routerLink]="['/questions']" [queryParams]="{ tag, state: 'all' }">{{ tag }}</a>
-              }
-            </div>
-          </article>
-        } @empty {
-          @if (!error()) {
-            <p class="empty">No questions match these filters.</p>
-          }
-        }
-        <div class="actions">
-          <button mat-button [disabled]="!history.length" (click)="previous()">Previous page</button
-          ><button mat-button [disabled]="!next()" (click)="forward()">Next page</button>
-        </div>
-      }
-    } @else {
-      <p>Sign in with workspace membership to read and create questions.</p>
-    }
-  </section>`,
+  templateUrl: './question-list.html',
 })
 export class QuestionList {
   readonly session = inject(IdentityService);

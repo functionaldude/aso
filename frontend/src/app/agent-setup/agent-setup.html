@@ -1,5 +1,5 @@
 <article>
-  <p class="eyebrow">Private workspace · Agent connection</p>
+  <p class="eyebrow">Workspace / Agent connection</p>
   <h1>Agent setup</h1>
   <p class="intro">
     Connect an MCP client with your own account, confirm its identity, then add the recommended
@@ -7,7 +7,9 @@
   </p>
 
   @if (error()) {
-    <p role="alert">Setup details are unavailable. Check the application connection and retry.</p>
+    <p class="notice error" role="alert">
+      Setup details are unavailable. Check the application connection and retry.
+    </p>
     <button mat-stroked-button (click)="load()">Retry setup details</button>
   } @else if (setup(); as value) {
     <section aria-labelledby="connection-title">
@@ -175,6 +177,6 @@
       </p>
     </section>
   } @else {
-    <p role="status">Loading public setup details…</p>
+    <p class="loading-state" role="status">Loading public setup details…</p>
   }
 </article>

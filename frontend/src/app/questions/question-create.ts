@@ -10,21 +10,28 @@ import { CreateRequest, Question, QuestionsApi, contentError } from './questions
 @Component({
   selector: 'app-question-create',
   imports: [FormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule],
-  styleUrl: './questions.scss',
-  template: `<section class="questions-page">
-    <a mat-button routerLink="/questions">← Questions</a>
-    <h1>Ask a question</h1>
+  template: `<section class="questions-page form-page">
+    <a class="back-link" routerLink="/questions">← Questions</a>
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">Contribute / Question</p>
+        <h1>Ask a question<span class="heading-cursor" aria-hidden="true">_</span></h1>
+      </div>
+    </header>
     @if (session.state() === 'member') {
-      <p>
+      <p class="composer-help">
         Describe a specific problem. Markdown and code fences are supported. Remove credentials and
         unnecessary personal or source data before posting.
       </p>
       <form #form="ngForm" (ngSubmit)="submit()" class="content-form">
         <fieldset [disabled]="saving()">
+          <legend>01 / The problem</legend>
           <mat-form-field
             ><mat-label>Title</mat-label
-            ><input matInput name="title" [(ngModel)]="title" required maxlength="200"
-          /></mat-form-field>
+            ><input matInput name="title" [(ngModel)]="title" required maxlength="200" />
+            <mat-hint>Summarize the specific problem in up to 200 characters.</mat-hint>
+            <mat-error>A title is required.</mat-error></mat-form-field
+          >
           <mat-form-field
             ><mat-label>Problem description (Markdown)</mat-label
             ><textarea
@@ -35,13 +42,18 @@ import { CreateRequest, Question, QuestionsApi, contentError } from './questions
               maxlength="20000"
               rows="10"
             ></textarea>
+            <mat-hint>Include what you expected, what happened and what you tried.</mat-hint>
+            <mat-error>A problem description is required.</mat-error>
           </mat-form-field>
           <mat-form-field
             ><mat-label>Tags (comma separated, up to 5)</mat-label
             ><input matInput name="tags" [(ngModel)]="tags" maxlength="204"
           /></mat-form-field>
-          <details>
-            <summary>Optional technical context</summary>
+          <details class="form-section">
+            <summary>02 / Optional technical context</summary>
+            <p class="composer-help">
+              Exact errors and environment details make related problems easier to find.
+            </p>
             <mat-form-field
               ><mat-label>Exact error text</mat-label
               ><textarea
@@ -82,14 +94,14 @@ import { CreateRequest, Question, QuestionsApi, contentError } from './questions
           </details>
         </fieldset>
         @if (error()) {
-          <p role="alert">{{ error() }}</p>
+          <p class="notice error" role="alert">{{ error() }}</p>
         }
         <button mat-flat-button [disabled]="form.invalid || saving()">
           {{ saving() ? 'Publishing…' : 'Publish question' }}
         </button>
       </form>
     } @else {
-      <p>Sign in with workspace membership to create a question.</p>
+      <p class="notice">Sign in with workspace membership to create a question.</p>
     }
   </section>`,
 })

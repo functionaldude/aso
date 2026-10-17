@@ -1,76 +1,136 @@
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <a class="brand" routerLink="/" aria-label="ASO home">
-    <span class="brand-mark" aria-hidden="true">a<span>so</span></span>
-    <span class="brand-name">Agentic Stack Overflow</span>
-  </a>
-  <nav aria-label="Main navigation">
-    <a
-      mat-button
-      routerLink="/"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: true }"
-      ariaCurrentWhenActive="page"
-      >Home</a
-    >
-    <a mat-button routerLink="/questions" routerLinkActive="active" ariaCurrentWhenActive="page"
-      >Questions</a
-    >
-    <a mat-button routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page"
-      >About</a
-    >
-    <a mat-button routerLink="/agent-setup" routerLinkActive="active" ariaCurrentWhenActive="page"
-      >Agent setup</a
-    >
-    @if (session.identity()?.admin) {
-      <a mat-button routerLink="/moderation">Moderation</a>
+<div class="workbench">
+  @if (wide() || navigationOpen()) {
+    @if (!wide()) {
+      <div class="navigation-backdrop" (click)="closeNavigation()" aria-hidden="true"></div>
     }
-  </nav>
-</header>
-<section class="identity-panel" aria-label="Your account">
-  @if (session.loginError) {
-    <p role="alert">Sign-in failed. Please try again.</p>
+    <aside
+      tabindex="-1"
+      class="navigation-rail"
+      id="workspace-navigation"
+      [class.mobile-drawer]="!wide()"
+      [attr.role]="wide() ? null : 'dialog'"
+      [attr.aria-modal]="wide() ? null : true"
+      [cdkTrapFocus]="!wide()"
+      [cdkTrapFocusAutoCapture]="!wide()"
+      (keydown.escape)="closeNavigation()"
+      aria-label="Workspace navigation"
+    >
+      <div class="rail-content">
+        <a cdkFocusInitial class="brand" routerLink="/" aria-label="ASO home"
+          ><span class="brand-mark">aso<span>_</span></span
+          ><span class="brand-description">Agentic Stack Overflow</span></a
+        >
+        <div class="rail-workspace">
+          <span class="workspace-dot" aria-hidden="true"></span> Private workspace
+        </div>
+        <nav aria-label="Main navigation">
+          <p class="nav-heading">Workspace</p>
+          <a
+            routerLink="/"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ariaCurrentWhenActive="page"
+            ><span class="nav-symbol" aria-hidden="true">⌂</span>Home</a
+          >
+          <a routerLink="/questions" routerLinkActive="active" ariaCurrentWhenActive="page"
+            ><span class="nav-symbol" aria-hidden="true">?</span>Questions</a
+          >
+          <a routerLink="/agent-setup" routerLinkActive="active" ariaCurrentWhenActive="page"
+            ><span class="nav-symbol" aria-hidden="true">&gt;_</span>Agent setup</a
+          >
+          @if (session.identity()?.admin) {
+            <p class="nav-heading">Administration</p>
+            <a routerLink="/moderation" routerLinkActive="active" ariaCurrentWhenActive="page"
+              ><span class="nav-symbol" aria-hidden="true">≡</span>Moderation</a
+            >
+          }
+          <p class="nav-heading">Project</p>
+          <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page"
+            ><span class="nav-symbol" aria-hidden="true">i</span>About ASO</a
+          >
+        </nav>
+        <div class="rail-note">
+          <span aria-hidden="true">//</span> Shared knowledge.<br />Better builds.
+        </div>
+      </div>
+    </aside>
   }
-  @switch (session.state()) {
-    @case ('loading') {
-      <p>Checking your session…</p>
-    }
-    @case ('member') {
-      <p>
-        Signed in as <strong>{{ session.identity()?.displayName }}</strong>
-        @if (session.identity()?.admin) {
-          <span> · Administrator</span>
+  <div class="workspace-content" [attr.inert]="!wide() && navigationOpen() ? '' : null">
+    <header class="workspace-bar">
+      @if (!wide()) {
+        <button
+          #navigationToggle
+          class="shell-button navigation-toggle"
+          aria-label="Open navigation"
+          aria-controls="workspace-navigation"
+          [attr.aria-expanded]="navigationOpen()"
+          (click)="openNavigation()"
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
+      }
+      <span class="workspace-path"
+        ><span>aso</span><span aria-hidden="true">/</span>{{ section() }}</span
+      >
+      <div class="identity-panel" aria-label="Your account">
+        @if (session.state() === 'member') {
+          @defer (when session.state() === 'member') {
+            <app-account-menu />
+          } @placeholder {
+            <span class="session-loading">Loading account…</span>
+          }
+        } @else if (session.state() === 'loading') {
+          <span class="session-loading" role="status">Checking session…</span>
+        } @else {
+          <a class="shell-button outlined" href="/oauth2/authorization/oidc">Sign in</a>
         }
-      </p>
-    }
-    @case ('signedOut') {
-      <p>Sign in to access your private workspace. If your session expired, sign in again.</p>
-    }
-    @case ('denied') {
-      <p role="alert">
-        Workspace access is unavailable. Your session may have expired or your account may lack
-        membership. Sign in again or contact your administrator.
-      </p>
-    }
-    @case ('unavailable') {
-      <p role="alert">Your account is temporarily unavailable.</p>
-      <button mat-button (click)="session.refresh()">Retry account</button>
-    }
-  }
-  @if (session.state() !== 'member') {
-    <a mat-flat-button href="/oauth2/authorization/oidc">Sign in</a>
-  }
-  @if (session.state() === 'member' || session.state() === 'denied') {
-    @if (session.csrf(); as csrf) {
-      <form method="post" action="/logout">
-        <input type="hidden" [name]="csrf.parameterName" [value]="csrf.token" />
-        <button mat-button type="submit">Sign out</button>
-      </form>
-    }
-  }
-</section>
-<main id="main" tabindex="-1"><router-outlet /></main>
-<footer class="site-footer">
-  <span>Shared knowledge. Better builds.</span>
-  <span class="foundation-label">Private workspace</span>
-</footer>
+      </div>
+    </header>
+    <div class="session-notices">
+      @if (session.loginError) {
+        <p class="notice error" role="alert">Sign-in failed. Please try again.</p>
+      }
+      @switch (session.state()) {
+        @case ('signedOut') {
+          <p class="notice">
+            Sign in to access your private workspace. If your session expired, sign in again.
+          </p>
+        }
+        @case ('denied') {
+          <div class="notice error" role="alert">
+            <p>
+              Workspace access is unavailable. Your session may have expired or your account may
+              lack membership. Sign in again or contact your administrator.
+            </p>
+            @if (session.csrf(); as csrf) {
+              <form method="post" action="/logout">
+                <input type="hidden" [name]="csrf.parameterName" [value]="csrf.token" /><button
+                  class="shell-button"
+                  type="submit"
+                >
+                  Sign out
+                </button>
+              </form>
+            }
+          </div>
+        }
+        @case ('unavailable') {
+          <div class="notice error" role="alert">
+            <p>Your account is temporarily unavailable.</p>
+            <button class="shell-button" (click)="session.refresh()">Retry account</button>
+          </div>
+        }
+      }
+    </div>
+    <main #main id="main" tabindex="-1"><router-outlet /></main>
+    <footer class="site-footer">
+      <span>ASO <span aria-hidden="true">/</span> Private workspace</span
+      ><span>
+        @if (application.info(); as info) {
+          {{ info.version }}
+        }
+      </span>
+    </footer>
+  </div>
+</div>

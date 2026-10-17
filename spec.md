@@ -8,7 +8,7 @@ The MVP succeeds when one developer's agent can publish a sanitized problem, ano
 
 ## Scope and decision status
 
-The agreed laptop MVP is implemented and verified through [goal 007](docs/goals/007-mvp-release-readiness.md); [PR #10](https://github.com/functionaldude/aso/pull/10) remains open for review. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Future proposed work does not enable Goal Mode or authorize starting another milestone.
+The agreed laptop MVP is implemented and verified through [goal 007](docs/goals/007-mvp-release-readiness.md); [PR #10](https://github.com/functionaldude/aso/pull/10) is merged. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Future proposed work does not enable Goal Mode or authorize starting another milestone.
 
 Confirmed MVP scope: individual OIDC identities; browser and MCP participation; questions, answers, context/comments, tags, accepted solutions, votes, occurrences, trends, and hybrid search with locally hosted embeddings. Agents may automatically search, report occurrences, and publish sanitized questions/context/answers under their developer's identity. Humans accept solutions.
 
@@ -100,6 +100,15 @@ For autonomous local development and tests, the owner selected a seeded local Ke
 - Cover actual Codex and MCP Jam CLI setup, individual login/logout/reauthentication, a harmless connection check, exact redirect/client/audience requirements, unavailable-server/degraded-search behavior, and existing loopback/HTTPS OAuth limitations. Label any Claude Code/Cursor examples or scenarios as unverified/simulated, not natively tested integrations.
 - Verify direct navigation/refresh of the guide in the executable jar, the correct configured URL under development and alternate public origins, copy/fallback behavior, absence of secrets, and readable desktop/mobile layouts. No private knowledge content is needed to read setup documentation; any exposed configuration must be explicitly limited to safe public fields.
 
+## Terminal-inspired browser UI (goal 008)
+
+- Deliver a complete dark developer workbench: near-black canvas, charcoal surfaces, subtle borders, off-white text and restrained emerald accents. Use locally bundled JetBrains Mono for navigation/headings/metadata/code and system sans-serif for comfortable long-form reading. No external runtime font/asset requests, light theme, marketing hero, gradients, glow or decorative terminal animation.
+- Use a persistent 224px desktop navigation rail at widths of at least 1024px and an accessible mobile drawer below it, a compact account bar, deliberate page hierarchy and a quiet footer. Home shows five recent real questions across resolution states for members, with useful browse/ask/setup actions and a concise signed-out introduction.
+- Cover all existing pages, forms, loading/empty/validation/error/session/rate-limit states and Material overlays. Share semantic design tokens and presentation patterns through supported Material theming APIs. Make authorship, accepted solutions, resolution and permitted primary actions clear. Keep usefulness votes separate from encounters and distinct developers; never fabricate unavailable counts or runtime sample content.
+- Preserve routes, API contracts, OIDC/CSRF/authorization, safe Markdown, drafts, retry IDs, pagination and business rules. Support keyboard navigation, visible focus, accessible names, reduced motion, sufficient contrast, mobile reflow/zoom and long code/identifiers without page overflow.
+- Implement the actual shell and populated list/detail pilot first using isolated packaged-application fixtures. Show desktop/mobile screenshots and pause for the owner's visual approval before extending page-specific redesign work. Inspect all final pages/states, retain sanitized before/after evidence, and run check/bootJar, integrationTest and e2eTest before completion. See [goal 008](docs/goals/008-terminal-ui-redesign.md).
+- Completion evidence: the owner approved the populated desktop/mobile pilot on 2026-10-17; the goal record retains final screenshots, accessibility/reflow checks and successful unit/integration/packaged-browser verification for the complete UI.
+
 ## MVP acceptance and delivery
 
 MVP completion requires all planned goals' evidence, including:
@@ -140,4 +149,4 @@ Acceptance criteria:
 
 ## Architecture and workflow boundaries
 
-Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goals 001–006 implemented; goal 007 laptop MVP release verification remains planned, and this is not a claim that it is ready for a team rollout.
+Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. Goals 001–007 complete the tested laptop MVP. Goal 008 redesigns its browser UI while preserving its contracts and business rules; team deployment remains outside this release.

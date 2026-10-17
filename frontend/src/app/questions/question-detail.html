@@ -1,0 +1,257 @@
+<section class="questions-page detail-page">
+  <a class="back-link" [routerLink]="moderation ? '/moderation' : '/questions'"
+    >← {{ moderation ? 'Moderation' : 'Questions' }}</a
+  >
+  @if (session.state() === 'member') {
+    @if (loading() && !detail()) {
+      <div class="loading-state" role="status">
+        <mat-spinner diameter="20" aria-label="Loading question" /><span>Loading question…</span>
+      </div>
+    }
+    @if (error()) {
+      <div class="notice error" role="alert">
+        <p>{{ error() }}</p>
+        <button mat-button (click)="load()">Retry</button>
+      </div>
+    }
+    @if (detail(); as detail) {
+      <article class="question-content">
+        <header class="question-header">
+          <div class="section-heading">
+            <p class="eyebrow">Knowledge / Question</p>
+            <span class="status-badge" [class.resolved]="detail.question.state === 'resolved'"
+              ><span aria-hidden="true">{{ detail.question.state === 'resolved' ? '✓' : '○' }}</span
+              >{{
+                detail.question.state === 'resolved' ? 'Resolved question' : 'Open question'
+              }}</span
+            >
+          </div>
+          @if (moderation) {
+            <p class="notice warning">
+              Administrator moderation · Hidden parents keep descendants out of ordinary reads.
+            </p>
+          }
+          <h1>{{ detail.question.title }}</h1>
+          <p class="metadata">
+            <span class="author">{{ detail.question.author.displayName }}</span> ·
+            {{ detail.question.createdAt | date: 'medium' }} · {{ detail.question.channel }}
+            @if (detail.question.version > 1) {
+              · edited {{ detail.question.updatedAt | date: 'MMM d' }}
+            }
+          </p>
+          <div class="section-heading">
+            <div class="tags">
+              @for (tag of detail.question.tags; track tag) {
+                <a routerLink="/questions" [queryParams]="{ tag, state: 'all' }">{{ tag }}</a>
+              }
+            </div>
+            @if (!moderation) {
+              <a mat-button href="#answer-composer">Write an answer ↓</a>
+            }
+          </div>
+        </header>
+        <div class="detail-grid">
+          <div class="problem-column">
+            <div class="markdown" appReadableContent [innerHTML]="detail.question.bodyHtml"></div>
+            @if (
+              detail.question.context.errorText ||
+              detail.question.context.dependencies ||
+              detail.question.context.versions ||
+              detail.question.context.repository
+            ) {
+              <section class="technical-context" aria-label="Technical context">
+                <h2>Technical context</h2>
+                @if (detail.question.context.errorText) {
+                  <h3>Exact error</h3>
+                  <pre class="context-value">{{ detail.question.context.errorText }}</pre>
+                }
+                @if (detail.question.context.dependencies) {
+                  <h3>Dependencies</h3>
+                  <pre class="context-value">{{ detail.question.context.dependencies }}</pre>
+                }
+                @if (detail.question.context.versions) {
+                  <h3>Versions</h3>
+                  <pre class="context-value">{{ detail.question.context.versions }}</pre>
+                }
+                @if (detail.question.context.repository) {
+                  <h3>Repository / module</h3>
+                  <pre class="context-value">{{ detail.question.context.repository }}</pre>
+                }
+              </section>
+            }
+            @if (!moderation) {
+              <app-engagement-controls
+                kind="question"
+                mode="votes"
+                [content]="detail.question"
+                (changed)="load()"
+              />
+            }
+            <div class="content-actions">
+              <app-content-editor
+                kind="question"
+                [content]="detail.question"
+                [moderation]="moderation"
+                (changed)="load()"
+              />
+              @if (session.identity()?.admin && !moderation) {
+                <a mat-button [routerLink]="['/moderation', detail.question.id]"
+                  >Moderate content</a
+                >
+              }
+            </div>
+          </div>
+          @if (!moderation) {
+            <aside class="problem-aside">
+              <app-engagement-controls
+                kind="question"
+                mode="encounters"
+                [content]="detail.question"
+                (changed)="load()"
+              />
+              <p class="aside-note">
+                <span aria-hidden="true">// </span>Votes express usefulness.<br />Acceptance is a
+                human decision.
+              </p>
+            </aside>
+          }
+        </div>
+        <app-content-comments
+          kind="question"
+          [targetId]="detail.question.id"
+          [moderation]="moderation"
+        />
+        @if (canAccept() && detail.question.acceptedAnswerId) {
+          <button
+            mat-button
+            [disabled]="accepting() || acceptanceConflict()"
+            (click)="accept(null)"
+          >
+            Reopen question
+          </button>
+        }
+        @if (acceptanceError()) {
+          <div class="notice error" role="alert">
+            <p>{{ acceptanceError() }}</p>
+            <button mat-button (click)="reviewAcceptance()">Reload acceptance state</button>
+          </div>
+        }
+      </article>
+      <section class="answers-section" aria-label="Answers">
+        <div class="section-heading">
+          <h2>Answers</h2>
+          <span class="metadata">Proposed fixes &amp; verification</span>
+        </div>
+        @for (answer of detail.answers.items; track answer.id) {
+          <article
+            class="answer"
+            [class.accepted-answer]="detail.question.acceptedAnswerId === answer.id"
+          >
+            <header class="answer-header">
+              <div>
+                @if (detail.question.acceptedAnswerId === answer.id) {
+                  <p class="accepted"><span aria-hidden="true">✓ </span>Accepted answer</p>
+                }
+                <p class="metadata">
+                  <span class="author">{{ answer.author.displayName }}</span> ·
+                  {{ answer.createdAt | date: 'medium' }} · {{ answer.channel }}
+                </p>
+              </div>
+              @if (
+                canAccept() &&
+                !answer.hidden &&
+                !detail.question.hidden &&
+                detail.question.acceptedAnswerId !== answer.id
+              ) {
+                <button
+                  mat-stroked-button
+                  [disabled]="accepting() || acceptanceConflict()"
+                  (click)="accept(answer.id)"
+                >
+                  Accept answer
+                </button>
+              }
+            </header>
+            <div class="markdown" appReadableContent [innerHTML]="answer.bodyHtml"></div>
+            @if (answer.applicability) {
+              <h3>Applicability</h3>
+              <pre class="context-value">{{ answer.applicability }}</pre>
+            }
+            <h3>Verification evidence</h3>
+            <pre class="context-value verification">{{
+              answer.verification || 'No testing evidence provided.'
+            }}</pre>
+            @if (!moderation) {
+              <app-engagement-controls kind="answer" [content]="answer" (changed)="load()" />
+            }
+            <app-content-editor
+              kind="answer"
+              [content]="answer"
+              [moderation]="moderation"
+              (changed)="load()"
+            />
+            <app-content-comments kind="answer" [targetId]="answer.id" [moderation]="moderation" />
+          </article>
+        } @empty {
+          <p class="empty">No answers yet. Share a proposed fix and what you tested.</p>
+        }
+        @if (detail.answers.nextCursor) {
+          <button mat-button [disabled]="moreLoading()" (click)="more()">Load more answers</button>
+        }
+        @if (moreError()) {
+          <p class="notice error" role="alert">{{ moreError() }}</p>
+        }
+      </section>
+      @if (!moderation) {
+        <section id="answer-composer" class="answer-composer" aria-labelledby="answer-title">
+          <p class="eyebrow">Contribute / Answer</p>
+          <h2 id="answer-title">Your answer</h2>
+          <p class="composer-help">
+            Remove credentials. Describe applicability and verification, or explicitly say the fix
+            was not tested.
+          </p>
+          <form #form="ngForm" (ngSubmit)="submit()" class="content-form">
+            <fieldset [disabled]="saving()">
+              <mat-form-field
+                ><mat-label>Answer (Markdown)</mat-label
+                ><textarea
+                  matInput
+                  name="body"
+                  [(ngModel)]="body"
+                  required
+                  maxlength="20000"
+                  rows="8"
+                ></textarea
+                ><mat-error>An answer is required.</mat-error></mat-form-field
+              ><mat-form-field
+                ><mat-label>Applicability</mat-label
+                ><textarea
+                  matInput
+                  name="applicability"
+                  [(ngModel)]="applicability"
+                  maxlength="2000"
+                ></textarea></mat-form-field
+              ><mat-form-field
+                ><mat-label>Verification evidence</mat-label
+                ><textarea
+                  matInput
+                  name="verification"
+                  [(ngModel)]="verification"
+                  maxlength="2000"
+                ></textarea>
+              </mat-form-field>
+            </fieldset>
+            @if (saveError()) {
+              <p class="notice error" role="alert">{{ saveError() }}</p>
+            }
+            <button mat-flat-button [disabled]="form.invalid || saving()">
+              {{ saving() ? 'Publishing…' : 'Publish answer' }}
+            </button>
+          </form>
+        </section>
+      }
+    }
+  } @else {
+    <p class="notice">Sign in with workspace membership to read this question.</p>
+  }
+</section>

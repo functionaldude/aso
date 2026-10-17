@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { ReadableContent } from '../shared/readable-content';
 import { IdentityService } from '../core/identity';
 import {
   Answer,
@@ -16,8 +17,7 @@ import {
 
 @Component({
   selector: 'app-content-editor',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
-  styleUrl: './questions.scss',
+  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, ReadableContent],
   template: `
     @if (moderation()) {
       <p class="metadata">
@@ -37,11 +37,18 @@ import {
     @if (editing()) {
       <form class="content-form" (ngSubmit)="save()" #form="ngForm">
         <fieldset [disabled]="busy()">
+          <legend>Edit {{ kind() }}</legend>
           @if (kind() === 'question') {
             <mat-form-field
               ><mat-label>Edit title</mat-label
-              ><input matInput name="title" [(ngModel)]="title" required maxlength="200"
-            /></mat-form-field>
+              ><input
+                matInput
+                name="title"
+                [(ngModel)]="title"
+                required
+                maxlength="200"
+              /><mat-error>A title is required.</mat-error></mat-form-field
+            >
             <mat-form-field
               ><mat-label>Edit tags (comma separated)</mat-label
               ><input matInput name="tags" [(ngModel)]="tags"
@@ -56,12 +63,13 @@ import {
               required
               maxlength="20000"
               rows="6"
-            ></textarea>
+            ></textarea
+            ><mat-error>Content is required.</mat-error>
           </mat-form-field>
           @if (kind() === 'question') {
             @for (field of contextFields; track field) {
               <mat-form-field
-                ><mat-label>Edit {{ field }}</mat-label
+                ><mat-label>Edit {{ contextLabels[field] }}</mat-label
                 ><textarea
                   matInput
                   [name]="field"
@@ -99,36 +107,39 @@ import {
       </form>
     }
     @if (error()) {
-      <p role="alert">{{ error() }}</p>
+      <p class="notice error" role="alert">{{ error() }}</p>
     }
     @if (conflict()) {
-      <p>Your draft is preserved above. Load the current content and compare before saving.</p>
-      <button mat-button type="button" [disabled]="busy()" (click)="loadLatest()">
-        Load latest content
-      </button>
-      @if (latest(); as latest) {
-        <h4>Latest saved content · Version {{ latest.version }}</h4>
-        @if (latestQuestion(); as question) {
-          <h5>{{ question.title }}</h5>
-          <p>Tags: {{ question.tags.join(', ') || 'None' }}</p>
-          @for (field of contextFields; track field) {
-            @if (question.context[field]) {
-              <p>{{ field }}</p>
-              <pre>{{ question.context[field] }}</pre>
+      <section class="conflict-panel" appReadableContent aria-label="Compare editing conflict">
+        <h3>Review the saved version</h3>
+        <p>Your draft is preserved above. Load the current content and compare before saving.</p>
+        <button mat-button type="button" [disabled]="busy()" (click)="loadLatest()">
+          Load latest content
+        </button>
+        @if (latest(); as latest) {
+          <h4>Latest saved content · Version {{ latest.version }}</h4>
+          @if (latestQuestion(); as question) {
+            <h5>{{ question.title }}</h5>
+            <p>Tags: {{ question.tags.join(', ') || 'None' }}</p>
+            @for (field of contextFields; track field) {
+              @if (question.context[field]) {
+                <p>{{ contextLabels[field] }}</p>
+                <pre>{{ question.context[field] }}</pre>
+              }
             }
           }
+          <pre class="latest-content">{{ latest.body }}</pre>
+          @if (latestAnswer(); as answer) {
+            <p>Applicability</p>
+            <pre>{{ answer.applicability || 'None' }}</pre>
+            <p>Verification evidence</p>
+            <pre>{{ answer.verification || 'No testing evidence provided.' }}</pre>
+          }
+          <button mat-button type="button" (click)="useLatest()">
+            Use latest version with my draft
+          </button>
         }
-        <pre class="latest-content">{{ latest.body }}</pre>
-        @if (latestAnswer(); as answer) {
-          <p>Applicability</p>
-          <pre>{{ answer.applicability || 'None' }}</pre>
-          <p>Verification evidence</p>
-          <pre>{{ answer.verification || 'No testing evidence provided.' }}</pre>
-        }
-        <button mat-button type="button" (click)="useLatest()">
-          Use latest version with my draft
-        </button>
-      }
+      </section>
     }
   `,
 })
@@ -144,6 +155,12 @@ export class ContentEditor {
   readonly error = signal('');
   readonly conflict = signal(false);
   readonly latest = signal<Content | null>(null);
+  readonly contextLabels = {
+    errorText: 'exact error',
+    dependencies: 'dependencies',
+    versions: 'runtime / framework versions',
+    repository: 'repository / module labels',
+  };
   readonly contextFields = ['errorText', 'dependencies', 'versions', 'repository'] as const;
   context: Question['context'] = { errorText: '', dependencies: '', versions: '', repository: '' };
   title = '';

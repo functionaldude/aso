@@ -1,0 +1,122 @@
+<section class="questions-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Knowledge / Browse</p>
+      <h1>Questions<span class="heading-cursor" aria-hidden="true">_</span></h1>
+    </div>
+    <a mat-flat-button routerLink="/questions/new"
+      ><span aria-hidden="true">+ </span>Ask a question</a
+    >
+  </div>
+  @if (session.state() === 'member') {
+    <form class="filters" (ngSubmit)="apply()">
+      <mat-form-field class="search-field"
+        ><mat-label>Search problems and solutions</mat-label
+        ><input matInput name="query" [(ngModel)]="query" maxlength="1000" /><span
+          class="search-enter"
+          matSuffix
+          aria-hidden="true"
+          >↵</span
+        ></mat-form-field
+      >
+      <div class="filter-toolbar">
+        <nav class="view-navigation" aria-label="Question views">
+          <a
+            mat-button
+            routerLink="/questions"
+            [queryParams]="{ view: 'recent', state, tag: tag || null }"
+            [class.selected]="!activeQuery && activeView === 'recent'"
+            [attr.aria-current]="!activeQuery && activeView === 'recent' ? 'page' : null"
+            >Recent</a
+          >
+          <a
+            mat-button
+            routerLink="/questions"
+            [queryParams]="{ view: 'unanswered', state, tag: tag || null }"
+            [class.selected]="!activeQuery && activeView === 'unanswered'"
+            [attr.aria-current]="!activeQuery && activeView === 'unanswered' ? 'page' : null"
+            >Unanswered</a
+          >
+          <a
+            mat-button
+            routerLink="/questions"
+            [queryParams]="{ view: 'recurring', state, tag: tag || null }"
+            [class.selected]="!activeQuery && activeView === 'recurring'"
+            [attr.aria-current]="!activeQuery && activeView === 'recurring' ? 'page' : null"
+            >Recurring · 7 days</a
+          >
+        </nav>
+        <div class="filter-fields">
+          <mat-form-field class="tag-filter"
+            ><mat-label>Tag filter</mat-label
+            ><input matInput name="tag" [(ngModel)]="tag" maxlength="40" /></mat-form-field
+          ><mat-form-field class="state-filter"
+            ><mat-label>State</mat-label
+            ><mat-select name="state" [(ngModel)]="state"
+              ><mat-option value="all">All</mat-option><mat-option value="open">Open</mat-option
+              ><mat-option value="resolved">Resolved</mat-option></mat-select
+            ></mat-form-field
+          ><button mat-stroked-button [disabled]="loading()">Apply filters</button>
+        </div>
+      </div>
+    </form>
+    @if (activeQuery) {
+      <p class="result-note">
+        Search results for <strong>{{ activeQuery }}</strong
+        >. Related evidence, not a verified fix. Check versions, context and human acceptance.
+      </p>
+      @if (degraded()) {
+        <p class="notice warning" role="status">
+          Degraded search: exact and lexical retrieval remain available. {{ degraded() }}
+        </p>
+      }
+    }
+    @if (activeView === 'recurring' && !activeQuery) {
+      <p class="notice">
+        Last 7 days (UTC), through {{ asOf() | date: 'medium' : 'UTC' }} UTC. Ranked by distinct
+        developers, encounters, then latest encounter.
+      </p>
+    }
+    @if (error()) {
+      <div class="notice error" role="alert">
+        <p>{{ error() }}</p>
+        <button mat-button (click)="load()">Retry</button>
+      </div>
+    }
+    @if (loading()) {
+      <div class="loading-state" role="status">
+        <mat-spinner diameter="20" aria-label="Loading questions" /><span>Loading questions…</span>
+      </div>
+    } @else {
+      <div class="list-heading">
+        <span>{{
+          activeQuery
+            ? 'Matching questions'
+            : activeView === 'unanswered'
+              ? 'No visible answers yet'
+              : activeView === 'recurring'
+                ? 'Recurring problems'
+                : 'Latest questions'
+        }}</span
+        ><span class="list-heading-note">Votes ≠ encounters</span>
+      </div>
+      @for (question of items(); track question.id) {
+        <app-question-row [question]="question" [match]="matches()[question.id]" />
+      } @empty {
+        @if (!error()) {
+          <div class="empty">
+            <h2>No questions match these filters.</h2>
+            <p>Try a different search or broaden the state and tag filters.</p>
+            <a mat-button routerLink="/questions" [queryParams]="{ state: 'all' }">Clear filters</a>
+          </div>
+        }
+      }
+      <div class="pagination">
+        <button mat-button [disabled]="!history.length" (click)="previous()">← Previous page</button
+        ><button mat-button [disabled]="!next()" (click)="forward()">Next page →</button>
+      </div>
+    }
+  } @else {
+    <p class="notice">Sign in with workspace membership to read and create questions.</p>
+  }
+</section>
