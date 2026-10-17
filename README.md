@@ -41,6 +41,8 @@ For separate terminals, run `docker compose up -d --wait database keycloak`, `SP
 ./gradlew --no-daemon e2eTest
 ```
 
+For isolated visual review, `./gradlew --no-daemon uiPreview` launches the packaged jar on a dynamic loopback port with disposable PostgreSQL, Keycloak and embedding fixtures. It seeds only sanitized representative content, prints review URLs, and captures desktop/mobile screens under ignored `backend/build/e2e/goal-008/review/`. Sign in with the documented fictitious fixture accounts. Stop with Ctrl-C to dispose the preview and its data; it never reads `.env` or uses the development services. Add `-PuiPreviewExit` to capture and exit automatically. This opt-in task is not a production seed feature.
+
 The default check includes Kotlin/JUnit and Angular/Vitest tests, ESLint, Spotless/ktlint, Prettier, and the production Angular build. Format changes with `./gradlew spotlessApply frontendFormat`.
 
 The jar is **`backend/build/libs/aso.jar`** and contains Angular's browser assets:
@@ -264,7 +266,7 @@ JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/t
 
 ## MVP delivery and later work
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–007 are implemented and the laptop release evidence is in [goal 007](docs/goals/007-mvp-release-readiness.md). [PR #10](https://github.com/functionaldude/aso/pull/10) remains open for review.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–007 are implemented and the laptop release evidence is in [goal 007](docs/goals/007-mvp-release-readiness.md). [PR #10](https://github.com/functionaldude/aso/pull/10) is merged.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 

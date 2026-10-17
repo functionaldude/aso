@@ -2,13 +2,20 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Home } from './home/home';
+import { signal } from '@angular/core';
+import { IdentityService } from './core/identity';
 import { provideRouter } from '@angular/router';
 
 describe('ASO connection', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [Home],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: IdentityService, useValue: { state: signal('signedOut') } },
+      ],
     });
   });
   afterEach(() => TestBed.inject(HttpTestingController).verify());

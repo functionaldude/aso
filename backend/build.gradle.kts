@@ -141,6 +141,34 @@ tasks.bootBuildImage {
 }
 
 val keycloakImage = rootProject.file("gradle/keycloak-image.txt").readText().trim()
+tasks.register<JavaExec>("uiPreview") {
+    group = "verification"
+    description = "Runs a disposable populated packaged application and captures desktop/mobile UI."
+    dependsOn(bootJar, playwrightInstall, tasks.named(e2eTest.classesTaskName))
+    classpath = e2eTest.runtimeClasspath
+    mainClass = "com.functionaldude.aso.UiPreviewKt"
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+    systemProperty("aso.test.database-image", databaseImage)
+    systemProperty("aso.test.keycloak-image", keycloakImage)
+    systemProperty("aso.test.realm", rootProject.file("dev/keycloak/aso-dev-realm.json").absolutePath)
+    systemProperty(
+        "aso.test.jar",
+        bootJar
+            .get()
+            .archiveFile
+            .get()
+            .asFile.absolutePath,
+    )
+    systemProperty("aso.ui.phase", providers.gradleProperty("uiPhase").getOrElse("review"))
+    systemProperty("aso.ui.exit", project.hasProperty("uiPreviewExit"))
+    systemProperty(
+        "aso.test.artifacts",
+        layout.buildDirectory
+            .dir("e2e/goal-008")
+            .get()
+            .asFile.absolutePath,
+    )
+}
 tasks.register<Test>("oidcSmokeTest") {
     group = "verification"
     description = "Verifies the isolated Keycloak fixture via browser code/PKCE login. Requires Docker."

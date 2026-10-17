@@ -82,6 +82,11 @@ tasks.register("e2eTest") {
     group = "verification"
     dependsOn(":backend:e2eTest")
 }
+tasks.register("uiPreview") {
+    group = "verification"
+    description = "Starts an isolated populated packaged UI for visual review; stop with Ctrl-C."
+    dependsOn(":backend:uiPreview")
+}
 tasks.register("playwrightInstall") {
     group = "verification"
     dependsOn(":backend:playwrightInstall")

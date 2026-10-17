@@ -1,3 +1,4 @@
+import { ReadableContent } from '../shared/readable-content';
 import { Component, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +10,7 @@ import { ContentEditor } from './content-editor';
 @Component({
   selector: 'app-content-comments',
   imports: [
+    ReadableContent,
     DatePipe,
     FormsModule,
     MatButtonModule,
@@ -16,16 +18,18 @@ import { ContentEditor } from './content-editor';
     MatInputModule,
     ContentEditor,
   ],
-  styleUrl: './questions.scss',
-  template: `<section aria-label="Comments and context">
+  template: `<section class="comments-section" aria-label="Comments and context">
     <h3>Comments and context</h3>
+    @if (loading() && !comments().length) {
+      <p class="metadata" role="status">Loading context…</p>
+    }
     @for (comment of comments(); track comment.id) {
       <div class="comment">
         <p class="metadata">
           {{ comment.author.displayName }} · {{ comment.createdAt | date: 'medium' }} ·
           {{ comment.channel }}
         </p>
-        <div class="markdown" [innerHTML]="comment.bodyHtml"></div>
+        <div class="markdown" appReadableContent [innerHTML]="comment.bodyHtml"></div>
         <app-content-editor
           kind="comment"
           [content]="comment"
@@ -40,25 +44,29 @@ import { ContentEditor } from './content-editor';
       </button>
     }
     @if (error()) {
-      <p role="alert">{{ error() }}</p>
+      <p class="notice error" role="alert">{{ error() }}</p>
       <button mat-button [disabled]="busy()" (click)="load()">Retry comments</button>
     }
     @if (!moderation()) {
-      <form class="content-form" #form="ngForm" (ngSubmit)="submit()">
-        <mat-form-field
-          ><mat-label>Add context (Markdown)</mat-label
-          ><textarea
-            matInput
-            name="comment"
-            [(ngModel)]="body"
-            required
-            maxlength="20000"
-            rows="3"
-            [disabled]="busy()"
-          ></textarea>
-        </mat-form-field>
-        <button mat-button [disabled]="form.invalid || busy()">Publish context</button>
-      </form>
+      <details class="context-composer">
+        <summary>Add context</summary>
+        <form class="content-form" #form="ngForm" (ngSubmit)="submit()">
+          <mat-form-field
+            ><mat-label>Add context (Markdown)</mat-label
+            ><textarea
+              matInput
+              name="comment"
+              [(ngModel)]="body"
+              required
+              maxlength="20000"
+              rows="3"
+              [disabled]="busy()"
+            ></textarea
+            ><mat-error>Context is required.</mat-error>
+          </mat-form-field>
+          <button mat-button [disabled]="form.invalid || busy()">Publish context</button>
+        </form>
+      </details>
     }
   </section>`,
 })

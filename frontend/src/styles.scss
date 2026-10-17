@@ -1,25 +1,100 @@
 @use '@angular/material' as mat;
+@use './tokens';
+@use './app/questions/questions';
 
+@include mat.strong-focus-indicators-structure();
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-medium.woff2') format('woff2');
+}
 html {
+  @include tokens.properties;
   @include mat.theme(
     (
       color: (
         primary: mat.$green-palette,
-        tertiary: mat.$orange-palette,
+        theme-type: dark,
       ),
-      typography: sans-serif,
+      typography: (
+        plain-family: 'system-ui, sans-serif',
+        brand-family: 'JetBrains Mono, monospace',
+      ),
       density: 0,
     )
   );
-  color-scheme: light;
-  --ink: #202e26;
-  --muted: #59655d;
-  --accent: #286045;
-  --line: #e0e5dd;
-  --soft: #e8eee6;
-  background: #f7f8f3;
+  @include mat.theme-overrides(
+    (
+      primary: #5ed9a3,
+      on-primary: #07120e,
+      primary-container: #142b24,
+      on-primary-container: #a5edcd,
+      secondary: #9aa9a4,
+      secondary-container: #25342e,
+      on-secondary-container: #e7eeeb,
+      surface: #12171b,
+      surface-dim: #0b0e11,
+      surface-bright: #1a2126,
+      surface-container-lowest: #0b0e11,
+      surface-container-low: #12171b,
+      surface-container: #1a2126,
+      surface-container-high: #202a30,
+      surface-container-highest: #253139,
+      on-surface: #e7eeeb,
+      on-surface-variant: #9aa9a4,
+      outline: #63736b,
+      outline-variant: #2b353c,
+      background: #0b0e11,
+      on-background: #e7eeeb,
+      error: #f28b82,
+      on-error: #260c0a,
+      inverse-surface: #e7eeeb,
+      inverse-on-surface: #12171b,
+    )
+  );
+  @include mat.button-overrides(
+    (
+      filled-container-shape: 4px,
+      outlined-container-shape: 4px,
+      text-container-shape: 4px,
+      tonal-container-shape: 4px,
+      filled-label-text-font: var(--font-mono),
+      outlined-label-text-font: var(--font-mono),
+      text-label-text-font: var(--font-mono),
+      filled-label-text-size: 12px,
+      outlined-label-text-size: 12px,
+      text-label-text-size: 12px,
+    )
+  );
+  @include mat.menu-overrides(
+    (
+      container-shape: 5px,
+      item-label-text-font: var(--font-mono),
+      item-label-text-size: 12px,
+    )
+  );
+  @include mat.strong-focus-indicators(
+    (
+      border-color: #5ed9a3,
+      border-width: 2px,
+    )
+  );
+  color-scheme: dark;
+  background: var(--canvas);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-prose);
+  font-size: 16px;
+  font-variant-ligatures: none;
 }
 body {
   margin: 0;
@@ -28,21 +103,368 @@ body {
   box-sizing: border-box;
 }
 button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+button,
+a,
+input,
+textarea,
+select,
+summary {
+  touch-action: manipulation;
+}
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline-offset: 3px;
+}
+::selection {
+  background: #315648;
+  color: var(--ink);
+}
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+nav,
+.eyebrow,
+.metadata,
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+h1 {
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  line-height: 1.4;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+h2 {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+h3 {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+p {
+  line-height: 1.65;
+}
+.eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.metadata {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.page-heading,
+.section-heading,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.page-heading {
+  margin-bottom: 28px;
+}
+.page-heading h1 {
+  margin: 4px 0 0;
+}
+.page-heading .eyebrow {
+  margin: 0;
+}
+.actions {
+  justify-content: flex-start;
+}
+.status-badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font: 400 0.65rem/1.5 var(--font-mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.status-badge.resolved {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: #315648;
+}
+.status-badge.hidden {
+  color: var(--warning);
+}
+.notice {
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--control-line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.notice p {
+  margin: 0;
+}
+.notice.warning {
+  border-left-color: var(--warning);
+}
+.notice.error,
+[role='alert'] {
+  color: var(--error);
+}
+.notice.error {
+  border-left-color: var(--error);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tags a {
+  padding: 3px 7px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--muted);
+  text-decoration: none;
+  font: 0.65rem/1.5 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.tags a:hover {
+  color: var(--accent);
+  border-color: var(--control-line);
+}
+.content-form {
+  margin-top: 20px;
+}
+.content-form mat-form-field {
+  display: block;
+  width: 100%;
+}
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+summary {
+  cursor: pointer;
+  font: 0.8rem/1.6 var(--font-mono);
+  color: var(--muted);
+  padding: 12px 0;
+}
+.markdown {
+  line-height: 1.75;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.markdown > :first-child {
+  margin-top: 0;
+}
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+.markdown p,
+.markdown li {
+  max-width: 75ch;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  margin: 24px 0 12px;
+}
+.markdown h1 {
+  font-size: 1.25rem;
+}
+.markdown img {
+  max-width: 100%;
+}
+pre {
+  max-width: 100%;
+  margin: 12px 0 20px;
+  padding: 16px;
+  overflow: auto;
+  white-space: pre;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: 0.75rem/1.8 var(--font-mono);
+  tab-size: 2;
+}
+pre code {
+  font-size: inherit;
+  background: none;
+  padding: 0;
+}
+:not(pre) > code {
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--surface-raised);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+.markdown blockquote {
+  margin-left: 0;
+  padding-left: 16px;
+  border-left: 2px solid var(--control-line);
+  color: var(--muted);
+}
+.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow: auto;
+  border-collapse: collapse;
+}
+.markdown th,
+.markdown td {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 120px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+@media (max-width: 599px) {
+  .page-heading {
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .content-form input,
+  .content-form textarea {
+    font-size: 16px;
+  }
+  a[mat-button],
+  button[mat-button],
+  a[mat-flat-button],
+  button[mat-flat-button],
+  button[mat-stroked-button] {
+    min-height: 44px;
+  }
+  pre {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+pre {
+  scrollbar-color: var(--control-line) var(--surface-raised);
+  scrollbar-width: thin;
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+button[mat-menu-item]:focus-visible {
+  outline-offset: -3px;
 }
 
-.markdown pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: var(--soft);
-  padding: 16px;
-  border-radius: 4px;
+.reading-page {
+  max-width: 900px;
 }
-.markdown a {
-  color: var(--accent);
+.reading-page .intro {
+  font-size: 1.05rem;
+  color: var(--muted);
+  max-width: 70ch;
+}
+.reading-page section {
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+}
+.reading-page p {
+  max-width: 75ch;
+}
+.form-page {
+  max-width: 960px;
+}
+legend {
+  padding: 0;
+  margin-bottom: 24px;
+  color: var(--muted);
+  font: 0.8rem/1.6 var(--font-mono);
+}
+.form-section {
+  padding: 8px 0;
+  margin: 16px 0 24px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.conflict-panel {
+  min-width: 0;
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--warning);
+  border-radius: var(--radius);
+}
+.conflict-panel h3 {
+  color: var(--warning);
+}
+.content-form textarea {
+  line-height: 1.65;
+}
+
+body:has(.mobile-drawer) {
+  overflow: hidden;
+}
+
+app-content-editor {
+  display: block;
+  min-width: 0;
+}
+.content-actions app-content-editor {
+  flex: 1 1 100%;
+}
+
+button[mat-flat-button],
+a[mat-flat-button] {
+  @include mat.strong-focus-indicators(
+    (
+      border-color: #07120e,
+    )
+  );
 }
