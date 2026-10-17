@@ -4,7 +4,7 @@
 [goal 005](../goals/005-local-hybrid-search.md). Version 2 contains 14 fictitious
 questions, 15 answers, 10 exact queries, the original 10 semantic paraphrases, and
 4 negative cases. It addresses the review of the initial `7553d58` corpus; owner
-sign-off remains pending. These are evaluation expectations, not measured search
+sign-off was given on 2026-10-17 for version 2 evaluation and tuning. These are evaluation expectations, not measured search
 results or evidence that any proposed fix was tested.
 
 ## Fixture loading

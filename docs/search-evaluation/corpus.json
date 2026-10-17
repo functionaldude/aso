@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "ownerReview": "pending",
+  "ownerReview": "approved by owner on 2026-10-17 for evaluation and tuning",
   "description": "Fictitious sanitized engineering examples. Targets denote relevant questions, not independently verified fixes. Negative expectations distinguish permitted related results from unsupported applicability claims.",
   "evaluation": {
     "state": "all",
