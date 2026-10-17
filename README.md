@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, encounter/recurring views, and local hybrid search are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
+A private engineering knowledge space for coding agents and humans. The tested laptop MVP includes individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, encounter/recurring views, local hybrid search, Agent setup guidance, and per-user request bounds. Start with [the spec](spec.md), [agent guidance](AGENTS.md), [release notes](docs/release-notes-007.md), and [the goal evidence](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -52,7 +52,7 @@ SPRING_PROFILES_ACTIVE=development java -jar backend/build/libs/aso.jar
 
 Open http://127.0.0.1:8080. Direct navigation and refresh work for `/about`, `/agent-setup`, `/questions`, `/questions/new`, `/questions/{uuid}`, `/moderation`, and `/moderation/{uuid}`. `/api/v1/info` returns application name/version; `/actuator/health` returns minimal health. Protected APIs return 401 without a browser session. Authenticated unknown API routes return JSON problem responses rather than the frontend.
 
-Build one local OCI application image with `./gradlew bootBuildImage` (Docker required). No image registry publication or deployment runs automatically. Running it needs explicit reachable database/IdP settings and the public callback URL; the host JVM commands above are the verified laptop topology. An issuer containing `127.0.0.1` addresses the container itself from inside a container, so do not copy the host-JVM development profile into that topology unchanged.
+Build one local OCI application image with `./gradlew --no-daemon bootBuildImage` (Docker required). No image registry publication or deployment runs automatically. Running it needs a database address reachable from the app container, one exact IdP issuer reachable from both the app and the browser, and an `ASO_PUBLIC_URL` whose login callback is registered with that IdP. The embedding endpoint must likewise be reachable and pass the private-host allowlist if enabled. An ordinary bridged container's `127.0.0.1` is its own network namespace, so the host-JVM development profile cannot simply be copied into it. Goal 007 [records the passing local container smoke topology](docs/goals/007-evidence.md#live-laptop-collaboration-and-persistence): disposable database and Keycloak containers, the app sharing the IdP's network namespace for one loopback issuer, explicit DB/OIDC/public URL settings, and no image push. The jar topology above uses the owner's existing local Keycloak and LM Studio.
 
 ## Local configuration and database lifecycle
 
@@ -65,6 +65,12 @@ The development helper works without a `.env` by explicitly selecting `developme
 | `ASO_DB_PASSWORD` | `aso-local-only`                       | Backend and Compose database password                  |
 | `ASO_PORT`        | `8080`                                 | Spring port; keep 8080 with the supplied Angular proxy |
 | `ASO_ADDRESS`     | `127.0.0.1`                            | Spring bind address; use `0.0.0.0` in a container      |
+
+### Per-user request bounds
+
+`ASO_RATE_LIMIT_REQUESTS` (default `600`) and `ASO_RATE_LIMIT_WRITES` (default `120`) bound each validated issuer/subject over `ASO_RATE_LIMIT_WINDOW` (default `1m`, allowed `1s`–`1h`). Set `0 < writes <= requests`. Browser REST and MCP share both budgets, so changing clients or browser sessions does not reset a person's capacity. Reads use the request budget; content creation, edits, votes, encounters, acceptance, moderation and index commands also use the write budget. Public setup/info/CSRF endpoints and authentication redirects do not consume a user budget. This is an in-memory single-application limit; restarting the application resets counters. Run only one application instance for this laptop configuration.
+
+An exceeded budget returns HTTP 429 with `Retry-After` seconds. REST returns a `rate_limited` problem response; MCP returns JSON-RPC error `-32029`. Rejected requests do not consume capacity or execute a write. Wait for the header interval, then retry the **same** request ID/event ID and payload. The browser displays the wait time and preserves the draft. The setting limits authenticated traffic; it is not a replacement for external ingress protection in a future deployment.
 
 PostgreSQL 18 with pgvector binds only to localhost:5433. Compose uses the dedicated `aso_database` volume mounted at PostgreSQL 18's `/var/lib/postgresql` parent directory. Flyway creates the `vector` extension at application startup. Flyway V2 adds `app_user`, uniquely keyed by validated issuer and subject. Identity access uses committed generated jOOQ sources; Flyway V3 adds questions, answers, tags, their relations, and transactional create-request reservations. Flyway V4 adds content lifecycle and audit records; V5 adds votes and encounter events; V6–V7 add derived search state and durable indexing without resetting data. See [Q&A contracts](docs/questions-and-answers.md).
 
@@ -256,14 +262,14 @@ CI runs `./gradlew --no-daemon playwrightInstall -PplaywrightWithDeps`, which in
 
 JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/test-results/`; Angular coverage is under `frontend/coverage/`. Sanitized shell/Q&A fixture screenshots and the packaged application's log are under `backend/build/e2e/`. OIDC reports are in the same test report directories; sanitized Keycloak failure logs and success summaries are under `backend/build/oidc/`. OIDC checks retain no browser traces, tokens, callback URLs, or passwords. Authentication browser traces are deliberately disabled because they can retain passwords, codes, and tokens. CI uploads the sanitized diagnostics even when validation fails. Docker unavailability fails integration/browser tests rather than silently skipping them.
 
-## Next milestones
+## MVP delivery and later work
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–006 are implemented; goal 007 remains planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–007 are implemented and the laptop release evidence is in [goal 007](docs/goals/007-mvp-release-readiness.md). [PR #10](https://github.com/functionaldude/aso/pull/10) remains open for review.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 
 LM Studio and the owner-approved sanitized search corpus have measured local evidence in goal 005. MVP delivery is a tested local release on the owner's laptop using Keycloak and LM Studio. Deployment and backup/restore functionality are deferred.
 
-Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
+Implement any newly agreed goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for a new goal. Goal Mode remains disabled until the owner explicitly enables it.
 
-The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 005](docs/goals/005-local-hybrid-search.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.
+The current application is the agreed tested laptop MVP. See [goal 007 evidence](docs/goals/007-evidence.md) for the acceptance checklist and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations. Native Claude Code/Cursor compatibility, another IdP, deployment, and backup/restore functionality remain outside this release.

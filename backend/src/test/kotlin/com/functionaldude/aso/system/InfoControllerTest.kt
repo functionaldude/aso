@@ -1,10 +1,13 @@
 package com.functionaldude.aso.system
 
+import com.functionaldude.aso.identity.RateLimits
+import com.functionaldude.aso.questions.EngagementTime
 import com.functionaldude.aso.web.SpaController
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
@@ -12,6 +15,7 @@ import org.springframework.test.web.servlet.get
 
 @AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(InfoController::class, SpaController::class)
+@Import(RateLimits::class, EngagementTime::class)
 @TestPropertySource(properties = ["aso.version=0.0.1-SNAPSHOT"])
 class InfoControllerTest(
     @Autowired private val mvc: MockMvc,

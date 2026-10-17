@@ -1707,6 +1707,9 @@ class QuestionIntegrationTest {
 
         @JvmStatic @DynamicPropertySource
         fun properties(registry: DynamicPropertyRegistry) {
+            // This broad domain suite is not the rate-limit fixture; RateLimitIntegrationTest exercises low ceilings.
+            registry.add("aso.rate-limit.requests") { 100000 }
+            registry.add("aso.rate-limit.writes") { 100000 }
             registry.add("aso.embedding.enabled") { true }
             registry.add("aso.embedding.base-url") { embeddings.baseUrl }
             registry.add("aso.embedding.dimensions") { 3 }
