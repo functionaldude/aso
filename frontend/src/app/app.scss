@@ -36,6 +36,13 @@
 nav {
   display: flex;
   gap: 0.25rem;
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 nav .active {
   background: var(--soft);

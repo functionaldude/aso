@@ -97,6 +97,8 @@ class SecurityConfiguration(
                         "/",
                         "/index.html",
                         "/about",
+                        "/agent-setup",
+                        "/api/v1/agent-setup",
                         "/moderation",
                         "/moderation/{id:[0-9a-fA-F-]{36}}",
                         "/questions",

@@ -60,3 +60,8 @@ aso:
     groups-claim: ${ASO_OIDC_GROUPS_CLAIM}
     member-group: ${ASO_OIDC_MEMBER_GROUP}
     admin-group: ${ASO_OIDC_ADMIN_GROUP}
+  agent-setup:
+    codex-client-id: ${ASO_CODEX_CLIENT_ID:}
+    codex-callback-url: ${ASO_CODEX_CALLBACK_URL:}
+    mcp-jam-client-id: ${ASO_MCP_JAM_CLIENT_ID:}
+    mcp-jam-callback-url: ${ASO_MCP_JAM_CALLBACK_URL:}

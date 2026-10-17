@@ -4,7 +4,7 @@ Status: planned
 
 ## Dependencies and prerequisites
 
-- [006 — Agent collaboration](006-agent-collaboration.md), including evidence for all three clients.
+- [006 — Agent collaboration and setup guide](006-agent-collaboration.md), including the owner-amended actual Codex/MCP Jam CLI evidence, simulated workflows, in-app setup guide, and native-client limitations.
 - Owner's laptop, seeded development Keycloak and goal 001's tested client configuration, and configured LM Studio embedding endpoint. No external IdP account is required for local MVP delivery.
 
 ## Objective
@@ -19,11 +19,11 @@ Include clean-checkout setup, packaged application verification, configuration/r
 
 1. A clean checkout can install its pinned build tools, start the local database and seeded Keycloak, and run the documented browser/API/MCP workflows on the laptop. Instructions clearly distinguish disposable test IdP/data from persistent development Keycloak/data and the actual LM Studio runtime. Independent database/Keycloak reset commands preserve the other service's data.
 2. `./gradlew --no-daemon check bootJar` needs no running Docker, IdP, database, or embedding service. Integration/E2E commands use isolated databases/authentication/embedding fixtures, never the owner's development data. Explicit real-client/model checks retain their own evidence and are not silently skipped.
-3. The executable jar serves all MVP client routes and its real authenticated APIs. Login redirects, direct question/search navigation, session expiry, Markdown safety, missing API errors, mobile layouts, and loading/empty/failure states work in the packaged browser tests. Verify the existing container build and document local connectivity to configured dependencies without publishing it.
+3. The executable jar serves all MVP client routes, including **Agent setup**, and its real authenticated APIs. Login redirects, direct question/search/setup navigation, configured MCP URL and copyable paragraph, session expiry, Markdown safety, missing API errors, mobile layouts, and loading/empty/failure states work in the packaged browser tests. Verify the existing container build and document local connectivity to configured dependencies without publishing it.
 4. A regression/authorization matrix covers member/owner/admin/anonymous and MCP credentials across reads/writes, editing, acceptance, moderation, votes, and occurrences. Check cookie/CSRF/token handling as applicable, configured credential validation, secret-safe logging, and payload limits. Add configurable per-user request/write bounds with observable retry behavior; keep the single-application architecture.
 5. Indexing retry/rebuild and model configuration changes are documented and demonstrated without losing product data. An embedding outage leaves exact/lexical search and ordinary content operations available. Missing authentication prerequisites fail closed with useful diagnostics.
 6. The self-hosted CI runs the documented deterministic checks and retains failure reports. Record actual CI status if available; lack of access or runner failures remain explicit limitations.
-7. Trace every MVP requirement to goal evidence, including actual laptop/IdP/LM Studio/all-client results. README describes the implemented behavior and all required non-secret configuration. Release notes identify remaining limitations; no feature or goal is marked complete solely because code exists.
+7. Trace every MVP requirement to goal evidence, including actual laptop/IdP/LM Studio/Codex/MCP Jam results, simulated unavailable-client workflows, and the in-app setup guide. Keep native Claude Code/Cursor compatibility unverified without making it an amended laptop-MVP gate. README describes implemented behavior and required non-secret configuration. Release notes identify limitations; no goal is marked complete solely because code exists.
 
 ## Verification
 
@@ -37,7 +37,8 @@ Include clean-checkout setup, packaged application verification, configuration/r
 - Owner defines MVP delivery as a tested runnable release on their laptop (2026-10-16).
 - No backup/restore functionality is required; the owner expects a future PaaS platform to provide it. Do not add backup/restore scripts, drills, or deployment work as MVP completion gates.
 - Production hosting and its embedding model are deferred; application configuration must allow a future locally hosted model change.
-- The local MVP uses real authentication against a development Keycloak. Another OIDC IdP requires configuration and its own browser/all-client compatibility check before use; it is not an external prerequisite for this release.
+- The local MVP uses real authentication against a development Keycloak. Another OIDC IdP requires configuration and its own browser/in-scope-client compatibility check before use; it is not an external prerequisite for this release.
+- Owner's 2026-10-17 amendment replaces unavailable native Claude Code/Cursor testing with MCP Jam CLI workflow simulation for goal 006 and this laptop release. Require accurate actual/simulated/unverified labels and the web setup guide; do not fabricate native compatibility.
 
 ## Progress and blockers
 

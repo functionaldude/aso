@@ -19,6 +19,9 @@
     <a mat-button routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page"
       >About</a
     >
+    <a mat-button routerLink="/agent-setup" routerLinkActive="active" ariaCurrentWhenActive="page"
+      >Agent setup</a
+    >
     @if (session.identity()?.admin) {
       <a mat-button routerLink="/moderation">Moderation</a>
     }

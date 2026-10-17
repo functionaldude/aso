@@ -9,6 +9,7 @@ class SpaController {
     @GetMapping(
         "/",
         "/about",
+        "/agent-setup",
         "/moderation",
         "/moderation/{id:[0-9a-fA-F-]{36}}",
         "/questions",
