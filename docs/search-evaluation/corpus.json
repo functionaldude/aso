@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "ownerReview": "pending",
+  "description": "Fictitious sanitized engineering examples; expected matches are questions, never independently verified fixes. Negative cases have no expected solution.",
+  "documents": [
+    {
+      "id": "variant",
+      "title": "Gradle cannot select org.example:client:2.1.0 for Java 25",
+      "body": "No matching variant of org.example:client:2.1.0 was found. The consumer requires Java 25 but the published variant targets Java 26.",
+      "tags": [
+        "gradle",
+        "java",
+        "variants"
+      ],
+      "answer": "Use a publication compiled for Java 25 or change the consumer toolchain. Inspect outgoingVariants before selecting a compatible artifact."
+    },
+    {
+      "id": "class",
+      "title": "NoClassDefFoundError for com.example.codec.Parser",
+      "body": "java.lang.NoClassDefFoundError: com/example/codec/Parser occurs at application startup although compilation succeeded.",
+      "tags": [
+        "java",
+        "classpath"
+      ],
+      "answer": "Add the missing codec runtime dependency, rather than compileOnly; inspect runtimeClasspath."
+    },
+    {
+      "id": "pool",
+      "title": "Database connection pool exhausted after requests",
+      "body": "Requests eventually wait forever for a database connection. Borrowed JDBC connections are never returned after exceptions.",
+      "tags": [
+        "postgresql",
+        "jdbc"
+      ],
+      "answer": "Use try-with-resources or Kotlin use to close borrowed connections on every path. Measure active connections after failures."
+    },
+    {
+      "id": "race",
+      "title": "Duplicate payment rows when clients retry after a timeout",
+      "body": "A payment succeeds on the server but the client loses the response. Retrying creates a second payment.",
+      "tags": [
+        "api",
+        "concurrency"
+      ],
+      "answer": "Reserve a stable idempotency key with a unique database constraint in the same transaction as the payment."
+    },
+    {
+      "id": "csrf",
+      "title": "Browser write fails with Invalid CSRF token",
+      "body": "Session-authenticated POST requests return 403 Invalid CSRF token while GET requests work.",
+      "tags": [
+        "spring",
+        "security"
+      ],
+      "answer": "Fetch the masked CSRF token and send X-CSRF-TOKEN with the session cookie."
+    },
+    {
+      "id": "issuer",
+      "title": "JWT issuer mismatch inside Docker",
+      "body": "OIDC JWT validation fails with issuer mismatch when a service uses localhost inside a container.",
+      "tags": [
+        "oidc",
+        "docker"
+      ],
+      "answer": "Use one advertised issuer reachable by the browser and backend. localhost inside a container addresses that container."
+    },
+    {
+      "id": "lock",
+      "title": "PostgreSQL SQLSTATE 40P01 during opposite row updates",
+      "body": "Concurrent transactions update parent and child rows in opposite order and PostgreSQL detects a deadlock.",
+      "tags": [
+        "postgresql",
+        "transactions"
+      ],
+      "answer": "Acquire parent locks in one consistent order across mutations; retry the entire aborted transaction."
+    },
+    {
+      "id": "angular",
+      "title": "Angular NG0100 after changing state during view checking",
+      "body": "ExpressionChangedAfterItHasBeenCheckedError NG0100 appears after modifying component state in a checked lifecycle hook.",
+      "tags": [
+        "angular",
+        "signals"
+      ],
+      "answer": "Move initialization before the checked view phase and avoid changing bound values during checking."
+    },
+    {
+      "id": "pagination",
+      "title": "Repeated rows across pages with equal creation times",
+      "body": "Sorting only by createdAt produces missing or repeated results when timestamps tie.",
+      "tags": [
+        "pagination",
+        "sql"
+      ],
+      "answer": "Use a stable compound keyset cursor with createdAt and UUID as a unique tie breaker."
+    },
+    {
+      "id": "hidden",
+      "title": "Stale search index reveals moderated answers",
+      "body": "Search results expose answer excerpts after a moderator hides the answer; background cleanup has not finished.",
+      "tags": [
+        "search",
+        "moderation"
+      ],
+      "answer": "Join search candidates against current product visibility and revision before constructing excerpts."
+    },
+    {
+      "id": "variant-old",
+      "title": "Gradle org.example:client:1.9.0 missing artifact",
+      "body": "Could not find org.example:client:1.9.0 in the repository. This release has never been published.",
+      "tags": [
+        "gradle",
+        "dependencies"
+      ],
+      "answer": "Correct the coordinate or publish that artifact. A toolchain change does not fix a missing artifact."
+    },
+    {
+      "id": "cpp",
+      "title": "C++ linker undefined reference in native parser",
+      "body": "C++ parser fails during native linking because the object file is omitted from target sources.",
+      "tags": [
+        "cpp",
+        "linker"
+      ],
+      "answer": "Add the native object to the link target."
+    },
+    {
+      "id": "csharp",
+      "title": "C# nullable reference warning in parser",
+      "body": "C# parser reports CS8602 possible null reference dereference.",
+      "tags": [
+        "csharp",
+        "compiler"
+      ],
+      "answer": "Check nullable values before dereferencing."
+    },
+    {
+      "id": "version",
+      "title": "PostgreSQL 18 versus PostgreSQL 15 upgrade plan",
+      "body": "The test environment runs PostgreSQL 18; another project remains on PostgreSQL 15. No upgrade compatibility evidence is provided.",
+      "tags": [
+        "postgresql",
+        "versions"
+      ],
+      "answer": "Evaluate extensions and upgrade requirements separately for each major version."
+    }
+  ],
+  "queries": [
+    {
+      "id": "exact-1",
+      "kind": "exact",
+      "query": "org.example:client:2.1.0",
+      "target": "variant"
+    },
+    {
+      "id": "exact-2",
+      "kind": "exact",
+      "query": "java.lang.NoClassDefFoundError",
+      "target": "class"
+    },
+    {
+      "id": "exact-3",
+      "kind": "exact",
+      "query": "SQLSTATE 40P01",
+      "target": "lock"
+    },
+    {
+      "id": "exact-4",
+      "kind": "exact",
+      "query": "NG0100",
+      "target": "angular"
+    },
+    {
+      "id": "exact-5",
+      "kind": "exact",
+      "query": "C++",
+      "target": "cpp"
+    },
+    {
+      "id": "exact-6",
+      "kind": "exact",
+      "query": "C# CS8602",
+      "target": "csharp"
+    },
+    {
+      "id": "semantic-1",
+      "kind": "semantic",
+      "query": "The build rejects my library because it needs a newer JVM than my application uses",
+      "target": "variant"
+    },
+    {
+      "id": "semantic-2",
+      "kind": "semantic",
+      "query": "My program compiles but a type disappears when I launch it",
+      "target": "class"
+    },
+    {
+      "id": "semantic-3",
+      "kind": "semantic",
+      "query": "After enough failed web requests every database operation waits for a free slot",
+      "target": "pool"
+    },
+    {
+      "id": "semantic-4",
+      "kind": "semantic",
+      "query": "A lost HTTP response causes the same financial operation to happen twice",
+      "target": "race"
+    },
+    {
+      "id": "semantic-5",
+      "kind": "semantic",
+      "query": "Reading pages works but submitting a form with my login cookie is forbidden",
+      "target": "csrf"
+    },
+    {
+      "id": "semantic-6",
+      "kind": "semantic",
+      "query": "Signing in works on my laptop but token validation breaks in a container network",
+      "target": "issuer"
+    },
+    {
+      "id": "semantic-7",
+      "kind": "semantic",
+      "query": "Two writers grab the same records in reverse sequence and one transaction aborts",
+      "target": "lock"
+    },
+    {
+      "id": "semantic-8",
+      "kind": "semantic",
+      "query": "My bound UI value changes while Angular is checking the view",
+      "target": "angular"
+    },
+    {
+      "id": "semantic-9",
+      "kind": "semantic",
+      "query": "Paging drops items when several records share the same timestamp",
+      "target": "pagination"
+    },
+    {
+      "id": "semantic-10",
+      "kind": "semantic",
+      "query": "A removed answer is still visible in search snippets until the index catches up",
+      "target": "hidden"
+    },
+    {
+      "id": "negative-1",
+      "kind": "negative",
+      "query": "org.example:client:9.9.9 has a verified fix",
+      "target": null,
+      "distractors": [
+        "variant",
+        "variant-old"
+      ]
+    },
+    {
+      "id": "negative-2",
+      "kind": "negative",
+      "query": "SQLSTATE 23505 unique violation during account signup",
+      "target": null,
+      "distractors": [
+        "lock"
+      ]
+    },
+    {
+      "id": "negative-3",
+      "kind": "negative",
+      "query": "Quantum flux regulator error QZ-991 on a lunar database",
+      "target": null,
+      "distractors": []
+    },
+    {
+      "id": "negative-4",
+      "kind": "negative",
+      "query": "Does PostgreSQL 15 guarantee PostgreSQL 18 extension compatibility?",
+      "target": null,
+      "distractors": [
+        "version"
+      ]
+    }
+  ]
+}
