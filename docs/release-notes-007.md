@@ -1,6 +1,6 @@
 # Laptop MVP release notes — goal 007
 
-ASO now packages the agreed private-team MVP as one executable jar and one local OCI image. On the owner's laptop, the browser and MCP clients use individual Keycloak identities to share questions, answers, context, votes, encounters, accepted solutions, moderation, Agent setup guidance, and local hybrid search. [README](../README.md) contains the setup and run commands; [goal 007 evidence](goals/007-evidence.md) traces the acceptance criteria and verification.
+ASO now packages the agreed private-team MVP as one executable jar and one local OCI image. On the owner's laptop, the browser and MCP clients use individual Keycloak identities to share questions, answers, context, votes, encounters, accepted solutions, moderation, Agent setup guidance, and local hybrid search. [README](../README.md) contains the setup and run commands; [goal 007 evidence](goals/007-evidence.md) traces the acceptance criteria and verification. [PR #10](https://github.com/functionaldude/aso/pull/10) is open with passing [self-hosted CI](https://github.com/functionaldude/aso/actions/runs/39030409065).
 
 ## Release additions
 

@@ -8,7 +8,7 @@ The MVP succeeds when one developer's agent can publish a sanitized problem, ano
 
 ## Scope and decision status
 
-The foundation, identity, Q&A, content lifecycle, votes/occurrences, and local hybrid search slices are implemented. This document defines the full MVP, which is not complete yet. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Planned goals do not enable Goal Mode or authorize starting feature implementation.
+The agreed laptop MVP is implemented and verified through [goal 007](docs/goals/007-mvp-release-readiness.md); [PR #10](https://github.com/functionaldude/aso/pull/10) remains open for review. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Future proposed work does not enable Goal Mode or authorize starting another milestone.
 
 Confirmed MVP scope: individual OIDC identities; browser and MCP participation; questions, answers, context/comments, tags, accepted solutions, votes, occurrences, trends, and hybrid search with locally hosted embeddings. Agents may automatically search, report occurrences, and publish sanitized questions/context/answers under their developer's identity. Humans accept solutions.
 

@@ -1,6 +1,6 @@
 # 007 — Tested laptop MVP release
 
-Status: In progress — local implementation and release checks passed; PR/CI handoff pending
+Status: Complete — tested laptop MVP release; PR open for review
 
 ## Dependencies and prerequisites
 
@@ -44,8 +44,8 @@ Include clean-checkout setup, packaged application verification, configuration/r
 
 ## Progress and blockers
 
-The [spec-to-evidence checklist and verification record](007-evidence.md) map all criteria, carry forward valid goals 005/006 results, and document clean setup, new throttling coverage, local two-user/model/outage/rebuild/restart smoke, local image operation, and resolved failed runs. The final PR CI result and commit/PR links are still pending. Completion does not mean production deployment or permission to enable Goal Mode.
+The [spec-to-evidence checklist and verification record](007-evidence.md) map all criteria, carry forward valid goals 005/006 results, and document clean setup, new throttling coverage, local two-user/model/outage/rebuild/restart smoke, local image operation, and resolved failed runs. [PR #10](https://github.com/functionaldude/aso/pull/10) is open, not merged. The self-hosted [CI run 39030409065](https://github.com/functionaldude/aso/actions/runs/39030409065) passed on implementation commit `0cda200603673fd45f4bf01dbc7404923c75a1b3`, including all deterministic gates and diagnostic upload. Completion does not mean production deployment or permission to enable Goal Mode.
 
 ## Completion evidence
 
-[Goal 007 evidence](007-evidence.md) contains the local evidence and limitations. Record final CI status, commit, and PR here before completion.
+[Goal 007 evidence](007-evidence.md) contains the requirement checklist, test counts, clean-checkout and local smoke trace, authorization review, model/index recovery, image result, CI diagnostics, and limitations. Local final gates passed: `oidcSmokeTest` (2), `check bootJar` (21 backend and 6 Angular tests), `integrationTest` (19), `e2eTest` (1 comprehensive packaged suite), and `bootBuildImage` (local image only); JUnit recorded zero failures/errors/skips. The disposable lifecycle test passed. Implementation commit `0cda200603673fd45f4bf01dbc7404923c75a1b3` is on [PR #10](https://github.com/functionaldude/aso/pull/10), with passing [CI run 39030409065](https://github.com/functionaldude/aso/actions/runs/39030409065). The post-CI handoff change only updates documentation and goal status.

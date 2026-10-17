@@ -1,6 +1,6 @@
 # ASO — Agentic Stack Overflow
 
-A private engineering knowledge space for coding agents and humans. Individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, encounter/recurring views, and local hybrid search are implemented. The remaining MVP features follow the ordered goals. Start with [the spec](spec.md), [agent guidance](AGENTS.md), and [the ordered implementation goals](docs/goals/README.md).
+A private engineering knowledge space for coding agents and humans. The tested laptop MVP includes individual browser/MCP identity, questions, answers, tags, comments, own-content editing, human acceptance, admin moderation, upvotes, encounter/recurring views, local hybrid search, Agent setup guidance, and per-user request bounds. Start with [the spec](spec.md), [agent guidance](AGENTS.md), [release notes](docs/release-notes-007.md), and [the goal evidence](docs/goals/README.md).
 
 ## Prerequisites
 
@@ -262,14 +262,14 @@ CI runs `./gradlew --no-daemon playwrightInstall -PplaywrightWithDeps`, which in
 
 JUnit/HTML reports are under `backend/build/reports/tests/` and `backend/build/test-results/`; Angular coverage is under `frontend/coverage/`. Sanitized shell/Q&A fixture screenshots and the packaged application's log are under `backend/build/e2e/`. OIDC reports are in the same test report directories; sanitized Keycloak failure logs and success summaries are under `backend/build/oidc/`. OIDC checks retain no browser traces, tokens, callback URLs, or passwords. Authentication browser traces are deliberately disabled because they can retain passwords, codes, and tokens. CI uploads the sanitized diagnostics even when validation fails. Docker unavailability fails integration/browser tests rather than silently skipping them.
 
-## Next milestones
+## MVP delivery and later work
 
-The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–006 are implemented; goal 007 remains planned.
+The [MVP spec](spec.md) covers one private team workspace, individual OIDC identities, browser/MCP Q&A, context/comments, tags, human-accepted solutions, upvotes, occurrences/trends, and hybrid search. Initial embeddings use the owner's LM Studio model `text-embedding-qwen3-embedding-0.6b`; endpoint/model/dimensions remain configurable. Goals 001–007 are implemented and the laptop release evidence is in [goal 007](docs/goals/007-mvp-release-readiness.md). [PR #10](https://github.com/functionaldude/aso/pull/10) remains open for review.
 
 [000a — Local development Keycloak](docs/goals/000a-local-keycloak.md) supplies the seeded IdP and standalone OIDC checks. [001 — Identity and access](docs/goals/001-identity-and-access.md) records browser/MCP implementation and verification. Follow the [ordered product goals](docs/goals/README.md). No external IdP configuration or personal credentials are required. ASO remains configurable for another OIDC IdP, with separate compatibility verification before use.
 
 LM Studio and the owner-approved sanitized search corpus have measured local evidence in goal 005. MVP delivery is a tested local release on the owner's laptop using Keycloak and LM Studio. Deployment and backup/restore functionality are deferred.
 
-Implement each goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for newly agreed goals. Goal Mode remains disabled until the owner explicitly enables it.
+Implement any newly agreed goal on a feature branch with a pull request and retain material decisions and verification evidence in its record. Use `docs/goals/TEMPLATE.md` for a new goal. Goal Mode remains disabled until the owner explicitly enables it.
 
-The current application is a local authenticated Q&A slice, not the completed team MVP. See [goal 005](docs/goals/005-local-hybrid-search.md) for current evidence and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations.
+The current application is the agreed tested laptop MVP. See [goal 007 evidence](docs/goals/007-evidence.md) for the acceptance checklist and [Q&A contracts and client instructions](docs/questions-and-answers.md) for bounds, retry behavior, and safety limitations. Native Claude Code/Cursor compatibility, another IdP, deployment, and backup/restore functionality remain outside this release.
