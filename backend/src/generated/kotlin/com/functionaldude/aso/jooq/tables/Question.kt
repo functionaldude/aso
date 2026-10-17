@@ -6,7 +6,9 @@ package com.functionaldude.aso.jooq.tables
 
 import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.indexes.QUESTION_RECENT
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_31
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_64
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_B
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_BA
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_F
@@ -16,6 +18,8 @@ import com.functionaldude.aso.jooq.tables.Answer.AnswerPath
 import com.functionaldude.aso.jooq.tables.AppUser.AppUserPath
 import com.functionaldude.aso.jooq.tables.ContentAudit.ContentAuditPath
 import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
+import com.functionaldude.aso.jooq.tables.ContentVote.ContentVotePath
+import com.functionaldude.aso.jooq.tables.Occurrence.OccurrencePath
 import com.functionaldude.aso.jooq.tables.QuestionTag.QuestionTagPath
 import com.functionaldude.aso.jooq.tables.Tag.TagPath
 import com.functionaldude.aso.jooq.tables.records.QuestionRecord
@@ -137,6 +141,18 @@ open class Question(
     fun answer(): AnswerPath = answer
     val answer: AnswerPath by lazy { AnswerPath(this, QUESTION_ACCEPTED_ANSWER, null) }
 
+    private lateinit var _contentVote: ContentVotePath
+
+    fun contentVote(): ContentVotePath {
+        if (!this::_contentVote.isInitialized)
+            _contentVote = ContentVotePath(this, null, CONSTRAINT_31.inverseKey)
+
+        return _contentVote;
+    }
+
+    val contentVote: ContentVotePath
+        get(): ContentVotePath = contentVote()
+
     private lateinit var _contentComment: ContentCommentPath
 
     fun contentComment(): ContentCommentPath {
@@ -148,6 +164,18 @@ open class Question(
 
     val contentComment: ContentCommentPath
         get(): ContentCommentPath = contentComment()
+
+    private lateinit var _occurrence: OccurrencePath
+
+    fun occurrence(): OccurrencePath {
+        if (!this::_occurrence.isInitialized)
+            _occurrence = OccurrencePath(this, null, CONSTRAINT_64.inverseKey)
+
+        return _occurrence;
+    }
+
+    val occurrence: OccurrencePath
+        get(): OccurrencePath = occurrence()
 
     private lateinit var _questionTag: QuestionTagPath
 

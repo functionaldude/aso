@@ -9,6 +9,8 @@ import com.functionaldude.aso.jooq.tables.AppUser
 import com.functionaldude.aso.jooq.tables.ContentAudit
 import com.functionaldude.aso.jooq.tables.ContentComment
 import com.functionaldude.aso.jooq.tables.ContentRequest
+import com.functionaldude.aso.jooq.tables.ContentVote
+import com.functionaldude.aso.jooq.tables.Occurrence
 import com.functionaldude.aso.jooq.tables.Question
 import com.functionaldude.aso.jooq.tables.QuestionTag
 import com.functionaldude.aso.jooq.tables.Tag
@@ -38,6 +40,10 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
 
     val CONTENT_REQUEST: ContentRequest get() = ContentRequest.CONTENT_REQUEST
 
+    val CONTENT_VOTE: ContentVote get() = ContentVote.CONTENT_VOTE
+
+    val OCCURRENCE: Occurrence get() = Occurrence.OCCURRENCE
+
     val QUESTION: Question get() = Question.QUESTION
 
     val QUESTION_TAG: QuestionTag get() = QuestionTag.QUESTION_TAG
@@ -52,6 +58,8 @@ open class DefaultSchema : SchemaImpl(DSL.name(""), DefaultCatalog.DEFAULT_CATAL
         ContentAudit.CONTENT_AUDIT,
         ContentComment.CONTENT_COMMENT,
         ContentRequest.CONTENT_REQUEST,
+        ContentVote.CONTENT_VOTE,
+        Occurrence.OCCURRENCE,
         Question.QUESTION,
         QuestionTag.QUESTION_TAG,
         Tag.TAG

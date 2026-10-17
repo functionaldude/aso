@@ -34,6 +34,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@org.springframework.context.annotation.Import(QuestionIntegrationTest.ClockFixture::class)
 class QuestionIntegrationTest {
     @Autowired private lateinit var database: DSLContext
 
@@ -315,7 +316,7 @@ class QuestionIntegrationTest {
             assertEquals("2025-11-25", initialized["protocolVersion"].asString())
             assertFalse(initialized["capabilities"]["tools"]["listChanged"].asBoolean())
             val tools = rpc(alice, request("tools/list")).body["result"]["tools"]
-            assertEquals(11, tools.size())
+            assertEquals(14, tools.size())
             val identity = tools.first { it["name"].asString() == "identity" }
             assertEquals(setOf("readOnlyHint", "openWorldHint"), identity["annotations"].propertyNames().toSet())
             assertEquals(0, identity["inputSchema"]["properties"].size())
@@ -712,6 +713,9 @@ class QuestionIntegrationTest {
                     "edit_question",
                     "edit_answer",
                     "edit_comment",
+                    "set_vote",
+                    "list_votes",
+                    "report_occurrence",
                 ),
                 tools
                     .asSequence()
@@ -1009,6 +1013,416 @@ class QuestionIntegrationTest {
             )
         }
 
+    @Autowired private lateinit var engagementClock: ControlledEngagementClock
+
+    class ControlledEngagementClock : java.time.Clock() {
+        @Volatile var time: java.time.Instant? = null
+
+        override fun instant(): java.time.Instant = time ?: java.time.Instant.now()
+
+        override fun getZone(): java.time.ZoneId = java.time.ZoneOffset.UTC
+
+        override fun withZone(zone: java.time.ZoneId): java.time.Clock = this
+    }
+
+    @org.springframework.boot.test.context.TestConfiguration
+    class ClockFixture {
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        fun controlledEngagementClock() = ControlledEngagementClock()
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    fun resetEngagementClock() {
+        engagementClock.time = null
+    }
+
+    @Test
+    fun `votes enforce identity evidence uniqueness and concurrent undo`() =
+        withActors { alice, bob ->
+            val q = mcp(alice, "create_question", question()).body["id"].asString()
+            val a = web(bob, "/api/v1/questions/$q/answers", answer()).body["id"].asString()
+
+            fun vote(
+                who: Actor,
+                kind: String,
+                id: String,
+                active: Boolean,
+                agent: Boolean = false,
+            ): Result {
+                val payload =
+                    mapOf(
+                        "active" to active,
+                        "verification" to "Applied the JVM target fix and reran the failing build successfully.",
+                    )
+                return if (agent) {
+                    mcp(who, "set_vote", payload + mapOf("kind" to kind, "targetId" to id))
+                } else {
+                    web(who, "/api/v1/content/$kind/$id/vote", payload)
+                }
+            }
+            for (agent in listOf(false, true)) {
+                assertEquals(403, vote(alice, "question", q, true, agent).status)
+                assertEquals(403, vote(bob, "answer", a, true, agent).status)
+            }
+            val blank = mcp(alice, "set_vote", mapOf("kind" to "answer", "targetId" to a, "active" to true))
+            assertEquals(400, blank.status)
+            for (verification in listOf(" ", "x".repeat(501), "api_key=private-test-value")) {
+                assertEquals(
+                    400,
+                    mcp(
+                        alice,
+                        "set_vote",
+                        mapOf(
+                            "kind" to "answer",
+                            "targetId" to a,
+                            "active" to true,
+                            "verification" to verification,
+                        ),
+                    ).status,
+                )
+            }
+            val at = java.time.Instant.parse("2030-05-10T12:00:00Z")
+            engagementClock.time = at
+            Executors.newFixedThreadPool(8).use { pool ->
+                val added = pool.invokeAll((0..15).map { n -> Callable { vote(alice, "answer", a, true, n % 2 == 0) } }).map { it.get() }
+                assertTrue(added.all { it.status == 200 && it.body["upvotes"].asInt() == 1 && it.body["votedByYou"].asBoolean() })
+                val first = mcp(alice, "list_votes", mapOf("kind" to "answer", "targetId" to a)).body["items"]
+                assertEquals(1, first.size())
+                assertEquals(alice.id, first[0]["voter"]["id"].asString())
+                assertEquals(
+                    at,
+                    java.time.OffsetDateTime
+                        .parse(first[0]["createdAt"].asString())
+                        .toInstant(),
+                )
+                assertTrue(first[0]["callerReportedVerification"].asString().contains("reran"))
+                engagementClock.time = at.plusSeconds(60)
+                assertEquals(200, vote(alice, "answer", a, true, true).status)
+                assertEquals(first, mcp(alice, "list_votes", mapOf("kind" to "answer", "targetId" to a)).body["items"])
+                // Undo by the author cannot delete the other developer's vote.
+                assertEquals(1, vote(bob, "answer", a, false).body["upvotes"].asInt())
+                val undone = pool.invokeAll((0..15).map { n -> Callable { vote(alice, "answer", a, false, n % 2 == 0) } }).map { it.get() }
+                assertTrue(undone.all { it.status == 200 && it.body["upvotes"].asInt() == 0 && !it.body["votedByYou"].asBoolean() })
+                val mixed =
+                    pool
+                        .invokeAll(
+                            (0..15).map { n ->
+                                Callable { vote(bob, "question", q, n % 3 != 0, n % 2 == 0) }
+                            },
+                        ).map { it.get() }
+                assertTrue(mixed.all { it.status == 200 && it.body["upvotes"].asInt() in 0..1 })
+                assertEquals(1, vote(bob, "question", q, true, true).body["upvotes"].asInt())
+            }
+            Playwright.create().use { pw ->
+                pw.chromium().launch().use { browser ->
+                    val contexts = mutableListOf<BrowserContext>()
+                    try {
+                        val admin = actor(browser, "aso-admin", contexts)
+                        val secondAlice =
+                            alice.copy(
+                                token =
+                                    login
+                                        .tokens(
+                                            browser,
+                                            issuer,
+                                            "alice",
+                                            client = "aso-mcp-other-test",
+                                            resource = "$base/mcp",
+                                        )["access_token"]
+                                        .asString(),
+                            )
+                        val secondBob =
+                            bob.copy(
+                                token =
+                                    login
+                                        .tokens(
+                                            browser,
+                                            issuer,
+                                            "bob",
+                                            client = "aso-mcp-other-test",
+                                            resource = "$base/mcp",
+                                        )["access_token"]
+                                        .asString(),
+                            )
+                        assertEquals(403, vote(secondAlice, "question", q, true, true).status)
+                        assertEquals(403, vote(secondBob, "answer", a, true, true).status)
+                        assertEquals(1, vote(secondBob, "question", q, true, true).body["upvotes"].asInt())
+                        assertEquals(2, vote(admin, "question", q, true).body["upvotes"].asInt())
+                        val page = web(alice, "/api/v1/content/question/$q/votes?limit=1").body
+                        assertEquals(1, page["items"].size())
+                        val next =
+                            mcp(
+                                alice,
+                                "list_votes",
+                                mapOf(
+                                    "kind" to "question",
+                                    "targetId" to q,
+                                    "limit" to 1,
+                                    "cursor" to page["nextCursor"].asString(),
+                                ),
+                            )
+                        assertEquals(1, next.body["items"].size())
+                        assertNotEquals(page["items"][0]["id"], next.body["items"][0]["id"])
+                        val evidenceCursor = page["nextCursor"].asString()
+                        assertEquals(400, web(alice, "/api/v1/content/answer/$a/votes?cursor=$evidenceCursor").status)
+                        assertEquals(200, vote(alice, "answer", a, true, true).status)
+                        assertEquals(
+                            200,
+                            web(
+                                admin,
+                                "/api/v1/admin/content/answer/$a/visibility",
+                                mapOf(
+                                    "expectedVersion" to 1,
+                                    "hidden" to true,
+                                ),
+                            ).status,
+                        )
+                        assertEquals(404, vote(alice, "answer", a, true, true).status)
+                        assertEquals(404, mcp(alice, "list_votes", mapOf("kind" to "answer", "targetId" to a)).status)
+                        assertEquals(0, web(alice, "/api/v1/questions/$q").body["answers"]["items"].size())
+                        assertEquals(2, web(alice, "/api/v1/questions/$q").body["question"]["votes"]["upvotes"].asInt())
+                        assertTrue(web(alice, "/api/v1/questions/$q").body["question"]["acceptedAnswerId"].isNull)
+                    } finally {
+                        contexts.forEach { it.close() }
+                    }
+                }
+            }
+            for (payload in listOf(
+                mapOf("active" to "true"),
+                mapOf("active" to 1),
+                mapOf("active" to true, "actorId" to alice.id),
+                mapOf("active" to true, "createdAt" to at.toString()),
+            )) {
+                assertEquals(400, web(bob, "/api/v1/content/question/$q/vote", payload).status)
+                assertEquals(400, mcp(bob, "set_vote", payload + mapOf("kind" to "question", "targetId" to q)).status)
+            }
+            assertEquals(401, web(null, "/api/v1/content/question/$q/votes").status)
+        }
+
+    @Test
+    fun `encounters preserve retries distinguish incidents and reject conflicts`() =
+        withActors { alice, bob ->
+            val q = web(alice, "/api/v1/questions", question()).body["id"].asString()
+            val other = web(alice, "/api/v1/questions", question()).body["id"].asString()
+
+            fun detail() = web(alice, "/api/v1/questions/$q").body["question"]
+            assertEquals(0, detail()["occurrences"]["allTime"]["encounters"].asInt())
+            val event = UUID.randomUUID().toString()
+            val at = java.time.Instant.parse("2030-05-10T12:00:00Z")
+            engagementClock.time = at
+            Executors.newFixedThreadPool(8).use { pool ->
+                val results =
+                    pool
+                        .invokeAll(
+                            (0..15).map { n ->
+                                Callable {
+                                    if (n % 2 == 0) {
+                                        web(alice, "/api/v1/questions/$q/occurrences", mapOf("eventId" to event))
+                                    } else {
+                                        mcp(alice, "report_occurrence", mapOf("questionId" to q, "eventId" to event))
+                                    }
+                                }
+                            },
+                        ).map { it.get() }
+                assertTrue(results.all { it.status == 200 })
+                assertEquals(1, results.map { it.body }.toSet().size)
+                val original = results.first().body
+                assertEquals(alice.id, original["reporterId"].asString())
+                assertEquals(
+                    at,
+                    java.time.OffsetDateTime
+                        .parse(original["createdAt"].asString())
+                        .toInstant(),
+                )
+                engagementClock.time = at.plusSeconds(3600)
+                assertEquals(original, mcp(alice, "report_occurrence", mapOf("questionId" to q, "eventId" to event)).body)
+                for (id in listOf(other, UUID.randomUUID().toString())) {
+                    assertEquals(409, web(alice, "/api/v1/questions/$id/occurrences", mapOf("eventId" to event)).status)
+                    assertEquals(409, mcp(alice, "report_occurrence", mapOf("questionId" to id, "eventId" to event)).status)
+                }
+                assertEquals(1, detail()["occurrences"]["allTime"]["encounters"].asInt())
+                assertEquals(200, web(alice, "/api/v1/questions/$q/occurrences", mapOf("eventId" to UUID.randomUUID().toString())).status)
+                assertEquals(2, detail()["occurrences"]["allTime"]["encounters"].asInt())
+                assertEquals(1, detail()["occurrences"]["allTime"]["distinctDevelopers"].asInt())
+                // IDs are scoped to the developer, so Bob may use the same incident UUID independently.
+                assertEquals(200, mcp(bob, "report_occurrence", mapOf("questionId" to q, "eventId" to event)).status)
+                assertEquals(3, detail()["occurrences"]["allTime"]["encounters"].asInt())
+                assertEquals(2, detail()["occurrences"]["allTime"]["distinctDevelopers"].asInt())
+                assertEquals(0, detail()["votes"]["upvotes"].asInt())
+                assertTrue(detail()["acceptedAnswerId"].isNull)
+                val reused = UUID.randomUUID().toString()
+                val conflict =
+                    pool
+                        .invokeAll(
+                            listOf(q, other).map { id ->
+                                Callable {
+                                    mcp(bob, "report_occurrence", mapOf("questionId" to id, "eventId" to reused))
+                                }
+                            },
+                        ).map { it.get().status }
+                        .sorted()
+                assertEquals(listOf(200, 409), conflict)
+            }
+            for (payload in listOf(
+                mapOf("eventId" to 123),
+                mapOf("eventId" to event, "reporterId" to bob.id),
+                mapOf(
+                    "eventId" to event,
+                    "createdAt" to at.toString(),
+                ),
+            )) {
+                assertEquals(400, web(alice, "/api/v1/questions/$q/occurrences", payload).status)
+                assertEquals(400, mcp(alice, "report_occurrence", payload + ("questionId" to q)).status)
+            }
+            Playwright.create().use { pw ->
+                pw.chromium().launch().use { browser ->
+                    val contexts = mutableListOf<BrowserContext>()
+                    try {
+                        val admin = actor(browser, "aso-admin", contexts)
+                        assertEquals(
+                            200,
+                            web(
+                                admin,
+                                "/api/v1/admin/content/question/$q/visibility",
+                                mapOf(
+                                    "expectedVersion" to 1,
+                                    "hidden" to true,
+                                ),
+                            ).status,
+                        )
+                        assertEquals(404, mcp(alice, "report_occurrence", mapOf("questionId" to q, "eventId" to event)).status)
+                        assertEquals(
+                            404,
+                            web(bob, "/api/v1/questions/$q/occurrences", mapOf("eventId" to UUID.randomUUID().toString())).status,
+                        )
+                        val visible = mcp(bob, "list_questions", mapOf("view" to "recurring", "state" to "all")).body["items"]
+                        assertTrue(visible.none { it["id"].asString() == q })
+                        assertEquals(
+                            200,
+                            web(
+                                admin,
+                                "/api/v1/admin/content/question/$q/visibility",
+                                mapOf(
+                                    "expectedVersion" to 2,
+                                    "hidden" to false,
+                                ),
+                            ).status,
+                        )
+                        assertTrue(detail()["occurrences"]["allTime"]["encounters"].asInt() in 3..4)
+                    } finally {
+                        contexts.forEach { it.close() }
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun `recurring uses exact UTC boundaries deterministic ties and anchored pages`() =
+        withActors { alice, bob ->
+            val tag = "window-${UUID.randomUUID().toString().take(12)}"
+
+            fun create(): String {
+                val result = web(alice, "/api/v1/questions", question() + ("tags" to listOf(tag)))
+                assertEquals(200, result.status, result.body.toString())
+                return result.body["id"].asString()
+            }
+            val high = create()
+            val many = create()
+            val latest = create()
+            val tieA = create()
+            val tieB = create()
+            val old = create()
+            val empty = create()
+            val asOf = java.time.Instant.parse("2030-05-10T12:00:00Z")
+
+            fun event(
+                who: Actor,
+                q: String,
+                at: java.time.Instant,
+            ) {
+                engagementClock.time = at
+                assertEquals(200, mcp(who, "report_occurrence", mapOf("questionId" to q, "eventId" to UUID.randomUUID().toString())).status)
+            }
+            val boundary = asOf.minusSeconds(7 * 24 * 3600)
+            event(alice, high, boundary) // Inclusive exact lower boundary.
+            event(bob, high, boundary.plusSeconds(1))
+            for (n in 1..4) event(alice, many, asOf.minusSeconds(100L + n))
+            event(alice, latest, asOf) // Inclusive upper boundary.
+            event(alice, tieA, asOf.minusSeconds(60))
+            event(alice, tieB, asOf.minusSeconds(60))
+            event(alice, old, boundary.minusNanos(1000)) // PostgreSQL microsecond immediately outside.
+            event(alice, high, asOf.plusNanos(1000)) // Future event excluded at this cutoff.
+            engagementClock.time = asOf
+
+            fun listing(
+                view: String,
+                cursor: String? = null,
+                limit: Int = 50,
+            ) = mcp(
+                alice,
+                "list_questions",
+                mapOf("tag" to tag, "state" to "all", "view" to view, "limit" to limit) +
+                    (cursor?.let { mapOf("cursor" to it) } ?: emptyMap()),
+            )
+            val all = listing("recurring").body
+            val ties = listOf(tieA, tieB).sortedDescending()
+            val expected = listOf(high, many, latest) + ties
+            assertEquals(expected, all["items"].asSequence().map { it["id"].asString() }.toList())
+            assertEquals(2, all["items"][0]["occurrences"]["sevenDay"]["distinctDevelopers"].asInt())
+            assertEquals(2, all["items"][0]["occurrences"]["sevenDay"]["encounters"].asInt())
+            assertEquals(2, all["items"][0]["occurrences"]["allTime"]["encounters"].asInt())
+            assertEquals(0, web(alice, "/api/v1/questions/$old").body["question"]["occurrences"]["sevenDay"]["encounters"].asInt())
+            assertEquals(1, web(alice, "/api/v1/questions/$old").body["question"]["occurrences"]["allTime"]["encounters"].asInt())
+            val first = listing("recurring", limit = 1).body
+            val ids = mutableListOf(first["items"][0]["id"].asString())
+            var cursor = first["nextCursor"].asString()
+            // New encounters after page one cannot change this traversal's ranking/window.
+            repeat(6) { event(bob, tieB, asOf.plusSeconds(1L + it)) }
+            do {
+                val page = listing("recurring", cursor, 1).body
+                assertEquals(first["asOf"], page["asOf"])
+                ids.addAll(page["items"].asSequence().map { it["id"].asString() }.toList())
+                cursor = if (page["nextCursor"].isNull) "" else page["nextCursor"].asString()
+            } while (cursor.isNotEmpty())
+            assertEquals(expected, ids)
+            assertEquals(tieB, listing("recurring").body["items"][0]["id"].asString())
+            assertEquals(400, listing("recent", first["nextCursor"].asString()).status)
+            assertEquals(400, mcp(alice, "list_questions", mapOf("view" to "popular")).status)
+            val answerId = web(bob, "/api/v1/questions/$empty/answers", answer()).body["id"].asString()
+            assertEquals("open", web(alice, "/api/v1/questions/$empty").body["question"]["state"].asString())
+            assertTrue(listing("unanswered").body["items"].none { it["id"].asString() == empty })
+            val unanswered = listing("unanswered", limit = 1).body
+            assertFalse(unanswered["nextCursor"].isNull)
+            assertEquals(400, listing("recent", unanswered["nextCursor"].asString()).status)
+            Playwright.create().use { pw ->
+                pw.chromium().launch().use { browser ->
+                    val contexts = mutableListOf<BrowserContext>()
+                    try {
+                        val admin = actor(browser, "aso-admin", contexts)
+                        web(
+                            admin,
+                            "/api/v1/admin/content/answer/$answerId/visibility",
+                            mapOf("expectedVersion" to 1, "hidden" to true),
+                        ).also {
+                            assertEquals(200, it.status)
+                        }
+                        assertTrue(listing("unanswered").body["items"].any { it["id"].asString() == empty })
+                        web(
+                            admin,
+                            "/api/v1/admin/content/question/$tieB/visibility",
+                            mapOf("expectedVersion" to 1, "hidden" to true),
+                        ).also {
+                            assertEquals(200, it.status)
+                        }
+                        assertTrue(listing("recurring").body["items"].none { it["id"].asString() == tieB })
+                    } finally {
+                        contexts.forEach { it.close() }
+                    }
+                }
+            }
+        }
+
     companion object {
         private val port = ServerSocket(0).use { it.localPort }
         private val base = "http://127.0.0.1:$port"
@@ -1019,6 +1433,7 @@ class QuestionIntegrationTest {
                 login.callback,
                 "$base/mcp",
                 "$base/login/oauth2/code/oidc",
+                additionalMcpClient = true,
             ).also { it.start() }
         private val issuer = keycloak.issuer
         private val db =

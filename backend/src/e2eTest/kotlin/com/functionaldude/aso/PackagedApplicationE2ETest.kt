@@ -23,6 +23,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PackagedApplicationE2ETest {
@@ -83,6 +84,7 @@ class PackagedApplicationE2ETest {
                                 loginFailure(browser, baseUrl)
                                 questions(browser, baseUrl, issuer, login, artifacts)
                                 lifecycle(browser, baseUrl, artifacts)
+                                engagement(browser, baseUrl, issuer, login, artifacts)
                             }
                         }
                     } finally {
@@ -868,6 +870,254 @@ class PackagedApplicationE2ETest {
                     owner.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("lifecycle-mobile.png")).setFullPage(true))
                     assertTrue(errors.isEmpty(), errors.joinToString("\n"))
                 }
+            }
+        }
+    }
+
+    private fun engagement(
+        browser: Browser,
+        base: String,
+        issuer: String,
+        login: OidcBrowserLogin,
+        artifacts: Path,
+    ) {
+        fun signedIn(username: String): com.microsoft.playwright.BrowserContext {
+            val context = browser.newContext(Browser.NewContextOptions().setViewportSize(1440, 1100))
+            val page = context.newPage()
+            page.navigate("$base/oauth2/authorization/oidc")
+            page.locator("#username").fill(username)
+            page.locator("#password").fill("$username-local-only")
+            page.locator("#kc-login").click()
+            page.waitForURL("$base/")
+            return context
+        }
+        signedIn("alice").use { alice ->
+            signedIn("bob").use { bob ->
+                fun post(
+                    context: com.microsoft.playwright.BrowserContext,
+                    path: String,
+                    payload: Any,
+                ): tools.jackson.databind.JsonNode {
+                    val csrf = json.readTree(context.request().get("$base/api/v1/csrf").text())["token"].asString()
+                    val response =
+                        context.request().post(
+                            "$base/api/v1$path",
+                            RequestOptions.create().setHeader("X-CSRF-TOKEN", csrf).setData(payload),
+                        )
+                    assertEquals(200, response.status(), response.text())
+                    return json.readTree(response.text())
+                }
+                val tag = "browser-engagement"
+
+                fun question(title: String) =
+                    post(
+                        alice,
+                        "/questions",
+                        mapOf(
+                            "requestId" to
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                            "title" to title,
+                            "body" to "An isolated recurring problem.",
+                            "tags" to listOf(tag),
+                        ),
+                    )["id"].asString()
+                val q = question("Many developers encounter this")
+                val repeat = question("One developer encounters this often")
+                val answer =
+                    post(
+                        bob,
+                        "/questions/$q/answers",
+                        mapOf(
+                            "requestId" to
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                            "body" to "Align JVM targets.",
+                        ),
+                    )["id"].asString()
+                val owner = alice.pages().first()
+                val member = bob.pages().first()
+                val errors = mutableListOf<String>()
+                listOf(owner, member).forEach { page -> page.onPageError { errors.add(it) } }
+                owner.navigate("$base/questions/$q")
+                val ownerQuestion = owner.locator("app-engagement-controls").first()
+                assertThat(ownerQuestion).containsText("All time: 0 encounters · 0 distinct developers")
+                assertEquals(
+                    0,
+                    ownerQuestion
+                        .getByRole(
+                            AriaRole.BUTTON,
+                            com.microsoft.playwright.Locator
+                                .GetByRoleOptions()
+                                .setName("Upvote")
+                                .setExact(true),
+                        ).count(),
+                )
+                // The server commits, but the browser loses the response. Its explicit retry reuses eventId.
+                val requests = mutableListOf<String>()
+                var loseResponse = true
+                owner.route("**/api/v1/questions/$q/occurrences") { route ->
+                    requests.add(route.request().postData()!!)
+                    if (loseResponse) {
+                        loseResponse = false
+                        route.fetch()
+                        route.abort()
+                    } else {
+                        route.resume()
+                    }
+                }
+                ownerQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Record this encounter"),
+                    ).click()
+                assertThat(ownerQuestion.getByRole(AriaRole.ALERT)).isVisible()
+                assertEquals(
+                    1,
+                    json
+                        .readTree(
+                            alice.request().get("$base/api/v1/questions/$q").text(),
+                        )["question"]["occurrences"]["allTime"]["encounters"]
+                        .asInt(),
+                )
+                ownerQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Record this encounter"),
+                    ).click()
+                assertThat(ownerQuestion).containsText("All time: 1 encounters · 1 distinct developers")
+                assertEquals(2, requests.size)
+                assertEquals(requests[0], requests[1])
+                owner.reload()
+                assertThat(ownerQuestion.getByRole(AriaRole.STATUS)).containsText("Encounter recorded")
+                ownerQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Start a later independent encounter"),
+                    ).click()
+                ownerQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Record this encounter"),
+                    ).click()
+                assertThat(ownerQuestion).containsText("All time: 2 encounters · 1 distinct developers")
+                assertTrue(requests[0] != requests[2])
+                member.navigate("$base/questions/$q")
+                val memberQuestion = member.locator("app-engagement-controls").first()
+                memberQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Upvote")
+                            .setExact(true),
+                    ).click()
+                assertThat(memberQuestion).containsText("1 upvotes")
+                memberQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Undo upvote"),
+                    ).click()
+                assertThat(memberQuestion).containsText("0 upvotes")
+                memberQuestion
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Record this encounter"),
+                    ).click()
+                assertThat(memberQuestion).containsText("All time: 3 encounters · 2 distinct developers")
+                assertThat(memberQuestion).containsText("Last 7 days (UTC): 3 encounters · 2 distinct developers")
+                val token = login.tokens(browser, issuer, "alice", resource = "$base/mcp")["access_token"].asString()
+                val rpc =
+                    mapOf(
+                        "jsonrpc" to "2.0",
+                        "id" to 1,
+                        "method" to "tools/call",
+                        "params" to
+                            mapOf(
+                                "name" to "set_vote",
+                                "arguments" to
+                                    mapOf(
+                                        "kind" to "answer",
+                                        "targetId" to answer,
+                                        "active" to true,
+                                        "verification" to "Applied the fix and the previously failing JVM build passes.",
+                                    ),
+                            ),
+                    )
+                val response =
+                    HttpClient.newHttpClient().send(
+                        HttpRequest
+                            .newBuilder(
+                                URI("$base/mcp"),
+                            ).header(
+                                "Authorization",
+                                "Bearer $token",
+                            ).header(
+                                "Content-Type",
+                                "application/json",
+                            ).POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(rpc)))
+                            .build(),
+                        HttpResponse.BodyHandlers.ofString(),
+                    )
+                assertEquals(200, response.statusCode())
+                assertFalse(json.readTree(response.body())["result"]["isError"].asBoolean())
+                owner.reload()
+                val answerControls = owner.locator("app-engagement-controls").nth(1)
+                assertThat(answerControls).containsText("1 upvotes")
+                answerControls
+                    .getByRole(
+                        AriaRole.BUTTON,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Read upvote evidence"),
+                    ).click()
+                assertThat(answerControls).containsText("Caller-reported evidence")
+                assertThat(answerControls).containsText("No independent server verification or human acceptance")
+                assertThat(answerControls).containsText("Applied the fix and the previously failing JVM build passes.")
+                assertEquals(0, owner.locator(".accepted").count())
+                repeat(4) {
+                    post(
+                        bob,
+                        "/questions/$repeat/occurrences",
+                        mapOf(
+                            "eventId" to
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                        ),
+                    )
+                }
+                member.navigate("$base/questions?tag=$tag&state=all&view=recurring")
+                assertThat(member.locator(".question-row")).hasCount(2)
+                assertThat(member.locator(".question-row").first()).containsText("Many developers encounter this")
+                assertThat(member.locator(".question-row").nth(1)).containsText("All time: 4 encounters · 1 distinct developers")
+                member.navigate("$base/questions?tag=$tag&state=all&view=unanswered")
+                assertThat(member.locator(".question-row")).hasCount(1)
+                assertThat(member.locator(".question-row").first()).containsText("One developer encounters this often")
+                member.navigate("$base/questions?tag=$tag&state=all&view=recent")
+                assertThat(member.locator(".question-row")).hasCount(2)
+                assertThat(member.locator(".question-row").first()).containsText("One developer encounters this often")
+                owner.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("engagement-desktop.png")).setFullPage(true))
+                member.navigate("$base/questions?tag=$tag&state=all&view=recurring")
+                member.setViewportSize(390, 844)
+                assertThat(member.locator(".question-row")).hasCount(2)
+                assertTrue(member.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
+                member.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("recurring-mobile.png")).setFullPage(true))
+                assertTrue(errors.isEmpty(), errors.joinToString("\n"))
             }
         }
     }

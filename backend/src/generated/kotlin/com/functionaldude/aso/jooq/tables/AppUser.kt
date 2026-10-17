@@ -6,9 +6,11 @@ package com.functionaldude.aso.jooq.tables
 
 import com.functionaldude.aso.jooq.DefaultSchema
 import com.functionaldude.aso.jooq.keys.APP_USER_IDENTITY
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_319
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_4
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_5
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_51D14
+import com.functionaldude.aso.jooq.keys.CONSTRAINT_6
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_ABC
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_BA
 import com.functionaldude.aso.jooq.keys.CONSTRAINT_FFF
@@ -16,6 +18,8 @@ import com.functionaldude.aso.jooq.tables.Answer.AnswerPath
 import com.functionaldude.aso.jooq.tables.ContentAudit.ContentAuditPath
 import com.functionaldude.aso.jooq.tables.ContentComment.ContentCommentPath
 import com.functionaldude.aso.jooq.tables.ContentRequest.ContentRequestPath
+import com.functionaldude.aso.jooq.tables.ContentVote.ContentVotePath
+import com.functionaldude.aso.jooq.tables.Occurrence.OccurrencePath
 import com.functionaldude.aso.jooq.tables.Question.QuestionPath
 import com.functionaldude.aso.jooq.tables.records.AppUserRecord
 
@@ -113,6 +117,18 @@ open class AppUser(
     override fun getPrimaryKey(): UniqueKey<AppUserRecord> = CONSTRAINT_4
     override fun getUniqueKeys(): List<UniqueKey<AppUserRecord>> = listOf(APP_USER_IDENTITY)
 
+    private lateinit var _contentVote: ContentVotePath
+
+    fun contentVote(): ContentVotePath {
+        if (!this::_contentVote.isInitialized)
+            _contentVote = ContentVotePath(this, null, CONSTRAINT_319.inverseKey)
+
+        return _contentVote;
+    }
+
+    val contentVote: ContentVotePath
+        get(): ContentVotePath = contentVote()
+
     private lateinit var _contentRequest: ContentRequestPath
 
     fun contentRequest(): ContentRequestPath {
@@ -136,6 +152,18 @@ open class AppUser(
 
     val contentComment: ContentCommentPath
         get(): ContentCommentPath = contentComment()
+
+    private lateinit var _occurrence: OccurrencePath
+
+    fun occurrence(): OccurrencePath {
+        if (!this::_occurrence.isInitialized)
+            _occurrence = OccurrencePath(this, null, CONSTRAINT_6.inverseKey)
+
+        return _occurrence;
+    }
+
+    val occurrence: OccurrencePath
+        get(): OccurrencePath = occurrence()
 
     private lateinit var _answer: AnswerPath
 

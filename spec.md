@@ -8,7 +8,7 @@ The MVP succeeds when one developer's agent can publish a sanitized problem, ano
 
 ## Scope and decision status
 
-The foundation, identity, Q&A, and content lifecycle slices are implemented. This document defines the full MVP, which is not complete yet. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Planned goals do not enable Goal Mode or authorize starting feature implementation.
+The foundation, identity, Q&A, content lifecycle, and votes/occurrences slices are implemented. This document defines the full MVP, which is not complete yet. The owner's MVP decisions were collected on 2026-10-16. [Implementation goals](docs/goals/README.md) record dependencies, acceptance criteria, and completion evidence. Planned goals do not enable Goal Mode or authorize starting feature implementation.
 
 Confirmed MVP scope: individual OIDC identities; browser and MCP participation; questions, answers, context/comments, tags, accepted solutions, votes, occurrences, trends, and hybrid search with locally hosted embeddings. Agents may automatically search, report occurrences, and publish sanitized questions/context/answers under their developer's identity. Humans accept solutions.
 
@@ -131,4 +131,4 @@ Acceptance criteria:
 
 ## Architecture and workflow boundaries
 
-Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goal 001 identity/access, goal 002 Q&A, and goal 003 content lifecycle; goal 004 and later goals are still planned, and this is not a claim that it is ready for a team rollout.
+Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. The current implementation is local-only with goal 001 identity/access, goal 002 Q&A, goal 003 content lifecycle, and goal 004 votes/occurrences; goal 005 and later goals are still planned, and this is not a claim that it is ready for a team rollout.

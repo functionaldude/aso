@@ -23,10 +23,11 @@ class QuestionController(
     fun list(
         authentication: Authentication,
         @RequestParam(required = false) tag: String?,
+        @RequestParam(defaultValue = "recent") view: String,
         @RequestParam(defaultValue = "open") state: String,
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(required = false) cursor: String?,
-    ) = questions.list(authentication, tag, state, limit, cursor)
+    ) = questions.list(authentication, tag, state, limit, cursor, view = view)
 
     @GetMapping("/api/v1/questions/{id}")
     fun detail(
@@ -56,7 +57,7 @@ class QuestionController(
     ) = questions.createAnswer(authentication, id, input)
 }
 
-@RestControllerAdvice(assignableTypes = [QuestionController::class, LifecycleController::class])
+@RestControllerAdvice(assignableTypes = [QuestionController::class, LifecycleController::class, EngagementController::class])
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class ContentErrors {
     @ExceptionHandler(HttpMessageNotReadableException::class)

@@ -39,6 +39,14 @@ import { Question, QuestionsApi, contentError } from './questions-api';
           ><input matInput name="tag" [(ngModel)]="tag" maxlength="40"
         /></mat-form-field>
         <mat-form-field
+          ><mat-label>View</mat-label
+          ><mat-select name="view" [(ngModel)]="view"
+            ><mat-option value="recent">Recent</mat-option
+            ><mat-option value="unanswered">Unanswered</mat-option
+            ><mat-option value="recurring">Recurring · 7 days</mat-option></mat-select
+          ></mat-form-field
+        >
+        <mat-form-field
           ><mat-label>State</mat-label
           ><mat-select name="state" [(ngModel)]="state"
             ><mat-option value="all">All</mat-option><mat-option value="open">Open</mat-option
@@ -47,6 +55,12 @@ import { Question, QuestionsApi, contentError } from './questions-api';
         >
         <button mat-button [disabled]="loading()">Apply filters</button>
       </form>
+      @if (activeView === 'recurring') {
+        <p>
+          Last 7 days (UTC), through {{ asOf() | date: 'medium' : 'UTC' }} UTC. Ranked by distinct
+          developers, encounters, then latest encounter.
+        </p>
+      }
       @if (error()) {
         <p role="alert">{{ error() }}</p>
         <button mat-button (click)="load()">Retry</button>
@@ -64,6 +78,15 @@ import { Question, QuestionsApi, contentError } from './questions-api';
             <h2>
               <a [routerLink]="['/questions', question.id]">{{ question.title }}</a>
             </h2>
+            <p>
+              {{ question.votes.upvotes }} upvotes · All time:
+              {{ question.occurrences.allTime.encounters }} encounters ·
+              {{ question.occurrences.allTime.distinctDevelopers }} distinct developers
+            </p>
+            <p>
+              Last 7 days (UTC): {{ question.occurrences.sevenDay.encounters }} encounters ·
+              {{ question.occurrences.sevenDay.distinctDevelopers }} distinct developers
+            </p>
             <div class="tags">
               @for (tag of question.tags; track tag) {
                 <a [routerLink]="['/questions']" [queryParams]="{ tag, state: 'all' }">{{ tag }}</a>
@@ -92,6 +115,9 @@ export class QuestionList {
   private readonly router = inject(Router);
   tag = '';
   state = 'open';
+  view = 'recent';
+  activeView = 'recent';
+  readonly asOf = signal<string | undefined>(undefined);
   readonly items = signal<Question[]>([]);
   readonly next = signal<string | null>(null);
   readonly loading = signal(false);
@@ -105,6 +131,8 @@ export class QuestionList {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.tag = params.get('tag') ?? '';
       this.state = params.get('state') ?? 'open';
+      this.view = params.get('view') ?? 'recent';
+      this.activeView = this.view;
       this.activeTag = this.tag;
       this.activeState = this.state;
       this.history = [];
@@ -122,7 +150,7 @@ export class QuestionList {
   }
   apply() {
     void this.router.navigate(['/questions'], {
-      queryParams: { tag: this.tag || null, state: this.state },
+      queryParams: { tag: this.tag || null, state: this.state, view: this.view },
     });
   }
   async load() {
@@ -130,9 +158,15 @@ export class QuestionList {
     this.loading.set(true);
     this.error.set('');
     try {
-      const page = await this.api.list(this.activeTag, this.activeState, this.current);
+      const page = await this.api.list(
+        this.activeTag,
+        this.activeState,
+        this.current,
+        this.activeView,
+      );
       if (generation === this.generation) {
         this.items.set(page.items);
+        this.asOf.set(page.asOf);
         this.next.set(page.nextCursor);
       }
     } catch (error) {
