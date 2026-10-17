@@ -1,6 +1,6 @@
 # 007 — Tested laptop MVP release
 
-Status: planned
+Status: In progress — local implementation and release checks passed; PR/CI handoff pending
 
 ## Dependencies and prerequisites
 
@@ -39,11 +39,13 @@ Include clean-checkout setup, packaged application verification, configuration/r
 - Production hosting and its embedding model are deferred; application configuration must allow a future locally hosted model change.
 - The local MVP uses real authentication against a development Keycloak. Another OIDC IdP requires configuration and its own browser/in-scope-client compatibility check before use; it is not an external prerequisite for this release.
 - Owner's 2026-10-17 amendment replaces unavailable native Claude Code/Cursor testing with MCP Jam CLI workflow simulation for goal 006 and this laptop release. Require accurate actual/simulated/unverified labels and the web setup guide; do not fabricate native compatibility.
+- Per-user limits use one in-process fixed window keyed by validated issuer/subject across browser REST and MCP. The one-application laptop architecture makes a distributed counter unnecessary. Rejections return 429/`Retry-After`, do not execute writes, and preserve retry-safe request/event IDs.
+- Release smoke uses disposable PostgreSQL state. The existing seeded local Keycloak and LM Studio are used for the actual laptop scenario without resetting the owner's realm or product database. The image uses a second disposable IdP because Docker Desktop loopback networking cannot simply reuse the host-JVM issuer; the different issuer intentionally produces different persisted user IDs.
 
 ## Progress and blockers
 
-Not started. Depends on the previous goals' actual evidence and the real local configuration. Completion does not mean production deployment or permission to enable Goal Mode.
+The [spec-to-evidence checklist and verification record](007-evidence.md) map all criteria, carry forward valid goals 005/006 results, and document clean setup, new throttling coverage, local two-user/model/outage/rebuild/restart smoke, local image operation, and resolved failed runs. The final PR CI result and commit/PR links are still pending. Completion does not mean production deployment or permission to enable Goal Mode.
 
 ## Completion evidence
 
-None yet. Record clean-checkout/package/container results, CI status, requirement-to-evidence links, actual laptop smoke results, commit, and PR when implemented.
+[Goal 007 evidence](007-evidence.md) contains the local evidence and limitations. Record final CI status, commit, and PR here before completion.

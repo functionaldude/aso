@@ -2,6 +2,7 @@ package com.functionaldude.aso.mcp
 
 import com.functionaldude.aso.identity.IdentityService
 import com.functionaldude.aso.identity.IdentitySettings
+import com.functionaldude.aso.identity.RateLimits
 import com.functionaldude.aso.questions.ContentFailure
 import com.functionaldude.aso.questions.QuestionTools
 import jakarta.servlet.http.HttpServletRequest
@@ -22,6 +23,7 @@ class McpController(
     private val settings: IdentitySettings,
     private val json: JsonMapper,
     private val questions: QuestionTools,
+    private val limits: RateLimits,
 ) {
     private fun originAllowed(request: HttpServletRequest) = request.getHeader("Origin").let { it == null || it == settings.publicUrl }
 
@@ -34,6 +36,8 @@ class McpController(
         request: HttpServletRequest,
     ): ResponseEntity<Void> {
         if (!originAllowed(request)) return ResponseEntity.status(403).build()
+        val rejected = limits.acquire(authentication, write = false)
+        if (rejected != null) return ResponseEntity.status(429).header("Retry-After", rejected.retryAfterSeconds.toString()).build()
         identities.current(authentication)
         return ResponseEntity.status(405).header("Allow", "POST").build()
     }
@@ -45,8 +49,25 @@ class McpController(
         request: HttpServletRequest,
     ): ResponseEntity<Any> {
         if (!originAllowed(request)) return ResponseEntity.status(403).build()
-        val identity = identities.current(authentication)
         val id = message.path("id")
+
+        val toolName =
+            message
+                .path("params")
+                .path("name")
+                .takeIf { it.isString }
+                ?.asString()
+        val write =
+            message.path("method").asString() == "tools/call" &&
+                questions.definitions.any { it.name == toolName && !it.annotations.readOnlyHint }
+        val rejected = limits.acquire(authentication, write)
+        if (rejected != null) {
+            return ResponseEntity
+                .status(429)
+                .header("Retry-After", rejected.retryAfterSeconds.toString())
+                .body(McpFailure(id, McpError(-32029, "rate_limited: retry after ${rejected.retryAfterSeconds} seconds")))
+        }
+        val identity = identities.current(authentication)
 
         fun error(
             code: Int,

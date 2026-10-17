@@ -76,6 +76,8 @@ class PackagedApplicationE2ETest {
                             "ASO_DB_USER" to database.username,
                             "ASO_DB_PASSWORD" to database.password,
                             "ASO_EMBEDDING_ENABLED" to "true",
+                            "ASO_RATE_LIMIT_REQUESTS" to "100000",
+                            "ASO_RATE_LIMIT_WRITES" to "100000",
                             "ASO_EMBEDDING_BASE_URL" to embeddings.baseUrl,
                             "ASO_EMBEDDING_DIMENSIONS" to "3",
                         ),

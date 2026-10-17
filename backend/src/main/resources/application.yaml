@@ -26,6 +26,10 @@ management:
       show-details: never
 aso:
   version: '@projectVersion@'
+  rate-limit:
+    requests: ${ASO_RATE_LIMIT_REQUESTS:600}
+    writes: ${ASO_RATE_LIMIT_WRITES:120}
+    window: ${ASO_RATE_LIMIT_WINDOW:1m}
   embedding:
     enabled: ${ASO_EMBEDDING_ENABLED:false}
     base-url: ${ASO_EMBEDDING_BASE_URL:http://127.0.0.1:1234/v1}

@@ -31,6 +31,7 @@ For autonomous local development and tests, the owner selected a seeded local Ke
 - Browser and MCP participation by the same person refer to the same user. Record how a mutation reached the application (web or MCP), without treating a client-provided agent name as a trusted identity or proof of human action.
 - A human accepts/reopens solutions through an explicit authenticated browser action. MCP must not expose acceptance or use ordinary agent credentials to bypass this rule. Specify and test that boundary in the identity/content goals.
 - Unauthorized APIs/MCP return protocol-appropriate errors. Browser login failures and expired sessions have understandable recovery states. Preserve the minimal health endpoint; do not expose content, credentials, or internal dependency details publicly.
+- Bound authenticated requests and writes per validated individual across browser REST and MCP in the single-application MVP. Expose a retry interval on rejection without applying the rejected content mutation; keep create/event retries on their original IDs.
 
 ## Development and test identity
 

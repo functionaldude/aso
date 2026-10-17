@@ -101,6 +101,12 @@ export function contentError(error: unknown): string {
     if (error.status === 401 || error.status === 403)
       return 'Your session expired or workspace access is unavailable. Sign in again.';
     if (error.status === 404) return error.error?.detail ?? 'Content not found.';
+    if (error.status === 429) {
+      const seconds = Number(error.headers.get('Retry-After'));
+      return Number.isFinite(seconds) && seconds > 0
+        ? `Request limit reached. Wait ${seconds} seconds, then retry with the same content.`
+        : 'Request limit reached. Wait briefly, then retry with the same content.';
+    }
     if (error.status === 400 || error.status === 409 || error.status === 413)
       return error.error?.detail ?? 'Check your input and try again.';
   }
