@@ -1,6 +1,6 @@
 # 006 — Agent collaboration and in-app setup guide
 
-Status: implementation verified locally; PR CI pending
+Status: Complete — implementation and verification finished; PR open for review
 
 ## Dependencies and prerequisites
 
@@ -43,8 +43,8 @@ Include complete MCP contracts/tool descriptions, actual Codex/MCP Jam CLI scena
 
 ## Progress and blockers
 
-The Angular Material Agent setup page is linked from the public navigation. A typed public API exposes only the configured backend MCP URL, issuer, scopes, optional public registrations, and the canonical paragraph embedded from `docs/agent-setup.md`. Copy controls have live-region success/failure feedback and selectable text fallback. The development profile supplies seeded public client details; non-development deployments must explicitly configure them. The packaged browser suite covers direct navigation/refresh, copy/fallback, dynamic public URL, signed-out access, secret absence and mobile layout. Actual Codex/MCP Jam two-user work and labelled simulations are recorded in [the evidence](006-evidence.md). Native Claude Code/Cursor remain unverified under the owner's amended scope. PR CI is the remaining handoff check.
+The Angular Material Agent setup page is linked from the public navigation. A typed public API exposes only the configured backend MCP URL, issuer, scopes, optional public registrations, and the canonical paragraph embedded from `docs/agent-setup.md`. Copy controls have live-region success/failure feedback and selectable text fallback. The development profile supplies seeded public client details; non-development deployments must explicitly configure them. The packaged browser suite covers direct navigation/refresh, copy/fallback, dynamic public URL, signed-out access, secret absence and mobile layout. Actual Codex/MCP Jam two-user work and labelled simulations are recorded in [the evidence](006-evidence.md). Native Claude Code/Cursor remain unverified under the owner's amended scope. The feature branch is open as [PR #9](https://github.com/functionaldude/aso/pull/9), without merging or starting goal 007.
 
 ## Completion evidence
 
-[Sanitized goal 006 evidence](006-evidence.md) records the client matrix, live two-user collaboration, exact and paraphrased discovery, publication/retry, one encounter despite replay, context/answer, verified vote, browser acceptance, expired-token reauthentication, model outage/recovery, and setup-page browser/copy/layout checks. Local checks passed: `check bootJar`, `oidcSmokeTest`, `integrationTest`, and `e2eTest`. The executable jar contains the guide and the exact canonical paragraph. Commit, PR and CI evidence will be added after publication.
+[Sanitized goal 006 evidence](006-evidence.md) records the client matrix, live two-user collaboration, exact and paraphrased discovery, publication/retry, one encounter despite replay, context/answer, verified vote, browser acceptance, expired-token reauthentication, model outage/recovery, and setup-page browser/copy/layout checks. Local checks passed: `check bootJar`, `oidcSmokeTest`, `integrationTest`, and `e2eTest`. The executable jar contains the guide and the exact canonical paragraph. [PR #9 CI run #29](https://github.com/functionaldude/aso/actions/runs/39027741453) passed on implementation commit `24a62eb`, including packaging, offline jOOQ generation, OIDC, lifecycle reset, integration, and packaged browser gates.
