@@ -77,5 +77,8 @@ class EmbeddingClientTest {
         assertEquals(listOf("C++", "org.example:lib:1.2.0"), SearchIdentifiers.matched("C++ and org.example:lib:1.2.0", tokens))
         assertTrue(SearchIdentifiers.matched("C# org.example:lib:1.2.01", listOf("C++", "org.example:lib:1.2.0")).isEmpty())
         assertEquals(listOf("java.lang.NoClassDefFoundError"), SearchIdentifiers.matched("java.lang.NoClassDefFoundError: parser", tokens))
+        assertEquals(listOf("org.example:lib:1.2.0"), SearchIdentifiers.matched("Use org.example:lib:1.2.0. Then rebuild.", tokens))
+        assertEquals(listOf("runtimeClasspath"), SearchIdentifiers.matched("Inspect runtimeClasspath.", listOf("runtimeClasspath")))
+        assertTrue(SearchIdentifiers.matched("org.example:lib:1.2.0.1", listOf("org.example:lib:1.2.0")).isEmpty())
     }
 }

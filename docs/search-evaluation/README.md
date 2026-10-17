@@ -152,8 +152,18 @@ All ten exact targets rank first, including reciprocal version/language cases an
 
 In both modes, negative cases 1–3 return no questions; negative case 4 returns only `version` at rank one. All negative allowlist/required-result/identifier/claim assertions pass. Source acceptance remains faithfully labelled. The packaged browser asserts the neutral related-evidence notice, absence of an accepted answer for the unaccepted fixture, semantic explanation and outage state. Desktop/mobile screenshots were visually inspected at `backend/build/e2e/search-desktop.png` and `search-mobile-degraded.png`; they stay in build/CI diagnostics rather than Git.
 
-The 1,000-question run indexes in **98.75 s**. After ten extra warmups, **100 authenticated MCP searches at concurrency five**, requesting 20 results, measure **p50 187.56 ms**, **p95 217.87 ms**, **max 238.38 ms**. The first application query after indexing is **740.77 ms**. This exceeds the required sample/dataset minima and meets the unchanged p95 ≤2 s gate.
+The 1,000-question run indexes in **100.87 s**. After ten extra warmups, **100 authenticated MCP searches at concurrency five**, requesting 20 results, measure **p50 186.95 ms**, **p95 210.24 ms**, **max 244.84 ms**. The first application query after indexing is **588.61 ms**. This exceeds the required sample/dataset minima and meets the unchanged p95 ≤2 s gate.
 
 Hardware: Apple M4 Max, 16 CPU cores (12 performance/4 efficiency), 64 GiB unified memory, macOS 27.0.1; Java 25.0.4.1 / Gradle 9.2.1. Selected local GGUF runtime: llama.cpp Metal 2.59.0. Model SHA-256: `06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439`.
 
-Cold evidence is a first application query with the model already loaded, not an unload/load benchmark. The latency seed adds 986 short synthetic inventory distractors; this is reproducible laptop evidence, not a production-sized diagnostic corpus or capacity guarantee. No development database, persistent realm, volumes or model loading state were reset.
+The first application query uses an already loaded model; a separate [cold model report](modelCold.json) records a real selected-model unload/reload: 0.828 s load wall time including CLI overhead, then 89.69 ms for the first prepared embedding and 35.65–36.75 ms for three following calls. Model identifier, artifact path, 32,768 context, no-TTL and ordinary engine mode were verified restored. This is one sample with warm OS file caches, not a reboot/disk-cold test. The latency seed adds 986 short synthetic inventory distractors; this is reproducible laptop evidence, not a production-sized diagnostic corpus or capacity guarantee. No development database, persistent realm or volumes were reset. The selected embedding model alone was unloaded/reloaded once; its observed loading configuration was restored.
+
+To repeat the selected-model load portion after other embedding work is idle:
+
+```bash
+lms unload text-embedding-qwen3-embedding-0.6b
+time lms load text-embedding-qwen3-embedding-0.6b \
+  --identifier text-embedding-qwen3-embedding-0.6b --context-length 32768 --yes
+```
+
+The cold report records the exact prepared input and endpoint for the first subsequent embeddings API request. Repeat it with a local API client configured for the endpoint's optional credentials; keep credential values outside reports. End-to-end authenticated search remains the separate root `searchLatency` task.

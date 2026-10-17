@@ -1,5 +1,5 @@
 {
-  "recordedAt" : "2026-10-17T09:36:24.938785Z",
+  "recordedAt" : "2026-10-17T09:50:02.581232Z",
   "corpusVersion" : 2,
   "corpusGitRevision" : "cb2ae685a3460a469c8d1ae03077fc107d242cca",
   "corpusSha256" : "9edc56db9bb7a41cd521a0eaa47abe54abda97c9f3f6a01b241529b0e47594eb",
@@ -10,7 +10,7 @@
   "dimensions" : 1024,
   "generation" : "d793688cf7e5adb73a45ab6ccc1b61ce9b94c55d12abd59b7ef8d1f47be99d22",
   "preparation" : "qwen3-retrieval-v1",
-  "indexSeconds" : 98.748568541,
+  "indexSeconds" : 100.872648333,
   "exactTop3" : 10,
   "semanticTop5" : 10,
   "lexicalExactTop3" : 10,
@@ -724,7 +724,7 @@
       "rank" : 1,
       "results" : [ {
         "id" : "class",
-        "snippet" : "NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.",
+        "snippet" : " codec runtime dependency, rather than compileOnly; inspect runtimeClasspath.",
         "identifiers" : [ "runtimeClasspath" ],
         "explanation" : "Exact identifiers: runtimeClasspath; Lexical text match; Semantic similarity",
         "state" : "resolved",
@@ -753,7 +753,7 @@
       }, {
         "name" : "source_evidence",
         "passed" : true,
-        "detail" : "Returned source evidence: NoClassDefFoundError for com.example.codec.Parser\nInspect runtimeClasspath for a transitive exclusion of the codec dependency. Remove the exclusion and check that the packaged application contains the codec classes.; identifiers=[runtimeClasspath]"
+        "detail" : "Returned source evidence:  codec runtime dependency, rather than compileOnly; inspect runtimeClasspath.; identifiers=[runtimeClasspath]"
       }, {
         "name" : "accepted_state:class",
         "passed" : true,
@@ -3393,10 +3393,10 @@
   "latency" : {
     "samples" : 100,
     "concurrency" : 5,
-    "firstSearchMs" : 740.772875,
-    "p50Ms" : 187.560167,
-    "p95Ms" : 217.868,
-    "maxMs" : 238.381666
+    "firstSearchMs" : 588.607084,
+    "p50Ms" : 186.947083,
+    "p95Ms" : 210.238833,
+    "maxMs" : 244.838792
   },
   "limitations" : [ "First search is a cold application query after indexing, not a model unload/load measurement.", "Negative queries have no expected verified solution; suggested neighbors are recorded without claiming a fix.", "All product and IdP state is disposable. No development state is read or mutated.", "Latency distractors are short synthetic inventory records, not production-sized engineering diagnostics." ]
 }

@@ -1,6 +1,6 @@
 # 005 — Hybrid search with locally hosted embeddings
 
-Status: in progress
+Status: complete
 
 ## Dependencies and prerequisites
 
@@ -52,14 +52,14 @@ Actual batched response: indices 0/1, 1,024 finite components per vector. A requ
 
 ## Completion evidence
 
-Local acceptance verification is complete on 2026-10-17 (Europe/Vienna). Publication and PR CI remain in progress and will be recorded before handoff.
+Implementation, local acceptance verification and the initial Linux PR CI are complete on 2026-10-17 (Europe/Vienna). PR #8 is open and unmerged; final follow-up checks are linked below.
 
 | Criterion | Actual evidence |
 | --- | --- |
 | 1 — Actual local model/configuration | Live model/preparation/batch probes above, verified GGUF hash below, strict typed adapter, internal-host/redirect restrictions, configurable credentials/preparation/bounds/timeouts, and finite/count/index/model/dimension response checks. Unit tests exercise wrong dimensions/duplicate indices, oversized and slow responses, outages, and refused public endpoints without external DNS. |
 | 2 — Shared authorized question results | Real-Keycloak REST/MCP responses are equal for the same query/filter. Anonymous REST is rejected; typed MCP coercions/cursor misuse fail. Browser shows source excerpts, explanations, separate existing metrics and acceptance. Evaluation asserts resolved/open source acceptance, answer-only/context-only identifiers, one parent despite multiple matching answers, and two-item pages matching full ordered results. |
 | 3 — Owner-reviewed relevance | Approved fixed corpus version 2 has 10 exact / 10 unchanged paraphrase / 4 negative queries. Both 14- and 1,000-question real-model reports pass: 10/10 exact in top three (all rank one), 10/10 paraphrases in top five. The lexical-only baseline gets 10/10 exact and 9/10 paraphrases; `semantic-4` is absent. All ordering/source/pagination/uniqueness/negative assertions pass: 218 hybrid assertions on the small set, 247 on the latency set. Negatives 1–3 return nothing; negative 4 returns only the version concern at rank one. See retained reports and per-query table below. |
-| 4 — Actual latency | 1,000 seeded questions, 100 warmed authenticated MCP searches, concurrency five, limit 20: p50 **187.56 ms**, p95 **217.87 ms**, max **238.38 ms**; first application query **740.77 ms**. Indexing takes **98.75 s**. Meets the unchanged p95 ≤2 s target. Hardware/model/cold/synthetic-data limits are explicit below. |
+| 4 — Actual latency | 1,000 seeded questions, 100 warmed authenticated MCP searches, concurrency five, limit 20: p50 **186.95 ms**, p95 **210.24 ms**, max **244.84 ms**; first application query **588.61 ms**. Indexing takes **100.87 s**. Meets the unchanged p95 ≤2 s target. Hardware/model/cold/synthetic-data limits are explicit below. |
 | 5 — Updates/recovery/configured reindex | Question and answer edits reach model inputs/search within the 60-second integration bound; removed old identifiers immediately stop matching. Acceptance changes are reflected. Failed queue state persists into a new worker; retry and expired claims recover. Packaged-jar browser test creates during outage, stops the actual JVM while work cannot finish, restarts against the same disposable DB/realm and observes automatic semantic recovery within 60 seconds. Configuration-only model/dimension/document-preparation switch (3→4 fixture dimensions) requires explicit rebuild; all resulting vectors have the selected size and product row counts survive. Concurrent creates, four rebuilds and multiple worker ticks retain current indexed revisions. |
 | 6 — Visibility/outage/metrics | Hiding an accepted answer clears acceptance and immediately removes its stale excerpt/vector matches; hiding its question excludes search/detail before cleanup. During a controlled provider outage, creates/detail/exact/lexical search remain usable, all adapters show explicit degradation, and recovery drains durable work. Search retains the separately asserted upvote/encounter counts. |
 
@@ -72,7 +72,7 @@ Required local commands passed, including a final combined invocation and subseq
 - `./gradlew --no-daemon searchRelevance` and `./gradlew --no-daemon searchLatency`: actual selected local model, isolated product/IdP data; [14-question report](../search-evaluation/searchRelevance.json), [1,000-question relevance/latency report](../search-evaluation/searchLatency.json), and [per-query results](../search-evaluation/README.md#measured-results--2026-10-17).
 - `./gradlew --no-daemon generateJooq`: final independent run matches all 31 generated Kotlin files by SHA-256. Zero generated Java files; V1–V5, image pins, lockfiles and CI workflow are unchanged. `git diff --check` passes.
 
-Desktop/mobile search screenshots were visually inspected under `backend/build/e2e/`; no overflow or unsupported fix label was observed. Screenshots, raw application/test logs, caches and browser artifacts stay untracked and are retained through the existing CI diagnostic upload. Development database/realm/volumes were never used or reset by tests/evaluation. No model unload/load, merge, deployment or goal 006 work occurred.
+Desktop/mobile search screenshots were visually inspected under `backend/build/e2e/`; no overflow or unsupported fix label was observed. Screenshots, raw application/test logs, caches and browser artifacts stay untracked and are retained through the existing CI diagnostic upload. Development database/realm/volumes were never used or reset by tests/evaluation. The selected model was unloaded/reloaded once for a separate cold probe and its observed configuration restored. No merge, deployment or goal 006 work occurred.
 
 Intermediate harness decoding, old MCP-tool expectations, an order-dependent existing resolved-list assertion, formatter issues and negative-case leakage were corrected before the final passing runs. The lexical baseline was strengthened to partial-term matching; its remaining semantic miss is reported rather than concealed. No target was relaxed.
 
@@ -88,9 +88,17 @@ Intermediate harness decoding, old MCP-tool expectations, an order-dependent exi
 
 Selected GGUF SHA-256: `06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439`. The recorded laptop/runtime details above describe the actual endpoint, not a cloud provider or inferred production model. Java 25.0.4.1, Gradle 9.2.1 and Gradle-provisioned Node 24.22.0 are retained. No dependency/image upgrades or goal 006 implementation are included.
 
+After the final warmed benchmark completed, a separate [cold probe](../search-evaluation/modelCold.json) unloaded only the selected idle embedding model and reloaded it with the same identifier and 32,768 context. Load wall time including CLI: **0.828 s**. First prepared API embedding: **89.69 ms**; three following calls: **35.65–36.75 ms**. Actual output remains 1,024 dimensions. Identifier, model artifact path, context, null TTL and ordinary engine mode match the pre-probe state. No other model or product/IdP state was changed. The report preserves lifecycle commands and exact prepared input; these API timings are separate from end-to-end ASO search.
+
+### Publication and CI
+
+Implementation commit: `3ce7b8f29d1bd043cdefcc61c69135388ae86dfe`. Pull request: [#8 — Add local hybrid search, durable indexing and measured evaluation (goal 005)](https://github.com/functionaldude/aso/pull/8), targeting `master`, open and unmerged. [Implementation CI run 39022128506](https://github.com/functionaldude/aso/actions/runs/39022128506) passed every step: check/package, offline regeneration drift, Linux browser setup, fresh OIDC smoke, disposable reset isolation, integration, executable-jar browser and diagnostic upload. Downloaded retained reports confirm 19 backend tests, 2 OIDC tests, 18 integration tests and one packaged-browser suite, all with zero failures/errors/skips; Angular's four tests also pass.
+
+The follow-up fixes a review-found sentence-ending-period boundary for complete identifiers, adds Java/PostgreSQL-adapter regression coverage, and refreshes both actual-model reports plus cold evidence. It preserves version/language distinctions and passes the same local gates. Current final-commit results are on [PR #8 checks](https://github.com/functionaldude/aso/pull/8/checks). Existing GitHub Action/JVM deprecation notices do not represent failed checks; their unrelated upgrades are outside this goal.
+
 ### Limits to retain
 
 - Exact vector distances and current-text scans are measured at 1,000 questions, not a production capacity guarantee. Latency distractors are 986 short synthetic inventory records; large diagnostic bodies/answer collections need their own later capacity evidence.
 - Semantic document chunks are bounded per question; exact/lexical retrieval still covers all current visible sources beyond that cap. Comments do not contribute search documents in this slice.
-- Cold evidence is the first authenticated application query after indexing with an already loaded LM Studio model. Model unload/load time was not measured and is not claimed; the owner's loaded runtime was preserved.
+- The first authenticated application query is measured separately from a real model unload/reload. The cold probe is one sample with warm OS file caches, not a reboot/disk-cold measurement; identifier/path/context/TTL/engine mode were verified restored.
 - This adds protocol-level real-Keycloak search verification and packaged-browser coverage. Existing Codex/MCP Jam evidence remains; no new actual-client login run or Claude Code/Cursor verification is claimed. Goal 006 remains planned.

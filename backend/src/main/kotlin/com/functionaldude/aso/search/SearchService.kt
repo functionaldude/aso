@@ -66,10 +66,10 @@ object SearchIdentifiers {
             .take(20)
             .toList()
 
-    fun pattern(token: String): String =
-        "(^|[^[:alnum:]_.:+#/-])" +
-            token.map(::escape).joinToString("") +
-            (if (':' in token) "($|[^[:alnum:]_.:+#/-])" else "($|[^[:alnum:]_.+#/-])")
+    fun pattern(token: String): String {
+        val boundary = if (':' in token) "[^[:alnum:]_.:+#/-]" else "[^[:alnum:]_.+#/-]"
+        return "(^|[^[:alnum:]_.:+#/-])" + token.map(::escape).joinToString("") + "($|$boundary|[.]($|$boundary))"
+    }
 
     private fun escape(character: Char): String = if (character in ".+*?^$[](){}|\\") "\\$character" else "$character"
 
@@ -80,8 +80,9 @@ object SearchIdentifiers {
         tokens: List<String>,
     ): List<String> =
         tokens.filter { token ->
-            val right = if (':' in token) "[\\p{L}\\p{N}_.:+#/-]" else "[\\p{L}\\p{N}_.+#/-]"
-            Regex("(?<![\\p{L}\\p{N}_.:+#/-])${Regex.escape(token)}(?!$right)", RegexOption.IGNORE_CASE).containsMatchIn(text)
+            val boundary = if (':' in token) "[^\\p{L}\\p{N}_.:+#/-]" else "[^\\p{L}\\p{N}_.+#/-]"
+            val ending = "(?=$|$boundary|[.]($|$boundary))"
+            Regex("(?<![\\p{L}\\p{N}_.:+#/-])${Regex.escape(token)}$ending", RegexOption.IGNORE_CASE).containsMatchIn(text)
         }
 }
 

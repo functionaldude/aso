@@ -1480,7 +1480,7 @@ class QuestionIntegrationTest {
                 while (index.status().pending > 0 && System.nanoTime() < deadline) index.tick()
                 assertEquals(0, index.status().pending)
             }
-            val water = create("Water connection", "Aqua supply needs attention in org.example:water:2.0")
+            val water = create("Water connection", "Aqua supply needs attention in org.example:water:2.0.")
             val other = create("Build connection", "Compiler setup in org.example:water:1.0")
             val answer =
                 web(
@@ -1493,6 +1493,7 @@ class QuestionIntegrationTest {
                 )
             assertEquals(200, answer.status)
             drain()
+            assertEquals(water, search("org.example:water:2.0").body["items"][0]["question"]["id"].asString())
             val edited =
                 web(
                     alice,
