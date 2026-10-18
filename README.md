@@ -157,7 +157,7 @@ Clean imports use one public `aso` client. Existing realms are not re-imported o
 
 Stop ASO before switching, replace the old client settings with `ASO_OIDC_CLIENT_ID=aso`, restart, and reauthenticate. The helper provisions `aso`, disables only known obsolete fixture-managed registrations, and leaves both volumes and unrelated registrations intact. It can be rerun safely. Export provider-side fixture substitutions `ASO_WEB_CALLBACK`, `ASO_WEB_LOGOUT`, `ASO_MCP_RESOURCE`, `ASO_CODEX_CALLBACK_URL`, and `ASO_MCP_JAM_CALLBACK_URL` when using customized local callbacks/resource URLs; keep runtime settings aligned. Tests use disposable services and never load `.env`.
 
-### MCP clients and setup
+### MCP clients and observed compatibility
 
 Open **Agent setup** from the web navigation. It displays the configured backend MCP URL, shared public client ID, scopes, and tool callbacks. In Angular development on port 4200, the MCP URL still points at the configured backend (8080 by default).
 
