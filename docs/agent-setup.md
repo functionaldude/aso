@@ -102,7 +102,7 @@ Configure one **public** OIDC client with authorization code flow and mandatory 
 - Codex on each user’s computer: `http://127.0.0.1:8766/callback`.
 - Browser post-logout URL: `<ASO_PUBLIC_URL>/?signedOut`.
 
-Set `ASO_OIDC_CLIENT_ID` to that registration’s ID. Emit signed membership/admin group claims in ID/access tokens and the intended MCP audience in access tokens only. Pre-registration is the supported flow; anonymous dynamic registration is unnecessary.
+Set `ASO_OIDC_CLIENT_ID` to that registration’s ID. Emit signed membership/admin group claims in ID/access tokens. MCP access tokens may name either the configured `ASO_MCP_AUDIENCE` or the shared `ASO_OIDC_CLIENT_ID` in `aud`; no extra audience mapping is needed for providers such as Authentik that already use the client ID. Access tokens must include `openid` in their signed space-delimited `scope` claim. Keep this claim out of ID tokens so they cannot be used as MCP bearer credentials. Issuer, signature, expiry, subject and membership validation still apply. Pre-registration is the supported flow; anonymous dynamic registration is unnecessary.
 
 `ASO_CODEX_CALLBACK_URL` defaults to `http://127.0.0.1:8766/callback` in every profile, including when unset or blank. The setup page fills in the installation’s URL/client ID/scopes and this effective callback. Registering it is a one-time administrator task, with no per-user callback setup. The loopback address always refers to the computer completing the Codex login, even when ASO runs on a server or in a container.
 

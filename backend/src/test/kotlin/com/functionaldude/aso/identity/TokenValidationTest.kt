@@ -23,17 +23,18 @@ class TokenValidationTest {
             it.setJwtValidator(
                 DelegatingOAuth2TokenValidator(
                     JwtValidators.createDefaultWithIssuer("https://idp.example.invalid"),
-                    SecurityConfiguration.audienceValidator("https://aso.example.invalid/mcp"),
+                    SecurityConfiguration.mcpTokenValidator("https://aso.example.invalid/mcp", "aso"),
                 ),
             )
         }
 
     private fun token(
         issuer: String = "https://idp.example.invalid",
-        audience: String = "https://aso.example.invalid/mcp",
+        audience: List<String> = listOf("https://aso.example.invalid/mcp"),
         expiry: Instant = Instant.now().plusSeconds(300),
         subject: String? = "alice",
         signingKey: com.nimbusds.jose.jwk.RSAKey = key,
+        scope: Any? = "openid profile email",
     ): String {
         val claims =
             JWTClaimsSet
@@ -43,6 +44,7 @@ class TokenValidationTest {
                 ).audience(
                     audience,
                 ).subject(subject)
+                .claim("scope", scope)
                 .issueTime(Date.from(Instant.now().minusSeconds(600)))
                 .expirationTime(Date.from(expiry))
                 .build()
@@ -53,13 +55,33 @@ class TokenValidationTest {
         assertEquals("alice", decoder.decode(token()).subject)
         listOf(
             token(issuer = "https://other.example.invalid"),
-            token(audience = "aso"),
+            token(audience = listOf("other-client")),
+            token(audience = listOf("aso-other")),
             token(expiry = Instant.now().minusSeconds(120)),
             token(subject = null),
             token(signingKey = RSAKeyGenerator(2048).generate()),
             "invalid",
         ).forEach {
             assertFailsWith<JwtException> { decoder.decode(it) }
+        }
+    }
+
+    @Test fun `access tokens accept either exact ASO audience including audience arrays`() {
+        listOf(
+            listOf("aso"),
+            listOf("https://aso.example.invalid/mcp"),
+            listOf("other-api", "aso"),
+            listOf("aso", "https://aso.example.invalid/mcp"),
+        ).forEach { audience ->
+            assertEquals("alice", decoder.decode(token(audience = audience)).subject)
+        }
+    }
+
+    @Test fun `ID tokens and missing malformed or unrelated access scopes are rejected for either audience`() {
+        listOf("aso", "https://aso.example.invalid/mcp").forEach { audience ->
+            listOf(null, "", "profile email", "not-openid", listOf("openid", "profile")).forEach { scope ->
+                assertFailsWith<JwtException> { decoder.decode(token(audience = listOf(audience), scope = scope)) }
+            }
         }
     }
 

@@ -19,6 +19,7 @@ The product requirements live in [the spec](../../spec.md). These records descri
 | [009 — CI container image](009-ci-container-image.md) | Build/test application images in CI and publish private master images to GHCR | 007, 008 | In progress |
 | [010 — Public OIDC and agent setup](010-public-oidc-and-setup.md) | One public client, safe local upgrade, and complete copyable Codex setup | 001, 006, 008, 009 | Complete |
 | [011 — Simpler Codex onboarding](011-codex-onboarding.md) | Four-step Codex guide with complete defaults and test-only MCP Jam | 010 | Complete |
+| [012 — MCP client-ID audience compatibility](012-mcp-client-id-audience.md) | Accept resource/client-ID access tokens while rejecting ID tokens | 011 | In progress |
 
 *Goals 001 and 002 use Codex and MCP Jam per the owner's 2026-10-16 amendment. The 2026-10-17 amendment extends this to goal 006 and laptop MVP delivery: actual Codex/MCP Jam CLI plus explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified and is not a completion gate for this amended MVP. Goal 006 also adds the in-app setup guide and recommended copyable `AGENTS.md` paragraph. Historical evidence remains in merged PRs #2 and #3.
 

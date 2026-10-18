@@ -6,6 +6,7 @@ import com.functionaldude.aso.oidc.KeycloakFixture
 import com.functionaldude.aso.oidc.OidcBrowserLogin
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Playwright
+import com.nimbusds.jwt.JWTParser
 import org.jooq.DSLContext
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
@@ -50,6 +51,9 @@ class IdentityIntegrationTest {
                 listOf("alice", "bob", "aso-admin", "outsider").forEach { username ->
                     val tokens = login.tokens(browser, issuer, username, resource = resource)
                     val access = tokens["access_token"].asString()
+                    val audiences = JWTParser.parse(access).jwtClaimsSet.audience
+                    assertTrue("aso" in audiences)
+                    assertTrue(resource !in audiences, "Exercise client-ID audience without the resource audience")
                     val response = request("/mcp", access)
                     assertEquals(403, request("/mcp", access, origin = "https://untrusted.example.invalid").statusCode())
                     assertEquals(403, request("/mcp", access, post = false, origin = "https://untrusted.example.invalid").statusCode())
@@ -151,7 +155,9 @@ class IdentityIntegrationTest {
     companion object {
         private val resource = "http://127.0.0.1:8080/mcp"
         private val login = OidcBrowserLogin()
-        private val keycloak = KeycloakFixture(login.callback, login.callback, resource).also { it.start() }
+
+        // Emulate providers such as Authentik that issue access tokens for the public client ID.
+        private val keycloak = KeycloakFixture(login.callback, login.callback, "aso").also { it.start() }
         private val issuer = keycloak.issuer
         private val db =
             PostgreSQLContainer(
