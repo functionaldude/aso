@@ -81,7 +81,8 @@ try:
     }
     shared = send(path + '/clients?clientId=aso', bearer=token)[0]
     shared = send(path + '/clients/' + shared['id'], bearer=token)
-    send(path + '/clients/' + shared['id'], method='DELETE', bearer=token)
+    shared['redirectUris'].append('http://localhost:6274/oauth/callback')
+    send(path + '/clients/' + shared['id'], shared, 'PUT', token)
     legacy_ids = ('aso-web', 'aso-codex', 'aso-mcpjam', 'aso-mcp-test', 'aso-dev-probe')
     for client_id in legacy_ids + ('unrelated-test-client',):
         client = copy.deepcopy(shared)
@@ -105,7 +106,10 @@ try:
         assert all(not clients[client_id]['enabled'] for client_id in legacy_ids)
         configured = send(path + '/clients/' + clients['aso']['id'], bearer=token)
         assert configured['attributes']['pkce.code.challenge.method'] == 'S256'
-        assert len(configured['redirectUris']) == 3
+        assert set(configured['redirectUris']) == {
+            'http://127.0.0.1:8080/login/oauth2/code/oidc',
+            'http://127.0.0.1:8766/callback',
+        }
         assert configured['standardFlowEnabled']
         assert not any(configured[grant] for grant in ('implicitFlowEnabled', 'directAccessGrantsEnabled', 'serviceAccountsEnabled'))
         assert send(path + '/users', bearer=token) == users_before

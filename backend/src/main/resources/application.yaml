@@ -65,5 +65,4 @@ aso:
     member-group: ${ASO_OIDC_MEMBER_GROUP:}
     admin-group: ${ASO_OIDC_ADMIN_GROUP:}
   agent-setup:
-    codex-callback-url: ${ASO_CODEX_CALLBACK_URL:}
-    mcp-jam-callback-url: ${ASO_MCP_JAM_CALLBACK_URL:}
+    codex-callback-url: ${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}

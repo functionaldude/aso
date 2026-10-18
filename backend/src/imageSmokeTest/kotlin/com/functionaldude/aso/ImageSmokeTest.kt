@@ -74,8 +74,6 @@ class ImageSmokeTest {
                             "ASO_OIDC_GROUPS_CLAIM" to "groups",
                             "ASO_OIDC_MEMBER_GROUP" to "aso-members",
                             "ASO_OIDC_ADMIN_GROUP" to "aso-admins",
-                            "ASO_CODEX_CALLBACK_URL" to "http://127.0.0.1:8766/callback",
-                            "ASO_MCP_JAM_CALLBACK_URL" to "http://localhost:6274/oauth/callback",
                             "ASO_EMBEDDING_ENABLED" to "false",
                             "ASO_EMBEDDING_API_KEY" to "image-smoke-embedding-local-only",
                             "ASO_RATE_LIMIT_REQUESTS" to "20",
@@ -104,8 +102,8 @@ class ImageSmokeTest {
                             assertEquals("$publicUrl/mcp", configuration["mcpUrl"].asString())
                             assertEquals(environment["ASO_OIDC_ISSUER"], configuration["issuer"].asString())
                             assertEquals("aso", configuration["clientId"].asString())
-                            assertEquals(environment["ASO_CODEX_CALLBACK_URL"], configuration["codexCallbackUrl"].asString())
-                            assertEquals(environment["ASO_MCP_JAM_CALLBACK_URL"], configuration["mcpJamCallbackUrl"].asString())
+                            assertEquals("http://127.0.0.1:8766/callback", configuration["codexCallbackUrl"].asString())
+                            assertFalse(configuration.has("mcpJamCallbackUrl"))
                             listOf("ASO_DB_PASSWORD", "ASO_EMBEDDING_API_KEY").forEach {
                                 assertFalse(setup.body().contains(environment.getValue(it)), "$it must remain private")
                             }

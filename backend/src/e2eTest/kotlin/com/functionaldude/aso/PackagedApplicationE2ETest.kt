@@ -64,8 +64,7 @@ class PackagedApplicationE2ETest {
                             "ASO_OIDC_CLIENT_ID" to "aso",
                             "ASO_PUBLIC_URL" to baseUrl,
                             "ASO_MCP_AUDIENCE" to "$baseUrl/mcp",
-                            "ASO_CODEX_CALLBACK_URL" to login.callback,
-                            "ASO_MCP_JAM_CALLBACK_URL" to login.callback,
+                            "ASO_CODEX_CALLBACK_URL" to "",
                             "ASO_OIDC_GROUPS_CLAIM" to "groups",
                             "ASO_OIDC_MEMBER_GROUP" to "aso-members",
                             "ASO_OIDC_ADMIN_GROUP" to "aso-admins",
@@ -268,11 +267,17 @@ class PackagedApplicationE2ETest {
             val setup = json.readTree(body)
             assertEquals("$base/mcp", setup["mcpUrl"].asString())
             assertEquals("aso", setup["clientId"].asString())
+            assertEquals("http://127.0.0.1:8766/callback", setup["codexCallbackUrl"].asString())
+            assertFalse(setup.has("mcpJamCallbackUrl"))
+            assertEquals(0, page.locator("details[open]").count())
+            assertFalse(page.locator("article").innerText().contains("MCP Jam"))
+            assertFalse(page.locator("article").innerText().contains("Actual client verified"))
             assertThat(page.locator("#mcp-url")).hasValue("$base/mcp")
             val codexConfig = page.locator("#codex-config").inputValue()
             assertTrue(codexConfig.contains("$base/mcp"))
             assertTrue(codexConfig.contains("scopes = [\"openid\", \"profile\", \"email\"]"))
             assertTrue(codexConfig.contains("client_id = \"aso\""))
+            assertTrue(codexConfig.contains("callback_url = \"http://127.0.0.1:8766/callback\"\ncallback_port = 8766"))
             assertEquals("codex mcp login aso", page.locator("#codex-login").inputValue())
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy Codex configuration")).click()
             assertEquals(codexConfig, page.evaluate("navigator.clipboard.readText()"))
@@ -292,6 +297,8 @@ class PackagedApplicationE2ETest {
             page.evaluate(
                 "Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: () => Promise.reject(new Error('blocked'))}})",
             )
+            val connectionHelp = page.getByText("Connection details and callbacks", Page.GetByTextOptions().setExact(true))
+            connectionHelp.click()
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy MCP URL")).click()
             assertThat(
                 page.getByRole(AriaRole.STATUS).filter(
@@ -306,6 +313,7 @@ class PackagedApplicationE2ETest {
                     "window.getSelection()?.toString() || document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd)",
                 ),
             )
+            connectionHelp.click()
             page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("agent-setup-desktop.png")).setFullPage(true))
             page.setViewportSize(390, 844)
             page.reload()

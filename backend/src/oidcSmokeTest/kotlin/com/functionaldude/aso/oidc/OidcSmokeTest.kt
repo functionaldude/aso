@@ -72,7 +72,6 @@ class OidcSmokeTest {
             listOf(
                 "\${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}",
                 "\${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}",
-                "\${ASO_MCP_JAM_CALLBACK_URL:http://localhost:6274/oauth/callback}",
             ),
             clients
                 .getValue("aso")["redirectUris"]

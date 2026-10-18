@@ -31,6 +31,7 @@ class KeycloakFixture(
         val clients = realm["clients"] as ArrayNode
         val shared = clients.first { it["clientId"].asString() == "aso" } as ObjectNode
         (shared["redirectUris"] as ArrayNode).add(mcpCallback)
+        mcpJamCallback?.let { (shared["redirectUris"] as ArrayNode).add(it) }
         // Negative and cross-client checks belong only to disposable fixtures, never the dev seed.
         val probe = json.readTree(json.writeValueAsString(shared)) as ObjectNode
         probe.put("clientId", "aso-dev-probe")
@@ -48,7 +49,6 @@ class KeycloakFixture(
         }
         withCopyToContainer(Transferable.of(json.writeValueAsBytes(realm)), destination)
         codexCallback?.let { withEnv("ASO_CODEX_CALLBACK_URL", it) }
-        mcpJamCallback?.let { withEnv("ASO_MCP_JAM_CALLBACK_URL", it) }
         withEnv("KC_DB", "dev-mem")
         withEnv("ASO_PROBE_CALLBACK", callback)
         withEnv("ASO_WEB_CALLBACK", webCallback)

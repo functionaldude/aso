@@ -44,7 +44,7 @@ The checked-in [container template](../.env.container.example) lists every appli
 | `ASO_OIDC_GROUPS_CLAIM` | Signed ID/access-token claim containing group strings, e.g. `groups` |
 | `ASO_OIDC_MEMBER_GROUP`, `ASO_OIDC_ADMIN_GROUP` | Distinct workspace membership and admin groups; admins must also be members |
 
-All seven identity variables must be nonempty; missing identity configuration fails startup. Register the exact browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut` with the provider. Issuer/public URLs require HTTPS except on loopback. Follow the [identity configuration and interoperability requirements](../README.md#identity-configuration-and-access), including signed groups and mandatory S256 PKCE; register tool callbacks on the same public client.
+All seven identity variables must be nonempty; missing identity configuration fails startup. Register the exact browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut` with the provider. Issuer/public URLs require HTTPS except on loopback. Follow the [identity configuration and interoperability requirements](../README.md#identity-configuration-and-access), including signed groups and mandatory S256 PKCE; register Codex’s default `http://127.0.0.1:8766/callback` on the same public client. This callback targets Codex on the user’s computer, even when ASO runs in a container. The setup page generates configuration from application settings; discovery does not verify the registered redirect list.
 
 Container `127.0.0.1` addresses the container itself. A host's loopback JDBC URL, Keycloak issuer, or LM Studio address cannot be copied into an ordinary bridged container. Use reachable private addresses, or attach the app to an existing private Docker network with `--network` when using container DNS aliases. Keep the issuer identical for browser and application; a separate internal issuer URL would fail validation. The [goal 007 smoke topology](goals/007-evidence.md#live-laptop-collaboration-and-persistence) and the automated image test use a shared namespace for their isolated loopback IdP. They do not configure your external IdP or networking.
 
@@ -55,8 +55,7 @@ For an existing installation, follow the [clean shared-client migration](agent-s
 | Variables | Defaults and behavior |
 | --- | --- |
 | `ASO_ADDRESS`, `ASO_PORT` | Image: `0.0.0.0`, `8080`; jar: `127.0.0.1`, `8080` |
-| `ASO_CODEX_CALLBACK_URL` | Empty; set to the exact Codex callback registered on the shared public client |
-| `ASO_MCP_JAM_CALLBACK_URL` | Empty; set to the exact MCP Jam callback registered on the shared public client |
+| `ASO_CODEX_CALLBACK_URL` | `http://127.0.0.1:8766/callback` when unset or blank; register once on the shared public client. Override for custom/remote Codex setups |
 | `ASO_RATE_LIMIT_REQUESTS`, `ASO_RATE_LIMIT_WRITES`, `ASO_RATE_LIMIT_WINDOW` | `600`, `120`, `1m`; shared per-user browser/MCP budgets, with `0 < writes <= requests`, window `1s`–`1h` |
 | `ASO_EMBEDDING_ENABLED` | `false`; exact/lexical search remains available with visible degradation |
 | `ASO_EMBEDDING_BASE_URL`, `ASO_EMBEDDING_ALLOWED_HOSTS` | `http://127.0.0.1:1234/v1`, `127.0.0.1,localhost,::1`; configure a container-reachable private model endpoint and its matching allowlist before enabling |

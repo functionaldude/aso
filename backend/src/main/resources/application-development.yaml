@@ -10,6 +10,3 @@ aso:
     groups-claim: ${ASO_OIDC_GROUPS_CLAIM:groups}
     member-group: ${ASO_OIDC_MEMBER_GROUP:aso-members}
     admin-group: ${ASO_OIDC_ADMIN_GROUP:aso-admins}
-  agent-setup:
-    codex-callback-url: ${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}
-    mcp-jam-callback-url: ${ASO_MCP_JAM_CALLBACK_URL:http://localhost:6274/oauth/callback}
