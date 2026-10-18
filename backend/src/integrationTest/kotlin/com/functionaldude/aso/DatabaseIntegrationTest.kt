@@ -274,8 +274,7 @@ class DatabaseIntegrationTest {
         @DynamicPropertySource
         fun databaseProperties(registry: DynamicPropertyRegistry) {
             registry.add("aso.identity.issuer") { keycloak.issuer }
-            registry.add("aso.identity.web-client-id") { "aso-web" }
-            registry.add("aso.identity.web-client-secret") { "aso-web-secret-local-only" }
+            registry.add("aso.identity.client-id") { "aso" }
             registry.add("aso.identity.public-url") { "http://127.0.0.1:8080" }
             registry.add("aso.identity.mcp-audience") { "http://127.0.0.1:8080/mcp" }
             registry.add("aso.identity.groups-claim") { "groups" }

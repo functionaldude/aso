@@ -7,17 +7,13 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
-data class AgentClientRegistration(
-    val clientId: String,
-    val callbackUrl: String,
-)
-
 data class AgentSetupInfo(
     val mcpUrl: String,
     val issuer: String,
     val scopes: List<String>,
-    val codex: AgentClientRegistration?,
-    val mcpJam: AgentClientRegistration?,
+    val clientId: String,
+    val codexCallbackUrl: String?,
+    val mcpJamCallbackUrl: String?,
     val recommendedParagraph: String,
 )
 
@@ -25,9 +21,7 @@ data class AgentSetupInfo(
 @RestController
 class AgentSetupController(
     private val identity: IdentitySettings,
-    @Value("\${aso.agent-setup.codex-client-id:}") private val codexClientId: String,
     @Value("\${aso.agent-setup.codex-callback-url:}") private val codexCallbackUrl: String,
-    @Value("\${aso.agent-setup.mcp-jam-client-id:}") private val mcpJamClientId: String,
     @Value("\${aso.agent-setup.mcp-jam-callback-url:}") private val mcpJamCallbackUrl: String,
 ) {
     private val paragraph =
@@ -44,16 +38,14 @@ class AgentSetupController(
             mcpUrl = identity.resource,
             issuer = identity.issuer,
             scopes = listOf("openid", "profile", "email"),
-            codex = registration(codexClientId, codexCallbackUrl),
-            mcpJam = registration(mcpJamClientId, mcpJamCallbackUrl),
+            clientId = identity.clientId,
+            codexCallbackUrl = callback(codexCallbackUrl),
+            mcpJamCallbackUrl = callback(mcpJamCallbackUrl),
             recommendedParagraph = paragraph,
         )
 
-    private fun registration(
-        clientId: String,
-        callbackUrl: String,
-    ): AgentClientRegistration? {
-        if (clientId.isBlank() || callbackUrl.isBlank()) return null
+    private fun callback(callbackUrl: String): String? {
+        if (callbackUrl.isBlank()) return null
         val callback = URI(callbackUrl)
         require(callback.userInfo == null && callback.query == null && callback.fragment == null) {
             "Public agent callbacks must not contain credentials, query parameters or fragments"
@@ -61,6 +53,6 @@ class AgentSetupController(
         require(callback.scheme == "https" || (callback.scheme == "http" && callback.host in setOf("127.0.0.1", "localhost", "::1"))) {
             "Public agent callbacks require HTTPS except on loopback"
         }
-        return AgentClientRegistration(clientId, callbackUrl)
+        return callbackUrl
     }
 }

@@ -2,17 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 
-interface ClientRegistration {
-  clientId: string;
-  callbackUrl: string;
-}
-
 interface AgentSetupInfo {
   mcpUrl: string;
   issuer: string;
   scopes: string[];
-  codex: ClientRegistration | null;
-  mcpJam: ClientRegistration | null;
+  clientId: string;
+  codexCallbackUrl: string | null;
+  mcpJamCallbackUrl: string | null;
   recommendedParagraph: string;
 }
 
@@ -40,21 +36,22 @@ export class AgentSetup {
     });
   }
 
-  protected codexConfig(value: AgentSetupInfo): string {
-    const client = value.codex;
-    if (!client) return '';
-    const port = new URL(client.callbackUrl).port;
-    return `[mcp_servers.aso]\nurl = ${JSON.stringify(value.mcpUrl)}\n\n[mcp_servers.aso.oauth]\nclient_id = ${JSON.stringify(client.clientId)}\ncallback_url = ${JSON.stringify(client.callbackUrl)}${port ? `\ncallback_port = ${port}` : ''}`;
-  }
+  protected readonly codexOpenConfig =
+    'mkdir -p "${CODEX_HOME:-$HOME/.codex}" && nano "${CODEX_HOME:-$HOME/.codex}/config.toml"';
+  protected readonly codexLogin = 'codex mcp login aso';
+  protected readonly codexLogout = 'codex mcp logout aso';
 
-  protected codexLogin(value: AgentSetupInfo): string {
-    return `codex mcp login aso --scopes ${value.scopes.join(',')}\n# Ask Codex to call ASO's identity tool and check your name.\ncodex mcp logout aso  # when signing out`;
+  protected codexConfig(value: AgentSetupInfo): string {
+    const callback = value.codexCallbackUrl;
+    const url = callback ? new URL(callback) : null;
+    const port = url && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) ? url.port : '';
+    const scopes = value.scopes.map((scope) => JSON.stringify(scope)).join(', ');
+    return `[mcp_servers.aso]\nurl = ${JSON.stringify(value.mcpUrl)}\nscopes = [${scopes}]\n\n[mcp_servers.aso.oauth]\nclient_id = ${JSON.stringify(value.clientId)}\ncallback_url = ${JSON.stringify(callback ?? 'YOUR_EXACT_REGISTERED_CALLBACK_URL')}${port ? `\ncallback_port = ${port}` : ''}`;
   }
 
   protected jamCommands(value: AgentSetupInfo): string {
-    const client = value.mcpJam;
-    if (!client) return '';
-    return `npx --yes @mcpjam/cli@5.16.1 --no-telemetry oauth login \\\n  --url ${this.shellQuote(value.mcpUrl)} --protocol-version 2025-11-25 \\\n  --registration preregistered --client-id ${this.shellQuote(client.clientId)} \\\n  --redirect-url ${this.shellQuote(client.callbackUrl)} \\\n  --scopes '${value.scopes.join(' ')}' --verify-tools --verify-call-tool identity \\\n  --credentials-out /tmp/aso-mcpjam-credentials.json\n\nnpx --yes @mcpjam/cli@5.16.1 --no-telemetry tools call \\\n  --url ${this.shellQuote(value.mcpUrl)} --credentials-file /tmp/aso-mcpjam-credentials.json \\\n  --tool-name identity --tool-args '{}' --validate-response --expect-success`;
+    if (!value.mcpJamCallbackUrl) return '';
+    return `npx --yes @mcpjam/cli@5.16.1 --no-telemetry oauth login \\\n  --url ${this.shellQuote(value.mcpUrl)} --protocol-version 2025-11-25 \\\n  --registration preregistered --client-id ${this.shellQuote(value.clientId)} \\\n  --redirect-url ${this.shellQuote(value.mcpJamCallbackUrl)} \\\n  --scopes ${this.shellQuote(value.scopes.join(' '))} --verify-tools --verify-call-tool identity \\\n  --credentials-out /tmp/aso-mcpjam-credentials.json\n\nnpx --yes @mcpjam/cli@5.16.1 --no-telemetry tools call \\\n  --url ${this.shellQuote(value.mcpUrl)} --credentials-file /tmp/aso-mcpjam-credentials.json \\\n  --tool-name identity --tool-args '{}' --validate-response --expect-success`;
   }
 
   private shellQuote(value: string): string {

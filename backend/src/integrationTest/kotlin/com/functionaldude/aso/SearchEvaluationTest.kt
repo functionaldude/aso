@@ -636,8 +636,7 @@ class SearchEvaluationTest {
             registry.add("aso.embedding.poll-millis") { 3600000 }
             mapOf(
                 "issuer" to keycloak.issuer,
-                "web-client-id" to "aso-web",
-                "web-client-secret" to "aso-web-secret-local-only",
+                "client-id" to "aso",
                 "public-url" to base,
                 "mcp-audience" to "$base/mcp",
                 "groups-claim" to "groups",

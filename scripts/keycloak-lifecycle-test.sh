@@ -19,6 +19,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 mkdir -p "$aso_test_root/scripts" "$aso_test_root/dev/keycloak"
 cp scripts/common.sh scripts/db-reset.sh scripts/keycloak-{start,stop,status,reset}.sh "$aso_test_root/scripts/"
+cp scripts/keycloak-configure-identity.py scripts/keycloak-migration-test.py "$aso_test_root/scripts/"
 cp compose.yaml "$aso_test_root/"
 cp dev/keycloak/aso-dev-realm.json "$aso_test_root/dev/keycloak/"
 cat > "$aso_test_root/override.yaml" <<'YAML'
@@ -29,7 +30,8 @@ services:
       POSTGRES_USER: aso
       POSTGRES_PASSWORD: aso-local-only
   keycloak:
-    ports: !override ["127.0.0.1::8080"]
+    # Disposable provider only: reachable through the Docker host gateway in containerized CI.
+    ports: !override ["0.0.0.0::8080"]
 YAML
 (
   cd -- "$aso_test_root"
@@ -42,6 +44,10 @@ YAML
   keycloak_id="$(dc ps --quiet keycloak)"
   sql "CREATE TABLE reset_sentinel (value text); INSERT INTO reset_sentinel VALUES ('keep');"
   dc exec -T keycloak bash -c 'echo keep > /opt/keycloak/data/reset-sentinel'
+  aso_migration_port="$(dc port keycloak 8080)"
+  ASO_MIGRATION_TEST_BASE="http://127.0.0.1:${aso_migration_port##*:}" python3 scripts/keycloak-migration-test.py
+  [[ "$(sql 'SELECT value FROM reset_sentinel')" == keep ]]
+  dc exec -T keycloak test -f /opt/keycloak/data/reset-sentinel
   ./scripts/keycloak-stop.sh
   [[ "$(dc ps --quiet database)" == "$database_id" ]]
   ./scripts/keycloak-start.sh

@@ -53,7 +53,7 @@ class TokenValidationTest {
         assertEquals("alice", decoder.decode(token()).subject)
         listOf(
             token(issuer = "https://other.example.invalid"),
-            token(audience = "aso-web"),
+            token(audience = "aso"),
             token(expiry = Instant.now().minusSeconds(120)),
             token(subject = null),
             token(signingKey = RSAKeyGenerator(2048).generate()),
@@ -68,14 +68,13 @@ class TokenValidationTest {
             IdentitySettings(
                 "https://idp.example.invalid",
                 "web",
-                "secret",
                 "https://aso.example.invalid",
                 "https://aso.example.invalid/mcp",
                 "groups",
                 "members",
                 "admins",
             )
-        assertFailsWith<IllegalArgumentException> { settings.copy(webClientSecret = "") }
+        assertFailsWith<IllegalArgumentException> { settings.copy(clientId = "") }
         assertFailsWith<IllegalArgumentException> { settings.copy(issuer = "http://idp.example.invalid") }
         assertFailsWith<IllegalArgumentException> { settings.copy(memberGroup = "admins") }
     }

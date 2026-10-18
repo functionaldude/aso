@@ -106,8 +106,16 @@ textarea:focus-visible {
 li {
   margin-bottom: 12px;
 }
-ul {
-  padding-left: 20px;
+ul,
+ol {
+  padding-left: 24px;
+}
+li .copy-block {
+  max-width: 100%;
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
 }
 @media (max-width: 599px) {
   article {

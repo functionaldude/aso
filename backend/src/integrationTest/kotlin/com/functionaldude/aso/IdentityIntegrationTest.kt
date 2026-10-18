@@ -167,8 +167,7 @@ class IdentityIntegrationTest {
             registry.add("spring.datasource.password", db::getPassword)
             mapOf(
                 "issuer" to issuer,
-                "web-client-id" to "aso-web",
-                "web-client-secret" to "aso-web-secret-local-only",
+                "client-id" to "aso",
                 "public-url" to "http://127.0.0.1:8080",
                 "mcp-audience" to resource,
                 "groups-claim" to "groups",

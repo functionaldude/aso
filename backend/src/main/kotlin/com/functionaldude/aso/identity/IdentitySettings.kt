@@ -6,8 +6,7 @@ import java.net.URI
 @ConfigurationProperties("aso.identity")
 data class IdentitySettings(
     val issuer: String,
-    val webClientId: String,
-    val webClientSecret: String,
+    val clientId: String,
     val publicUrl: String,
     val mcpAudience: String,
     val groupsClaim: String,
@@ -15,7 +14,7 @@ data class IdentitySettings(
     val adminGroup: String,
 ) {
     init {
-        listOf(issuer, webClientId, webClientSecret, publicUrl, mcpAudience, groupsClaim, memberGroup, adminGroup)
+        listOf(issuer, clientId, publicUrl, mcpAudience, groupsClaim, memberGroup, adminGroup)
             .forEach { require(it.isNotBlank()) { "All ASO identity settings must be explicitly configured" } }
         listOf(issuer, publicUrl).forEach {
             val uri = URI(it)

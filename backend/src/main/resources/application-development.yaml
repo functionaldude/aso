@@ -4,15 +4,12 @@ aso:
     enabled: ${ASO_EMBEDDING_ENABLED:true}
   identity:
     issuer: ${ASO_OIDC_ISSUER:http://127.0.0.1:8180/realms/aso-dev}
-    web-client-id: ${ASO_OIDC_WEB_CLIENT_ID:aso-web}
-    web-client-secret: ${ASO_OIDC_WEB_CLIENT_SECRET:aso-web-secret-local-only}
+    client-id: ${ASO_OIDC_CLIENT_ID:aso}
     public-url: ${ASO_PUBLIC_URL:http://127.0.0.1:8080}
     mcp-audience: ${ASO_MCP_AUDIENCE:http://127.0.0.1:8080/mcp}
     groups-claim: ${ASO_OIDC_GROUPS_CLAIM:groups}
     member-group: ${ASO_OIDC_MEMBER_GROUP:aso-members}
     admin-group: ${ASO_OIDC_ADMIN_GROUP:aso-admins}
   agent-setup:
-    codex-client-id: ${ASO_CODEX_CLIENT_ID:aso-codex}
     codex-callback-url: ${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}
-    mcp-jam-client-id: ${ASO_MCP_JAM_CLIENT_ID:aso-mcpjam}
     mcp-jam-callback-url: ${ASO_MCP_JAM_CALLBACK_URL:http://localhost:6274/oauth/callback}

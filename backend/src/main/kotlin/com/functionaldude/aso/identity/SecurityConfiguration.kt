@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
@@ -37,8 +38,8 @@ class SecurityConfiguration(
             ClientRegistrations
                 .fromIssuerLocation(settings.issuer)
                 .registrationId("oidc")
-                .clientId(settings.webClientId)
-                .clientSecret(settings.webClientSecret)
+                .clientId(settings.clientId)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 .scope("openid", "profile", "email")
                 .redirectUri("${settings.publicUrl}/login/oauth2/code/oidc")
                 .build(),

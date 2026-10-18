@@ -4,7 +4,6 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.builder.Transferable
 import org.testcontainers.utility.DockerImageName
-import org.testcontainers.utility.MountableFile
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.node.ArrayNode
 import tools.jackson.databind.node.ObjectNode
@@ -18,6 +17,8 @@ class KeycloakFixture(
     resource: String = "http://127.0.0.1:8080/mcp",
     webCallback: String = "http://127.0.0.1:8080/login/oauth2/code/oidc",
     additionalMcpClient: Boolean = false,
+    codexCallback: String? = null,
+    mcpJamCallback: String? = null,
 ) : GenericContainer<KeycloakFixture>(DockerImageName.parse(System.getProperty("aso.test.keycloak-image"))) {
     private var forwarder: LoopbackPortForwarder? = null
     val issuer: String get() = "${checkNotNull(forwarder) { "Keycloak fixture must be started" }.baseUrl}/realms/aso-dev"
@@ -25,21 +26,29 @@ class KeycloakFixture(
     init {
         withExposedPorts(8080)
         val destination = "/opt/keycloak/data/import/aso-dev-realm.json"
+        val json = JsonMapper.builder().build()
+        val realm = json.readTree(Path.of(System.getProperty("aso.test.realm")).toFile())
+        val clients = realm["clients"] as ArrayNode
+        val shared = clients.first { it["clientId"].asString() == "aso" } as ObjectNode
+        (shared["redirectUris"] as ArrayNode).add(mcpCallback)
+        // Negative and cross-client checks belong only to disposable fixtures, never the dev seed.
+        val probe = json.readTree(json.writeValueAsString(shared)) as ObjectNode
+        probe.put("clientId", "aso-dev-probe")
+        probe.put("name", "Isolated wrong-audience probe")
+        probe.putArray("redirectUris").add(callback)
+        val probeMappers = probe["protocolMappers"] as ArrayNode
+        val audience = probeMappers.first { it["protocolMapper"].asString() == "oidc-audience-mapper" } as ObjectNode
+        (audience["config"] as ObjectNode).put("included.custom.audience", "aso-dev-probe")
+        clients.add(probe)
         if (additionalMcpClient) {
-            // Disposable fixture only: two public PKCE clients share the exact temporary callback/resource.
-            // Keep the real Codex/MCP Jam registrations and persistent development seed unchanged.
-            val json = JsonMapper.builder().build()
-            val realm = json.readTree(Path.of(System.getProperty("aso.test.realm")).toFile())
-            val clients = realm["clients"] as ArrayNode
-            val first = clients.first { it["clientId"].asString() == "aso-mcp-test" }
-            val second = json.readTree(json.writeValueAsString(first)) as ObjectNode
+            val second = json.readTree(json.writeValueAsString(shared)) as ObjectNode
             second.put("clientId", "aso-mcp-other-test")
             second.put("name", "Second isolated MCP test client")
             clients.add(second)
-            withCopyToContainer(Transferable.of(json.writeValueAsBytes(realm)), destination)
-        } else {
-            withCopyFileToContainer(MountableFile.forHostPath(System.getProperty("aso.test.realm")), destination)
         }
+        withCopyToContainer(Transferable.of(json.writeValueAsBytes(realm)), destination)
+        codexCallback?.let { withEnv("ASO_CODEX_CALLBACK_URL", it) }
+        mcpJamCallback?.let { withEnv("ASO_MCP_JAM_CALLBACK_URL", it) }
         withEnv("KC_DB", "dev-mem")
         withEnv("ASO_PROBE_CALLBACK", callback)
         withEnv("ASO_WEB_CALLBACK", webCallback)
