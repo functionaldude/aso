@@ -1,6 +1,6 @@
 # 010 — One public OIDC client and simpler agent setup
 
-Status: in progress
+Status: Complete — implementation and local verification finished; PR open for review
 
 ## Dependencies and prerequisites
 
@@ -35,7 +35,7 @@ Run `check bootJar`, `oidcSmokeTest`, `integrationTest`, `e2eTest`, disposable m
 
 ## Progress and blockers
 
-Implementation is complete on `codex/goal-010-public-oidc`. Automated local checks, image smoke tests, and disposable migration/lifecycle checks pass. Actual Codex/MCP Jam checks pass for Alice and Bob with the same public registration. PR handoff is being finished.
+Implementation and local verification are complete on `codex/goal-010-public-oidc`, delivered through [PR #13](https://github.com/functionaldude/aso/pull/13). Automated checks, image smoke tests, disposable migration/lifecycle checks and actual Codex/MCP Jam two-user identity checks pass. Linux CI results are available from the [PR checks](https://github.com/functionaldude/aso/pull/13/checks).
 
 ## Completion evidence
 
@@ -65,4 +65,4 @@ The Codex probe additionally allowlisted only `identity`. An initial unrestricte
 
 The probe used private temporary Codex configuration/credential storage and separate private MCP Jam credential files. Its copied model-login credential and all OAuth credentials/raw client diagnostics were removed after verification. Only sanitized results remain under ignored `backend/build/e2e/goal-010/live-clients.txt`; automated command logs are retained alongside them. Owner configuration, local realm, product database and volumes were not changed.
 
-Another IdP remains unverified; no native Claude Code/Cursor claim is added. PR/CI links follow at handoff.
+Another IdP remains unverified; no native Claude Code/Cursor claim is added. Implementation commit `db22de6` is pushed in [PR #13](https://github.com/functionaldude/aso/pull/13), open against master. The [PR checks](https://github.com/functionaldude/aso/pull/13/checks) report Linux verification separately from the local evidence above. No merge, registry publication or deployment was performed.

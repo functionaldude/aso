@@ -17,7 +17,7 @@ The product requirements live in [the spec](../../spec.md). These records descri
 | [007 — Laptop MVP release](007-mvp-release-readiness.md)                    | Tested local release, setup/configuration docs, and delivery evidence             | 006                                                     | Complete  |
 | [008 — Terminal-inspired UI](008-terminal-ui-redesign.md) | Complete dark workbench redesign with isolated visual review and regression evidence | 007 | Complete |
 | [009 — CI container image](009-ci-container-image.md) | Build/test application images in CI and publish private master images to GHCR | 007, 008 | In progress |
-| [010 — Public OIDC and agent setup](010-public-oidc-and-setup.md) | One public client, safe local upgrade, and complete copyable Codex setup | 001, 006, 008, 009 | In progress |
+| [010 — Public OIDC and agent setup](010-public-oidc-and-setup.md) | One public client, safe local upgrade, and complete copyable Codex setup | 001, 006, 008, 009 | Complete |
 
 *Goals 001 and 002 use Codex and MCP Jam per the owner's 2026-10-16 amendment. The 2026-10-17 amendment extends this to goal 006 and laptop MVP delivery: actual Codex/MCP Jam CLI plus explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified and is not a completion gate for this amended MVP. Goal 006 also adds the in-app setup guide and recommended copyable `AGENTS.md` paragraph. Historical evidence remains in merged PRs #2 and #3.
 
