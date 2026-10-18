@@ -16,12 +16,15 @@ The product requirements live in [the spec](../../spec.md). These records descri
 | [006 — Agent collaboration and setup](006-agent-collaboration.md)           | Actual Codex/MCP Jam workflows, explicit simulations, and in-app setup/copy guide | 004, 005                                                | Complete  |
 | [007 — Laptop MVP release](007-mvp-release-readiness.md)                    | Tested local release, setup/configuration docs, and delivery evidence             | 006                                                     | Complete  |
 | [008 — Terminal-inspired UI](008-terminal-ui-redesign.md) | Complete dark workbench redesign with isolated visual review and regression evidence | 007 | Complete |
+| [009 — CI container image](009-ci-container-image.md) | Build/test application images in CI and publish private master images to GHCR | 007, 008 | In progress |
 
 *Goals 001 and 002 use Codex and MCP Jam per the owner's 2026-10-16 amendment. The 2026-10-17 amendment extends this to goal 006 and laptop MVP delivery: actual Codex/MCP Jam CLI plus explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified and is not a completion gate for this amended MVP. Goal 006 also adds the in-app setup guide and recommended copyable `AGENTS.md` paragraph. Historical evidence remains in merged PRs #2 and #3.
 
 Start with preparatory goal 000a, then follow goals 001–007 in order, completing cleanup 002a before 003. This keeps the existing product goal numbers intact. Goal 005 can follow goal 003 directly if search is the priority; its implementation must still integrate with goal 004 before goal 006 completes. Local Keycloak supplies development identities; no external IdP account is required. Confirm LM Studio configuration/evaluation examples early.
 
 Goal 008 is an approved post-MVP UI redesign and follows the completed laptop release.
+
+Goal 009 is approved post-MVP CI container publication; deployment and multi-architecture publication remain outside its scope.
 
 For each goal:
 

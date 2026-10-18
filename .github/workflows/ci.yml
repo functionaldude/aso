@@ -16,10 +16,12 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: self-hosted
-    timeout-minutes: 30
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 45
     env:
       CI: 'true'
+      ASO_CI_IMAGE: aso-ci:${{ github.run_id }}-${{ github.run_attempt }}
+      ASO_IMAGE_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -45,6 +47,28 @@ jobs:
         run: ./gradlew --no-daemon integrationTest
       - name: Packaged application browser tests
         run: ./gradlew --no-daemon e2eTest
+      - name: Build application image
+        run: |
+          ./gradlew --no-daemon :backend:bootBuildImage \
+            --imageName="$ASO_CI_IMAGE" --imagePlatform=linux/amd64 \
+            --environment="BP_OCI_REVISION=$GITHUB_SHA" \
+            -PimageBuildId="$ASO_IMAGE_BUILD_ID"
+      - name: Isolated application image smoke tests
+        run: ./gradlew --no-daemon imageSmokeTest -PimageUnderTest="$ASO_CI_IMAGE"
+      - name: Export tested image for publication
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: |
+          mkdir -p backend/build/container
+          docker image save --output backend/build/container/aso-image.tar "$ASO_CI_IMAGE"
+      - name: Transfer tested image
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: backend/build/container/aso-image.tar
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
       - name: Preserve reports and browser diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,5 +79,80 @@ jobs:
             backend/build/test-results/
             backend/build/e2e/
             backend/build/oidc/
+            backend/build/image-smoke/
             frontend/coverage/
           if-no-files-found: ignore
+      - name: Clean up this run's image and build caches
+        if: always()
+        run: |
+          docker image rm "$ASO_CI_IMAGE" || true
+          docker volume rm \
+            "aso-ci-$ASO_IMAGE_BUILD_ID-workspace" \
+            "aso-ci-$ASO_IMAGE_BUILD_ID-build" \
+            "aso-ci-$ASO_IMAGE_BUILD_ID-launch" || true
+          rm -f backend/build/container/aso-image.tar
+
+  publish:
+    needs: verify
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      ASO_CI_IMAGE: aso-ci:${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Prepare isolated transfer and credential paths
+        run: |
+          printf 'ASO_IMAGE_TRANSFER=%s/aso-image-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf 'DOCKER_CONFIG=%s/aso-docker-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      - name: Download tested image
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ASO_IMAGE_TRANSFER }}
+      - name: Load and verify image metadata
+        run: |
+          docker image load --input "$ASO_IMAGE_TRANSFER/aso-image.tar"
+          test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$ASO_CI_IMAGE")" = linux/amd64
+          test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ASO_CI_IMAGE")" = "$GITHUB_SHA"
+          test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.source"}}' "$ASO_CI_IMAGE")" = "https://github.com/$GITHUB_REPOSITORY"
+      - name: Sign in to GitHub Container Registry
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$DOCKER_CONFIG"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish commit image and latest
+        run: |
+          aso_registry_image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          aso_commit_image="$aso_registry_image:sha-$GITHUB_SHA"
+          docker image tag "$ASO_CI_IMAGE" "$aso_commit_image"
+          docker image push "$aso_commit_image"
+          aso_digest="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$aso_commit_image" | awk -v prefix="$aso_registry_image@" 'index($0, prefix) == 1 {print; exit}')"
+          test -n "$aso_digest"
+          docker image tag "$aso_commit_image" "$aso_registry_image:latest"
+          docker image push "$aso_registry_image:latest"
+          {
+            printf '### Published application image\n\n'
+            printf -- '- Commit: `%s`\n' "$aso_commit_image"
+            printf -- '- Latest: `%s:latest`\n' "$aso_registry_image"
+            printf -- '- Digest: `%s`\n' "$aso_digest"
+            printf -- '- Platform: `linux/amd64`\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up this run's credentials and image transfer
+        if: always()
+        run: |
+          aso_registry_image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          aso_image_id="$(docker image inspect --format '{{.Id}}' "$ASO_CI_IMAGE" 2>/dev/null || true)"
+          for aso_tag in "$aso_registry_image:sha-$GITHUB_SHA" "$aso_registry_image:latest"; do
+            if [[ -n "$aso_image_id" && "$(docker image inspect --format '{{.Id}}' "$aso_tag" 2>/dev/null || true)" == "$aso_image_id" ]]; then
+              docker image rm "$aso_tag" || true
+            fi
+          done
+          docker image rm "$ASO_CI_IMAGE" || true
+          rm -rf -- "$DOCKER_CONFIG" "$ASO_IMAGE_TRANSFER"

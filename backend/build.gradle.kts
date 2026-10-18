@@ -40,7 +40,8 @@ dependencies {
 val integrationTest by sourceSets.creating
 val e2eTest by sourceSets.creating
 val oidcSmokeTest by sourceSets.creating
-listOf(integrationTest, e2eTest, oidcSmokeTest).forEach {
+val imageSmokeTest by sourceSets.creating
+listOf(integrationTest, e2eTest, oidcSmokeTest, imageSmokeTest).forEach {
     it.compileClasspath += sourceSets.testFixtures.get().output
     it.runtimeClasspath += sourceSets.testFixtures.get().output
     it.compileClasspath += sourceSets.main.get().output
@@ -59,6 +60,7 @@ dependencies {
     add(e2eTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
     add(oidcSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers")
     add(oidcSmokeTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(imageSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
 }
 
 spotless {
@@ -138,9 +140,39 @@ tasks.register<Test>("e2eTest") {
 tasks.bootBuildImage {
     imageName = "aso:${project.version}"
     environment.put("BP_JVM_VERSION", "25")
+    environment.put("BPE_DEFAULT_ASO_ADDRESS", "0.0.0.0")
+    environment.put("BP_OCI_SOURCE", "https://github.com/functionaldude/aso")
+    providers.gradleProperty("imageBuildId").orNull?.let { buildId ->
+        require(buildId.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_.-]*"))) { "Invalid imageBuildId" }
+        buildWorkspace { volume { name = "aso-ci-$buildId-workspace" } }
+        buildCache { volume { name = "aso-ci-$buildId-build" } }
+        launchCache { volume { name = "aso-ci-$buildId-launch" } }
+    }
 }
 
 val keycloakImage = rootProject.file("gradle/keycloak-image.txt").readText().trim()
+tasks.register<Test>("imageSmokeTest") {
+    val artifacts =
+        layout.buildDirectory
+            .dir("image-smoke")
+            .get()
+            .asFile
+    group = "verification"
+    description = "Smoke-tests an already built application image with disposable services. Requires Docker."
+    testClassesDirs = imageSmokeTest.output.classesDirs
+    classpath = imageSmokeTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst { check(artifacts.deleteRecursively()) { "Could not clear image smoke logs" } }
+    systemProperty("aso.test.image", providers.gradleProperty("imageUnderTest").getOrElse("aso:${project.version}"))
+    systemProperty("aso.test.database-image", databaseImage)
+    systemProperty("aso.test.keycloak-image", keycloakImage)
+    systemProperty("aso.test.realm", rootProject.file("dev/keycloak/aso-dev-realm.json").absolutePath)
+    systemProperty("aso.test.runtime-config", project.file("src/main/resources/application.yaml").absolutePath)
+    systemProperty("aso.test.container-env", rootProject.file(".env.container.example").absolutePath)
+    systemProperty("aso.test.image-artifacts", artifacts.absolutePath)
+}
+
 tasks.register<JavaExec>("uiPreview") {
     group = "verification"
     description = "Runs a disposable populated packaged application and captures desktop/mobile UI."
