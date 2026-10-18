@@ -41,7 +41,7 @@ Include the existing buildpack image, CI verification, isolated image smoke test
 
 ## Progress and blockers
 
-Implementation and local verification pass on `codex/ci-container-image`; PR CI remains to be confirmed. No actual GHCR publication has been attempted; that requires an eligible master run after review/merge.
+Implementation and local verification pass on `codex/ci-container-image`, published as [PR #12](https://github.com/functionaldude/aso/pull/12), open and unmerged. Linux CI results and retained diagnostics are available from the [PR checks](https://github.com/functionaldude/aso/pull/12/checks). No actual GHCR publication has been attempted; that requires an eligible master run after review/merge.
 
 ## Completion evidence
 
@@ -51,4 +51,4 @@ Implementation and local verification pass on `codex/ci-container-image`; PR CI 
 - The initial image negative test exposed the unresolved-secret placeholder bug and failed. After empty fallbacks were added, all eight omission cases produce the existing explicit-configuration failure, while fully configured image startup succeeds. Fixture-only logs are retained under `backend/build/image-smoke/`; no real credentials are used.
 - Local native ARM64 image `aso-ci:local-009` built with Java 25, source/revision labels and user `1002:1001`; image ID `sha256:dbef285c1934c945b87faecb50f778bd03cdf1150a0f5ff43a43fad59c091222`. Docker save/load preserved its exact ID and metadata (367 MiB archive), and the temporary archive was removed. Linux/AMD64 verification belongs to PR CI.
 - `actionlint` v1.7.12 and `bash -n` validation of every workflow shell block pass; `git diff --check`, generated-source diff and env-file ignore checks pass. Publication is gated to master push/manual events; only its separate job has package write permission.
-- PR link and Linux CI evidence pending. Registry tags/digest/private-package verification remain pending the first eligible master publication run; this goal is not yet complete.
+- [PR #12 checks](https://github.com/functionaldude/aso/pull/12/checks) retain the Linux/AMD64 build, all regression/image tests, and the publication job's skipped state for this pull-request event. Publication behavior itself remains unverified: registry tags/digest/private-package verification require the first eligible master publication run. This goal is not yet complete.
