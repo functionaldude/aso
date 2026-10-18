@@ -1720,8 +1720,7 @@ class QuestionIntegrationTest {
             registry.add("spring.datasource.password", db::getPassword)
             mapOf(
                 "issuer" to issuer,
-                "web-client-id" to "aso-web",
-                "web-client-secret" to "aso-web-secret-local-only",
+                "client-id" to "aso",
                 "public-url" to base,
                 "mcp-audience" to "$base/mcp",
                 "groups-claim" to "groups",

@@ -116,7 +116,7 @@ All subjects use prefix `00000000-0000-4000-8000-`. Accounts require no initial 
 
 Issuer: `http://127.0.0.1:8180/realms/aso-dev`. Discovery: `<issuer>/.well-known/openid-configuration`. Under `<issuer>/protocol/openid-connect`, standard endpoints are `/auth`, `/token`, `/certs` (JWKS), and `/userinfo`. The fixture emits `sub`, `preferred_username`, email/profile attributes, and a flat `groups` claim in ID/access tokens and userinfo. ASO maps the configurable membership/admin values from signed ID/access-token claims.
 
-`aso-web` is a confidential development client with secret `aso-web-secret-local-only`, reserving exactly `http://127.0.0.1:8080/login/oauth2/code/oidc`. `aso-dev-probe` is public and defaults to exactly `http://127.0.0.1:8765/oidc/callback`. The fixture supports provider-side `ASO_PROBE_CALLBACK` substitution (not an ASO runtime setting): the isolated smoke container receives the exact callback of a real loopback listener on a dynamic port. No wildcard redirects are registered. Both clients require authorization code and S256 PKCE, disallow password/implicit/service-account grants, and have no cross-origin browser permissions. The probe access token has audience `aso-dev-probe`; it is only a fixture verification audience. ID tokens are checked separately and are never used as API access tokens. The separate MCP registrations below issue access tokens for the ASO resource audience; probe tokens are rejected by ASO.
+`aso` is the single public development application client for browser, Codex, and MCP Jam. It requires S256 PKCE and registers exactly `http://127.0.0.1:8080/login/oauth2/code/oidc`, `http://127.0.0.1:8766/callback`, and `http://localhost:6274/oauth/callback`, plus the browser post-logout URL. It emits signed groups and the ASO audience in access tokens only. No client secret is used. Probe/cross-client registrations are created only inside disposable test fixtures.
 
 `oidcSmokeTest` creates a disposable 1 GiB Keycloak with in-memory state, the same image/realm, and a dynamic host port. Browser and verifier use that exact issuer; discovery, signatures, issuer/audience, nonce, userinfo, four distinct subjects/groups, and incorrect PKCE rejection are checked. Containers close on success/failure through Testcontainers; no `.env`, persistent realm, or product database is used. Docker's published ports must be reachable by the test JVM. The shared Keycloak fixture forwards TCP traffic through a temporary `127.0.0.1` port so its HTTP issuer stays on loopback even when the runner itself runs inside Docker and mapped ports use the host gateway. Browser, verifier, and application use the same loopback issuer; the forwarder closes with the fixture. Every explicit `oidcSmokeTest` invocation exercises a fresh provider; successful prior results are not reused. Lifecycle checks require Compose 2.24.4+ for dynamic-port overrides, use a throwaway copy with no `.env`, and remove only their disposable project on exit.
 
@@ -124,13 +124,12 @@ This smoke task verifies the IdP fixture. Separate application integration/E2E c
 
 ## Identity configuration and access
 
-Only `application-development.yaml` supplies the intentionally public local issuer/client secret and group defaults. Select it explicitly with `SPRING_PROFILES_ACTIVE=development`; do not select it for a non-development runtime. Without this profile **all eight settings below are required** and startup fails when they are absent/empty. Standard Spring Security OIDC discovery, code/PKCE, ID-token validation, JWT/JWKS signature/issuer/time/audience validation, and RP-initiated logout are used; there is no Keycloak application library or authentication bypass.
+Only `application-development.yaml` supplies the intentionally public local issuer/client ID and group defaults. Select it explicitly with `SPRING_PROFILES_ACTIVE=development`; do not select it for a non-development runtime. Without this profile **all seven settings below are required** and startup fails when they are absent/empty. Standard Spring Security OIDC discovery, code/PKCE, ID-token validation, JWT/JWKS signature/issuer/time/audience validation, and RP-initiated logout are used; there is no Keycloak application library or authentication bypass.
 
 | Setting                      | Explicit development profile value     | Meaning                                                            |
 | ---------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
 | `ASO_OIDC_ISSUER`            | `http://127.0.0.1:8180/realms/aso-dev` | Exact validated issuer/discovery source                            |
-| `ASO_OIDC_WEB_CLIENT_ID`     | `aso-web`                              | Confidential OIDC browser registration; ID-token audience          |
-| `ASO_OIDC_WEB_CLIENT_SECRET` | `aso-web-secret-local-only`            | Fictitious development client secret                               |
+| `ASO_OIDC_CLIENT_ID`     | `aso`                                  | Shared public browser/MCP registration; ID-token audience          |
 | `ASO_PUBLIC_URL`             | `http://127.0.0.1:8080`                | Canonical URL, no trailing slash; callback/logout and MCP metadata |
 | `ASO_MCP_AUDIENCE`           | `http://127.0.0.1:8080/mcp`            | Required API access-token audience                                 |
 | `ASO_OIDC_GROUPS_CLAIM`      | `groups`                               | Signed token claim containing a list of group strings              |
@@ -145,57 +144,30 @@ Public routes are `/`, `/about`, `/agent-setup`, the `/questions`, `/questions/n
 
 Human-only acceptance/moderation uses browser-session-only, CSRF-protected handlers and shared authorization services; it has no MCP tool. This is a transport/credential boundary, not proof of human presence. A claimed client name, user-agent, or role payload conveys no human/admin authority. The Q&A handlers retain this boundary and shared authorization; see [their contracts](docs/questions-and-answers.md).
 
-For another IdP, explicitly configure these values, provision the browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut`, and register individual MCP clients with exact redirects and the intended resource audience. Separately verify discovery, signatures/issuer/audiences, signed groups, logout, PKCE, resource handling, and each target client. Local Keycloak results do not establish another provider's compatibility.
+For another IdP, explicitly configure these values, provision the browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut`, and add exact MCP callbacks to the same public client registration and the intended resource audience. Separately verify discovery, signatures/issuer/audiences, signed groups, logout, PKCE, resource handling, and each target client. Local Keycloak results do not establish another provider's compatibility.
 
 ### Upgrade an existing local realm without deleting data
 
-Clean fixture imports already include goal 001's clients/logout registration. Goal 000a's existing realm is not re-imported on restart. Apply the additive update once instead of resetting it:
+Clean imports use one public `aso` client. Existing realms are not re-imported on restart. Upgrade their fixture-managed clients without deleting users, subjects, or product data:
 
 ```bash
 ./scripts/keycloak-start.sh
-./scripts/keycloak-configure-identity.sh  # Python 3; local bootstrap admin only
+./scripts/keycloak-configure-identity.sh
 ```
 
-The helper changes only the dedicated MCP client registrations and `aso-web`'s logout redirect, preserving users/subjects and product data. It leaves the probe registration unchanged. It uses provider bootstrap credentials only for local administration; ASO users still use browser code/PKCE, never password grants. If customized, export the actual bootstrap values before running it. Provider-side fixture substitutions `ASO_WEB_CALLBACK`, `ASO_WEB_LOGOUT`, `ASO_MCP_CALLBACK`, and `ASO_MCP_RESOURCE` change exact imported callbacks/logout/resource mappings; these are distinct from ASO runtime settings and must agree with them. The default browser callback is unchanged. Isolated tests substitute their own dynamic callbacks and resource URLs.
+Stop ASO before switching, replace the old client settings with `ASO_OIDC_CLIENT_ID=aso`, restart, and reauthenticate. The helper provisions `aso`, disables only known obsolete fixture-managed registrations, and leaves both volumes and unrelated registrations intact. It can be rerun safely. Export provider-side fixture substitutions `ASO_WEB_CALLBACK`, `ASO_WEB_LOGOUT`, `ASO_MCP_RESOURCE`, `ASO_CODEX_CALLBACK_URL`, and `ASO_MCP_JAM_CALLBACK_URL` when using customized local callbacks/resource URLs; keep runtime settings aligned. Tests use disposable services and never load `.env`.
 
 ### MCP clients and observed compatibility
 
-The development fixture has public, S256-PKCE-only `aso-codex`, `aso-mcpjam`, and `aso-mcp-test` registrations, separate from `aso-web` and the wrong-audience probe. They disable password, implicit, and service-account grants. Each issues an access token with the exact ASO resource URL audience through a dedicated mapper; ID tokens do not get that resource audience. Pre-registration is the supported mechanism: no anonymous dynamic-registration policy is opened. The current local Keycloak processes its audience mapper rather than the `resource` parameter (the experimental resource-indicators feature is not enabled). Both tested clients send the resource URL and ASO enforces its intended audience. Do not claim full RFC 8707 conformance or arbitrary-resource support from this setup.
+Open **Agent setup** from the web navigation. It displays the configured backend MCP URL, shared public client ID, scopes, and tool callbacks. In Angular development on port 4200, the MCP URL still points at the configured backend (8080 by default).
 
-Verified on 2026-10-16: **Codex CLI 0.162.1** and **MCP Jam CLI 5.16.1**, each with Alice and Bob, real login/discovery/PKCE and successful `identity` calls matching the browser IDs. The owner initially replaced goal 001's Claude Code/Cursor checks with MCP Jam. On 2026-10-17 they extended this to goal 006/laptop MVP delivery: use actual Codex and MCP Jam CLI with explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified; actual native testing is deferred beyond this amended MVP.
+The [step-by-step guide](docs/agent-setup.md) explains opening `~/.codex/config.toml`, pasting/saving the copyable TOML block, authenticating with `codex mcp login aso`, reloading Codex, and checking `identity`. Login and optional logout have separate copy controls. MCP Jam uses the same client ID with its own registered callback. Each person signs in individually.
 
-Codex configuration (individual user's private config, not committed token headers):
+Set `ASO_CODEX_CALLBACK_URL` and `ASO_MCP_JAM_CALLBACK_URL` outside development to display ready-to-use examples. The client ID always comes from `ASO_OIDC_CLIENT_ID`. If a callback is missing, the guide keeps the real MCP URL/client ID visible and marks the missing callback. These are public values; setup metadata contains no tokens, bootstrap credentials or private workspace data.
 
-```toml
-[mcp_servers.aso]
-url = "http://127.0.0.1:8080/mcp"
-[mcp_servers.aso.oauth]
-client_id = "aso-codex"
-callback_url = "http://127.0.0.1:8766/callback"
-callback_port = 8766
-```
+The [migration instructions](docs/agent-setup.md#administrator-setup-and-migration) cover converting an existing external registration in place and removing `ASO_OIDC_WEB_CLIENT_ID`, `ASO_OIDC_WEB_CLIENT_SECRET`, `ASO_CODEX_CLIENT_ID`, and `ASO_MCP_JAM_CLIENT_ID`. No aliases are supported. Subjects must stay stable; never merge users by email. [Goal 010](docs/goals/010-public-oidc-and-setup.md) records shared-client verification.
 
-Run `codex mcp login aso --scopes openid,profile,email`, then ask Codex to call only ASO's `identity`. `codex mcp logout aso` clears its OAuth credentials. The exact loopback callback above is registered in the fixture. See [official Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp#oauth-client-registration-and-callbacks).
-
-MCP Jam CLI (uses the Gradle-provisioned Node 24 on PATH if needed):
-
-```bash
-npx --yes @mcpjam/cli@5.16.1 --no-telemetry oauth login \
-  --url http://127.0.0.1:8080/mcp --protocol-version 2025-11-25 \
-  --registration preregistered --client-id aso-mcpjam \
-  --redirect-url http://localhost:6274/oauth/callback \
-  --scopes 'openid profile email' --verify-tools --verify-call-tool identity \
-  --credentials-out /tmp/aso-mcpjam-credentials.json
-npx --yes @mcpjam/cli@5.16.1 --no-telemetry tools call \
-  --url http://127.0.0.1:8080/mcp --credentials-file /tmp/aso-mcpjam-credentials.json \
-  --tool-name identity --tool-args '{}' --validate-response --expect-success
-```
-
-Use a fresh IdP browser session or sign out before testing the second person; an SSO session otherwise retains the first person. MCP Jam writes credentials mode 0600 and redacts them in stdout. Keep those temporary files and raw OAuth diagnostics out of Git and remove them after use. The browser Inspector is optional; the CLI can manage its own callback listener. See [MCP Jam CLI](https://www.mcpjam.com/features/cli).
-
-MCP Jam protocol checks pass for the 2025-11-25 profile. Its stricter OAuth conformance command rejects an HTTP `resource` URI at metadata validation even on loopback; the separate real OAuth login/tool checks succeed. This local HTTP result is not reported as an OAuth conformance pass. Production resource metadata requires HTTPS.
-
-The **Agent setup** page is linked from the web navigation and remains readable before sign-in. It obtains the configured backend MCP URL from `/api/v1/agent-setup`, so Angular on port 4200 still shows port 8080 by default. The [canonical guide](docs/agent-setup.md) supplies the exact recommended paragraph embedded in the jar. Set `ASO_CODEX_CLIENT_ID`, `ASO_CODEX_CALLBACK_URL`, `ASO_MCP_JAM_CLIENT_ID`, and `ASO_MCP_JAM_CALLBACK_URL` for registered clients in a non-development installation; until configured, the page asks users for their exact public registration instead of showing local fixture settings. The development profile supplies its seeded registration values and accepts overrides. These are public client details, never the confidential browser client secret. Native Claude Code/Cursor compatibility remains unverified; the named workflow replays in [goal 006 evidence](docs/goals/006-agent-collaboration.md) used MCP Jam CLI.
+Pre-registration remains supported; anonymous dynamic registration is not enabled. The local Keycloak audience mapper binds tokens to ASO; its experimental resource-indicators feature is not enabled. Local HTTP loopback login/tool success does not establish strict HTTPS/RFC 8707 conformance or another IdP’s compatibility. Earlier native-client evidence and explicitly simulated workflows remain in goals 001/006; native Claude Code/Cursor compatibility remains unverified.
 
 ### Reproducible schema generation
 

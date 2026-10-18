@@ -35,7 +35,7 @@ class OidcBrowserLogin : AutoCloseable {
         browser: Browser,
         issuer: String,
         username: String,
-        client: String = "aso-mcp-test",
+        client: String = "aso",
         resource: String? = null,
     ): JsonNode {
         val verifier = UUID.randomUUID().toString().repeat(2)

@@ -38,23 +38,25 @@ The checked-in [container template](../.env.container.example) lists every appli
 | `ASO_DB_URL` | JDBC URL for reachable PostgreSQL with pgvector, e.g. `jdbc:postgresql://your-private-db:5432/aso` |
 | `ASO_DB_USER`, `ASO_DB_PASSWORD` | Your database credentials; do not use the local-development defaults |
 | `ASO_OIDC_ISSUER` | Exact issuer URL used by discovery and signed tokens, reachable from both application and browser |
-| `ASO_OIDC_WEB_CLIENT_ID`, `ASO_OIDC_WEB_CLIENT_SECRET` | Your confidential browser OIDC registration |
+| `ASO_OIDC_CLIENT_ID` | Your shared public browser/MCP OIDC registration (no client secret) |
 | `ASO_PUBLIC_URL` | Canonical browser origin, without a trailing slash |
 | `ASO_MCP_AUDIENCE` | Required audience in MCP access tokens, normally `<ASO_PUBLIC_URL>/mcp` |
 | `ASO_OIDC_GROUPS_CLAIM` | Signed ID/access-token claim containing group strings, e.g. `groups` |
 | `ASO_OIDC_MEMBER_GROUP`, `ASO_OIDC_ADMIN_GROUP` | Distinct workspace membership and admin groups; admins must also be members |
 
-All eight identity variables must be nonempty; missing identity configuration fails startup. Register the exact browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut` with the provider. Issuer/public URLs require HTTPS except on loopback. Follow the [identity configuration and interoperability requirements](../README.md#identity-configuration-and-access), including signed groups and individual MCP registrations.
+All seven identity variables must be nonempty; missing identity configuration fails startup. Register the exact browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut` with the provider. Issuer/public URLs require HTTPS except on loopback. Follow the [identity configuration and interoperability requirements](../README.md#identity-configuration-and-access), including signed groups and mandatory S256 PKCE; register tool callbacks on the same public client.
 
 Container `127.0.0.1` addresses the container itself. A host's loopback JDBC URL, Keycloak issuer, or LM Studio address cannot be copied into an ordinary bridged container. Use reachable private addresses, or attach the app to an existing private Docker network with `--network` when using container DNS aliases. Keep the issuer identical for browser and application; a separate internal issuer URL would fail validation. The [goal 007 smoke topology](goals/007-evidence.md#live-laptop-collaboration-and-persistence) and the automated image test use a shared namespace for their isolated loopback IdP. They do not configure your external IdP or networking.
+
+For an existing installation, follow the [clean shared-client migration](agent-setup.md#administrator-setup-and-migration): convert the existing browser registration in place, replace the old settings with `ASO_OIDC_CLIENT_ID`, remove the client secret/per-tool IDs, and reauthenticate. Verify stable subjects before switching.
 
 ## Optional configuration
 
 | Variables | Defaults and behavior |
 | --- | --- |
 | `ASO_ADDRESS`, `ASO_PORT` | Image: `0.0.0.0`, `8080`; jar: `127.0.0.1`, `8080` |
-| `ASO_CODEX_CLIENT_ID`, `ASO_CODEX_CALLBACK_URL` | Empty; set both to your registered public Codex client and exact callback |
-| `ASO_MCP_JAM_CLIENT_ID`, `ASO_MCP_JAM_CALLBACK_URL` | Empty; set both to your registered public MCP Jam client and exact callback |
+| `ASO_CODEX_CALLBACK_URL` | Empty; set to the exact Codex callback registered on the shared public client |
+| `ASO_MCP_JAM_CALLBACK_URL` | Empty; set to the exact MCP Jam callback registered on the shared public client |
 | `ASO_RATE_LIMIT_REQUESTS`, `ASO_RATE_LIMIT_WRITES`, `ASO_RATE_LIMIT_WINDOW` | `600`, `120`, `1m`; shared per-user browser/MCP budgets, with `0 < writes <= requests`, window `1s`–`1h` |
 | `ASO_EMBEDDING_ENABLED` | `false`; exact/lexical search remains available with visible degradation |
 | `ASO_EMBEDDING_BASE_URL`, `ASO_EMBEDDING_ALLOWED_HOSTS` | `http://127.0.0.1:1234/v1`, `127.0.0.1,localhost,::1`; configure a container-reachable private model endpoint and its matching allowlist before enabling |
@@ -96,4 +98,4 @@ Increment `ASO_EMBEDDING_PREPARATION_VERSION` and reindex when changing preparat
 ./gradlew --no-daemon imageSmokeTest -PimageUnderTest=aso:0.0.1-SNAPSHOT
 ```
 
-The explicit task requires Docker and an already-built local image; it never pulls an application image implicitly. It uses disposable pgvector and seeded Keycloak, no `.env`, persistent development services, or live embedding provider. It verifies the env-template inventory, non-root runtime, default container bind address, overridden port, health, packaged routes, public configuration, anonymous API rejection, and startup rejection when each of the eight required identity variables is omitted. Reports are under `backend/build/reports/tests/imageSmokeTest/`; fixture-only application logs are under `backend/build/image-smoke/` and are retained by CI. The task is separate from ordinary `check`.
+The explicit task requires Docker and an already-built local image; it never pulls an application image implicitly. It uses disposable pgvector and seeded Keycloak, no `.env`, persistent development services, or live embedding provider. It verifies the env-template inventory, non-root runtime, default container bind address, overridden port, health, packaged routes, public configuration, anonymous API rejection, and startup rejection when each of the seven required identity variables is omitted. Reports are under `backend/build/reports/tests/imageSmokeTest/`; fixture-only application logs are under `backend/build/image-smoke/` and are retained by CI. The task is separate from ordinary `check`.

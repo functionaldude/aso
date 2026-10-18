@@ -68,16 +68,13 @@ class ImageSmokeTest {
                             "ASO_DB_PASSWORD" to database.password,
                             "ASO_PORT" to port.toString(),
                             "ASO_OIDC_ISSUER" to "http://127.0.0.1:8080/realms/aso-dev",
-                            "ASO_OIDC_WEB_CLIENT_ID" to "aso-web",
-                            "ASO_OIDC_WEB_CLIENT_SECRET" to "aso-web-secret-local-only",
+                            "ASO_OIDC_CLIENT_ID" to "aso",
                             "ASO_PUBLIC_URL" to publicUrl,
                             "ASO_MCP_AUDIENCE" to "$publicUrl/mcp",
                             "ASO_OIDC_GROUPS_CLAIM" to "groups",
                             "ASO_OIDC_MEMBER_GROUP" to "aso-members",
                             "ASO_OIDC_ADMIN_GROUP" to "aso-admins",
-                            "ASO_CODEX_CLIENT_ID" to "image-codex",
                             "ASO_CODEX_CALLBACK_URL" to "http://127.0.0.1:8766/callback",
-                            "ASO_MCP_JAM_CLIENT_ID" to "image-mcpjam",
                             "ASO_MCP_JAM_CALLBACK_URL" to "http://localhost:6274/oauth/callback",
                             "ASO_EMBEDDING_ENABLED" to "false",
                             "ASO_EMBEDDING_API_KEY" to "image-smoke-embedding-local-only",
@@ -106,11 +103,10 @@ class ImageSmokeTest {
                             val configuration = json.readTree(setup.body())
                             assertEquals("$publicUrl/mcp", configuration["mcpUrl"].asString())
                             assertEquals(environment["ASO_OIDC_ISSUER"], configuration["issuer"].asString())
-                            assertEquals("image-codex", configuration["codex"]["clientId"].asString())
-                            assertEquals(environment["ASO_CODEX_CALLBACK_URL"], configuration["codex"]["callbackUrl"].asString())
-                            assertEquals("image-mcpjam", configuration["mcpJam"]["clientId"].asString())
-                            assertEquals(environment["ASO_MCP_JAM_CALLBACK_URL"], configuration["mcpJam"]["callbackUrl"].asString())
-                            listOf("ASO_DB_PASSWORD", "ASO_OIDC_WEB_CLIENT_SECRET", "ASO_EMBEDDING_API_KEY").forEach {
+                            assertEquals("aso", configuration["clientId"].asString())
+                            assertEquals(environment["ASO_CODEX_CALLBACK_URL"], configuration["codexCallbackUrl"].asString())
+                            assertEquals(environment["ASO_MCP_JAM_CALLBACK_URL"], configuration["mcpJamCallbackUrl"].asString())
+                            listOf("ASO_DB_PASSWORD", "ASO_EMBEDDING_API_KEY").forEach {
                                 assertFalse(setup.body().contains(environment.getValue(it)), "$it must remain private")
                             }
                             val metadataResponse = get(base, "/.well-known/oauth-protected-resource/mcp")
@@ -122,8 +118,7 @@ class ImageSmokeTest {
                     }
                     listOf(
                         "ASO_OIDC_ISSUER",
-                        "ASO_OIDC_WEB_CLIENT_ID",
-                        "ASO_OIDC_WEB_CLIENT_SECRET",
+                        "ASO_OIDC_CLIENT_ID",
                         "ASO_PUBLIC_URL",
                         "ASO_MCP_AUDIENCE",
                         "ASO_OIDC_GROUPS_CLAIM",

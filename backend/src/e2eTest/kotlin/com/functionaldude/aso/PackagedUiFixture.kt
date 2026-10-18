@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit
 /** Opt-in visual fixtures never read .env or connect to persistent development services. */
 class PackagedUiFixture(
     artifacts: Path,
+    codexCallbackUrl: String? = null,
+    mcpJamCallbackUrl: String? = null,
 ) : AutoCloseable {
     private val database =
         PostgreSQLContainer(DockerImageName.parse(System.getProperty("aso.test.database-image")).asCompatibleSubstituteFor("postgres"))
@@ -25,7 +27,15 @@ class PackagedUiFixture(
     private val embeddings = EmbeddingFixture()
     private val port = ServerSocket(0).use { it.localPort }
     val baseUrl = "http://127.0.0.1:$port"
-    private val keycloak = KeycloakFixture(login.callback, login.callback, "$baseUrl/mcp", "$baseUrl/login/oauth2/code/oidc")
+    private val keycloak =
+        KeycloakFixture(
+            login.callback,
+            login.callback,
+            "$baseUrl/mcp",
+            "$baseUrl/login/oauth2/code/oidc",
+            codexCallback = codexCallbackUrl,
+            mcpJamCallback = mcpJamCallbackUrl,
+        )
     private var application: Process? = null
 
     init {
@@ -45,14 +55,11 @@ class PackagedUiFixture(
             builder.environment().putAll(
                 mapOf(
                     "ASO_OIDC_ISSUER" to keycloak.issuer,
-                    "ASO_OIDC_WEB_CLIENT_ID" to "aso-web",
-                    "ASO_OIDC_WEB_CLIENT_SECRET" to "aso-web-secret-local-only",
+                    "ASO_OIDC_CLIENT_ID" to "aso",
                     "ASO_PUBLIC_URL" to baseUrl,
                     "ASO_MCP_AUDIENCE" to "$baseUrl/mcp",
-                    "ASO_CODEX_CLIENT_ID" to "aso-codex",
-                    "ASO_CODEX_CALLBACK_URL" to login.callback,
-                    "ASO_MCP_JAM_CLIENT_ID" to "aso-mcpjam",
-                    "ASO_MCP_JAM_CALLBACK_URL" to login.callback,
+                    "ASO_CODEX_CALLBACK_URL" to (codexCallbackUrl ?: login.callback),
+                    "ASO_MCP_JAM_CALLBACK_URL" to (mcpJamCallbackUrl ?: login.callback),
                     "ASO_OIDC_GROUPS_CLAIM" to "groups",
                     "ASO_OIDC_MEMBER_GROUP" to "aso-members",
                     "ASO_OIDC_ADMIN_GROUP" to "aso-admins",

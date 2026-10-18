@@ -26,64 +26,130 @@
       <dl>
         <dt>OIDC issuer</dt>
         <dd>{{ value.issuer }}</dd>
+        <dt>Public client ID</dt>
+        <dd>{{ value.clientId }}</dd>
         <dt>Scopes</dt>
         <dd>{{ value.scopes.join(' ') }}</dd>
       </dl>
       <p>
-        Use the exact registered callback and client ID for your installation. Each person signs in
-        separately. Browser sign-in does not authenticate an MCP client.
+        Browser login, Codex, and MCP Jam use the same public client ID. Each person signs in with
+        their own account. Browser sign-in does not authenticate an MCP client.
       </p>
     </section>
 
     <section aria-labelledby="codex-title">
       <h2 id="codex-title">2. Codex <span class="badge">Actual client verified</span></h2>
-      @if (value.codex) {
+      <ol>
+        <li>
+          <strong>Open your Codex configuration.</strong> The default file is
+          <code>~/.codex/config.toml</code>; if you customized <code>CODEX_HOME</code>, use
+          <code>$CODEX_HOME/config.toml</code>. Open or create it in a text editor. On macOS/Linux,
+          this command creates the directory and opens the file in Nano:
+          <div class="copy-block">
+            <label for="codex-open">Open config.toml</label>
+            <textarea
+              #codexOpenField
+              id="codex-open"
+              readonly
+              rows="2"
+              [value]="codexOpenConfig"
+            ></textarea>
+            <button
+              mat-stroked-button
+              (click)="copy('codex-open', codexOpenConfig, codexOpenField)"
+            >
+              Copy editor command
+            </button>
+            <span role="status" aria-live="polite">{{ copied()['codex-open'] }}</span>
+          </div>
+        </li>
+        <li>
+          <strong>Paste this TOML configuration and save.</strong> If
+          <code>[mcp_servers.aso]</code> or <code>[mcp_servers.aso.oauth]</code> already exists,
+          update that table instead of adding a duplicate. Keep your other settings. In Nano, press
+          <kbd>Ctrl+O</kbd>, <kbd>Enter</kbd>, then <kbd>Ctrl+X</kbd> to save and exit.
+          @if (!value.codexCallbackUrl) {
+            <p class="notice" role="note">
+              Replace <code>YOUR_EXACT_REGISTERED_CALLBACK_URL</code> before signing in. Your
+              administrator must register the exact callback reported by Codex on this same public
+              client and set <code>ASO_CODEX_CALLBACK_URL</code> for this installation. The MCP URL
+              and client ID below are already configured.
+            </p>
+          }
+          <div class="copy-block">
+            <label for="codex-config">Codex configuration (TOML)</label>
+            <textarea
+              #codexField
+              id="codex-config"
+              readonly
+              rows="9"
+              [value]="codexConfig(value)"
+            ></textarea>
+            <button mat-stroked-button (click)="copy('codex', codexConfig(value), codexField)">
+              Copy Codex configuration
+            </button>
+            <span role="status" aria-live="polite">{{ copied()['codex'] }}</span>
+          </div>
+          <p>
+            The callback must match the identity provider registration. For a fixed loopback port,
+            set <code>callback_port</code> to the same port as <code>callback_url</code>; the URL
+            alone does not choose Codex’s listener port. Provider metadata can affect the callback
+            path, so register the exact URL Codex reports.
+          </p>
+        </li>
+        <li>
+          <strong>Sign in from a terminal.</strong> Complete the browser login with your own ASO
+          account. This authenticates your MCP connection.
+          <div class="copy-block">
+            <label for="codex-login">Sign in to ASO</label>
+            <textarea
+              #codexLoginField
+              id="codex-login"
+              readonly
+              rows="1"
+              [value]="codexLogin"
+            ></textarea>
+            <button mat-stroked-button (click)="copy('codex-login', codexLogin, codexLoginField)">
+              Copy login command
+            </button>
+            <span role="status" aria-live="polite">{{ copied()['codex-login'] }}</span>
+          </div>
+        </li>
+        <li>
+          <strong>Restart or reload Codex and check the connection.</strong> Use
+          <code>/mcp</code> to check available servers, then ask:
+          <q>Call only ASO’s identity tool and show my name.</q>
+          Confirm the expected person before using other tools. The desktop app, CLI, and IDE
+          extension share this configuration on the same Codex host.
+        </li>
+      </ol>
+      <details>
+        <summary>Sign out or change accounts</summary>
         <p>
-          Add this to your private Codex configuration. The callback must match the provider
-          registration.
+          To sign out of this MCP connection, run the command below. To change accounts, also sign
+          out of the identity provider in your browser, then log in again and recheck
+          <code>identity</code>.
         </p>
         <div class="copy-block">
-          <label for="codex-config">Codex configuration</label>
+          <label for="codex-logout">Optional logout</label>
           <textarea
-            #codexField
-            id="codex-config"
+            #codexLogoutField
+            id="codex-logout"
             readonly
-            rows="8"
-            [value]="codexConfig(value)"
+            rows="1"
+            [value]="codexLogout"
           ></textarea>
-          <button mat-stroked-button (click)="copy('codex', codexConfig(value), codexField)">
-            Copy Codex configuration
+          <button mat-stroked-button (click)="copy('codex-logout', codexLogout, codexLogoutField)">
+            Copy logout command
           </button>
-          <span role="status" aria-live="polite">{{ copied()['codex'] }}</span>
+          <span role="status" aria-live="polite">{{ copied()['codex-logout'] }}</span>
         </div>
-        <div class="copy-block">
-          <label for="codex-login">Login and logout</label>
-          <textarea
-            #codexLoginField
-            id="codex-login"
-            readonly
-            rows="3"
-            [value]="codexLogin(value)"
-          ></textarea>
-          <button
-            mat-stroked-button
-            (click)="copy('codex-login', codexLogin(value), codexLoginField)"
-          >
-            Copy Codex commands
-          </button>
-          <span role="status" aria-live="polite">{{ copied()['codex-login'] }}</span>
-        </div>
-      } @else {
-        <p>
-          Ask your administrator for the public Codex client ID and exact registered callback before
-          connecting.
-        </p>
-      }
+      </details>
     </section>
 
     <section aria-labelledby="jam-title">
       <h2 id="jam-title">3. MCP Jam CLI <span class="badge">Actual client verified</span></h2>
-      @if (value.mcpJam) {
+      @if (value.mcpJamCallbackUrl) {
         <p>
           Complete the browser login with your own account. Keep the resulting credentials file
           private and out of Git.
@@ -104,8 +170,8 @@
         </div>
       } @else {
         <p>
-          Ask your administrator for the public MCP Jam client ID and exact registered callback
-          before connecting.
+          Ask your administrator to register the MCP Jam callback on the shared public client and
+          configure ASO_MCP_JAM_CALLBACK_URL before connecting.
         </p>
       }
       <p>

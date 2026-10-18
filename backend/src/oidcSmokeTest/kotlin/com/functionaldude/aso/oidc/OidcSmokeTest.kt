@@ -38,8 +38,8 @@ import kotlin.test.assertTrue
 class OidcSmokeTest {
     private val json = JsonMapper.builder().build()
     private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
-    private val fixtureCallback = "\${ASO_PROBE_CALLBACK:http://127.0.0.1:8765/oidc/callback}"
-    private val client = "aso-dev-probe"
+    private val client = "aso"
+    private val resource = "http://127.0.0.1:8080/mcp"
     private val decoder = Base64.getUrlDecoder()
 
     @Test
@@ -50,7 +50,7 @@ class OidcSmokeTest {
         val realm = json.readTree(Files.readString(Path.of(System.getProperty("aso.test.realm"))))
         assertEquals("aso-dev", realm["realm"].asString())
         val clients = realm["clients"].associateBy { it["clientId"].asString() }
-        assertEquals(setOf("aso-web", client, "aso-codex", "aso-mcpjam", "aso-mcp-test"), clients.keys)
+        assertEquals(setOf("aso"), clients.keys)
         clients.values.forEach {
             assertEquals(
                 setOf("basic", "profile", "email"),
@@ -66,19 +66,16 @@ class OidcSmokeTest {
             assertFalse(it["serviceAccountsEnabled"].asBoolean())
             assertEquals("S256", it["attributes"]["pkce.code.challenge.method"].asString())
         }
+        assertTrue(clients.getValue("aso")["publicClient"].asBoolean())
+        assertFalse(clients.getValue("aso").has("secret"))
         assertEquals(
-            listOf(fixtureCallback),
+            listOf(
+                "\${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}",
+                "\${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}",
+                "\${ASO_MCP_JAM_CALLBACK_URL:http://localhost:6274/oauth/callback}",
+            ),
             clients
-                .getValue(client)["redirectUris"]
-                .asSequence()
-                .map { it.asString() }
-                .toList(),
-        )
-        assertFalse(clients.getValue("aso-web")["publicClient"].asBoolean())
-        assertEquals(
-            listOf("\${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}"),
-            clients
-                .getValue("aso-web")["redirectUris"]
+                .getValue("aso")["redirectUris"]
                 .asSequence()
                 .map { it.asString() }
                 .toList(),
@@ -92,7 +89,7 @@ class OidcSmokeTest {
         Files.deleteIfExists(artifacts.resolve("keycloak.log"))
         Files.deleteIfExists(artifacts.resolve("result.txt"))
         LoopbackCallback().use { callback ->
-            KeycloakFixture(callback.url).use { keycloak ->
+            KeycloakFixture(callback.url, callback.url).use { keycloak ->
                 try {
                     keycloak.start()
                     val issuer = keycloak.issuer
@@ -107,6 +104,38 @@ class OidcSmokeTest {
                     ).forEach { (name, expected) -> assertEquals(expected, discovery[name].asString()) }
                     assertTrue(discovery["code_challenge_methods_supported"].any { it.asString() == "S256" })
                     val keys = get(discovery["jwks_uri"].asString())["keys"]
+                    val authorization =
+                        mapOf(
+                            "client_id" to client,
+                            "redirect_uri" to callback.url,
+                            "response_type" to "code",
+                            "scope" to "openid",
+                            "state" to UUID.randomUUID().toString(),
+                        )
+                    val noPkce =
+                        http.send(
+                            HttpRequest.newBuilder(URI(discovery["authorization_endpoint"].asString() + "?" + form(authorization))).build(),
+                            HttpResponse.BodyHandlers.discarding(),
+                        )
+                    assertEquals(302, noPkce.statusCode())
+                    val errorRedirect = noPkce.headers().firstValue("Location").orElseThrow()
+                    assertTrue(errorRedirect.startsWith(callback.url + "?"))
+                    assertTrue(errorRedirect.contains("error=invalid_request"), "Missing PKCE must return an OAuth error")
+                    assertFalse(errorRedirect.contains("code="), "Missing PKCE must never issue a code")
+                    val unregistered =
+                        authorization +
+                            mapOf(
+                                "redirect_uri" to "http://127.0.0.1:1/not-registered",
+                                "code_challenge" to "a".repeat(43),
+                                "code_challenge_method" to "S256",
+                            )
+                    val badRedirect =
+                        http.send(
+                            HttpRequest.newBuilder(URI(discovery["authorization_endpoint"].asString() + "?" + form(unregistered))).build(),
+                            HttpResponse.BodyHandlers.discarding(),
+                        )
+                    assertEquals(400, badRedirect.statusCode())
+                    assertTrue(badRedirect.headers().firstValue("Location").isEmpty, "An unregistered callback must not receive a redirect")
                     Playwright.create().use { playwright ->
                         playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(true)).use { browser ->
                             val subjects = mutableSetOf<String>()
@@ -116,7 +145,7 @@ class OidcSmokeTest {
                                 assertEquals(200, response.statusCode(), "Code exchange failed for $username")
                                 val tokens = json.readTree(response.body())
                                 assertEquals("Bearer", tokens["token_type"].asString())
-                                val access = verify(tokens["access_token"].asString(), keys, issuer, client)
+                                val access = verify(tokens["access_token"].asString(), keys, issuer, resource)
                                 val id = verify(tokens["id_token"].asString(), keys, issuer, client)
                                 assertEquals(login.nonce, id["nonce"].asString())
                                 assertEquals(client, access["azp"].asString())

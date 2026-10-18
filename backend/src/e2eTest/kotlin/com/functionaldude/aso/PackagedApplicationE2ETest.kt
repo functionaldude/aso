@@ -61,13 +61,10 @@ class PackagedApplicationE2ETest {
                     builder.environment().putAll(
                         mapOf(
                             "ASO_OIDC_ISSUER" to issuer,
-                            "ASO_OIDC_WEB_CLIENT_ID" to "aso-web",
-                            "ASO_OIDC_WEB_CLIENT_SECRET" to "aso-web-secret-local-only",
+                            "ASO_OIDC_CLIENT_ID" to "aso",
                             "ASO_PUBLIC_URL" to baseUrl,
                             "ASO_MCP_AUDIENCE" to "$baseUrl/mcp",
-                            "ASO_CODEX_CLIENT_ID" to "aso-codex",
                             "ASO_CODEX_CALLBACK_URL" to login.callback,
-                            "ASO_MCP_JAM_CLIENT_ID" to "aso-mcpjam",
                             "ASO_MCP_JAM_CALLBACK_URL" to login.callback,
                             "ASO_OIDC_GROUPS_CLAIM" to "groups",
                             "ASO_OIDC_MEMBER_GROUP" to "aso-members",
@@ -264,14 +261,21 @@ class PackagedApplicationE2ETest {
             val details = context.request().get("$base/api/v1/agent-setup")
             assertEquals(200, details.status())
             val body = details.text()
-            assertFalse(body.contains("aso-web-secret-local-only"))
+            assertFalse(body.contains("clientSecret"))
+            assertFalse(body.contains("client_secret"))
             assertFalse(body.contains("idp-admin-local-only"))
             assertFalse(body.contains("access_token"))
             val setup = json.readTree(body)
             assertEquals("$base/mcp", setup["mcpUrl"].asString())
-            assertEquals("aso-codex", setup["codex"]["clientId"].asString())
+            assertEquals("aso", setup["clientId"].asString())
             assertThat(page.locator("#mcp-url")).hasValue("$base/mcp")
-            assertTrue(page.locator("#codex-config").inputValue().contains("$base/mcp"))
+            val codexConfig = page.locator("#codex-config").inputValue()
+            assertTrue(codexConfig.contains("$base/mcp"))
+            assertTrue(codexConfig.contains("scopes = [\"openid\", \"profile\", \"email\"]"))
+            assertTrue(codexConfig.contains("client_id = \"aso\""))
+            assertEquals("codex mcp login aso", page.locator("#codex-login").inputValue())
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy Codex configuration")).click()
+            assertEquals(codexConfig, page.evaluate("navigator.clipboard.readText()"))
             val paragraph = setup["recommendedParagraph"].asString()
             val source = Files.readString(Path.of(System.getProperty("aso.test.agent-guide")))
             assertTrue(source.contains("```markdown\n$paragraph\n```"))

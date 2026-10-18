@@ -1,4 +1,4 @@
-"""Development-only additive client update. Never resets the realm, users, or product database."""
+"""Development-only shared public-client upgrade. Never resets the realm, users, or product database."""
 import json
 import os
 import re
@@ -36,23 +36,27 @@ try:
     # Resolve the same labelled development defaults Keycloak would resolve during initial import.
     text = re.sub(r'\$\{([^:}]+):([^}]+)\}', lambda m: os.environ.get(m[1]) or m[2], text)
     clients = json.loads(text)['clients']
+    path = '/admin/realms/aso-dev/clients'
     for client in clients:
-        if client['clientId'] == 'aso-dev-probe':
-            continue
-        path = '/admin/realms/aso-dev/clients'
         matches = send(path + '?clientId=' + urllib.parse.quote(client['clientId']), bearer=token)
         if matches:
             current = send(path + '/' + matches[0]['id'], bearer=token)
-            if client['clientId'] == 'aso-web':
-                # Preserve existing redirects/customizations; add only the logout URI used by ASO.
-                current.setdefault('attributes', {})['post.logout.redirect.uris'] = client['attributes']['post.logout.redirect.uris']
-            else:
-                # These dedicated development registrations are managed by the fixture.
-                current.update(client)
+            current.update(client)
+            # A previously confidential registration must not retain a configured secret.
+            current.pop('secret', None)
             send(path + '/' + current['id'], current, 'PUT', token)
         else:
             send(path, client, 'POST', token)
-        print('Configured local client:', client['clientId'])
+        print('Configured local public client:', client['clientId'])
+    # Only known obsolete development fixtures are disabled; unrelated registrations are untouched.
+    for obsolete in ('aso-web', 'aso-codex', 'aso-mcpjam', 'aso-mcp-test', 'aso-dev-probe'):
+        matches = send(path + '?clientId=' + urllib.parse.quote(obsolete), bearer=token)
+        for match in matches:
+            current = send(path + '/' + match['id'], bearer=token)
+            if current.get('enabled', True):
+                current['enabled'] = False
+                send(path + '/' + current['id'], current, 'PUT', token)
+                print('Disabled obsolete local client:', obsolete)
 except Exception as failure:
     # Never print an HTTP response body, token, password, or credential-bearing request.
     raise SystemExit(f'Local Keycloak client configuration failed ({type(failure).__name__}). Check service readiness and bootstrap credentials.') from None

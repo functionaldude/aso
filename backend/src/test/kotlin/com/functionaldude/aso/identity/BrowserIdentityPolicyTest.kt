@@ -17,7 +17,6 @@ class BrowserIdentityPolicyTest {
         IdentitySettings(
             "https://idp.example.invalid",
             "web",
-            "secret",
             "https://aso.example.invalid",
             "https://aso.example.invalid/mcp",
             "groups",

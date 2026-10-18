@@ -98,208 +98,24 @@
   ],
   "clients": [
     {
-      "clientId": "aso-web",
-      "name": "aso-web (LOCAL DEVELOPMENT ONLY)",
+      "clientId": "aso",
+      "name": "ASO browser and MCP (LOCAL DEVELOPMENT ONLY)",
       "enabled": true,
       "protocol": "openid-connect",
-      "publicClient": false,
+      "publicClient": true,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}"
+        "${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}",
+        "${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}",
+        "${ASO_MCP_JAM_CALLBACK_URL:http://localhost:6274/oauth/callback}"
       ],
       "webOrigins": [],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "${ASO_WEB_LOGOUT:http://127.0.0.1:8080/?signedOut}"
-      },
-      "defaultClientScopes": [
-        "basic",
-        "profile",
-        "email"
-      ],
-      "protocolMappers": [
-        {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "full.path": "false",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ],
-      "secret": "aso-web-secret-local-only"
-    },
-    {
-      "clientId": "aso-dev-probe",
-      "name": "aso-dev-probe (LOCAL DEVELOPMENT ONLY)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "${ASO_PROBE_CALLBACK:http://127.0.0.1:8765/oidc/callback}"
-      ],
-      "webOrigins": [],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "defaultClientScopes": [
-        "basic",
-        "profile",
-        "email"
-      ],
-      "protocolMappers": [
-        {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "full.path": "false",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "probe audience",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "aso-dev-probe",
-            "id.token.claim": "false",
-            "access.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "aso-codex",
-      "name": "aso-codex (LOCAL DEVELOPMENT ONLY)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "http://127.0.0.1:8766/callback"
-      ],
-      "webOrigins": [],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "defaultClientScopes": [
-        "basic",
-        "profile",
-        "email"
-      ],
-      "protocolMappers": [
-        {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "full.path": "false",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "ASO resource audience",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.custom.audience": "${ASO_MCP_RESOURCE:http://127.0.0.1:8080/mcp}",
-            "id.token.claim": "false",
-            "access.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "aso-mcpjam",
-      "name": "aso-mcpjam (LOCAL DEVELOPMENT ONLY)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "http://localhost:6274/oauth/callback"
-      ],
-      "webOrigins": [],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "defaultClientScopes": [
-        "basic",
-        "profile",
-        "email"
-      ],
-      "protocolMappers": [
-        {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "full.path": "false",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "ASO resource audience",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.custom.audience": "${ASO_MCP_RESOURCE:http://127.0.0.1:8080/mcp}",
-            "id.token.claim": "false",
-            "access.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "aso-mcp-test",
-      "name": "aso-mcp-test (LOCAL DEVELOPMENT ONLY)",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "${ASO_MCP_CALLBACK:http://127.0.0.1:8767/oidc/callback}"
-      ],
-      "webOrigins": [],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
         "basic",
