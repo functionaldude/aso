@@ -12,7 +12,7 @@ def send(path, data=None, method=None, bearer=None):
     headers = {}
     if bearer:
         headers['Authorization'] = 'Bearer ' + bearer
-    if isinstance(data, dict):
+    if isinstance(data, (dict, list)):
         data = json.dumps(data).encode()
         headers['Content-Type'] = 'application/json'
     elif isinstance(data, bytes):
@@ -35,8 +35,10 @@ try:
         text = fixture.read()
     # Resolve the same labelled development defaults Keycloak would resolve during initial import.
     text = re.sub(r'\$\{([^:}]+):([^}]+)\}', lambda m: os.environ.get(m[1]) or m[2], text)
-    clients = json.loads(text)['clients']
+    seed = json.loads(text)
+    clients = seed['clients']
     path = '/admin/realms/aso-dev/clients'
+    scopes = {scope['name']: scope['id'] for scope in send('/admin/realms/aso-dev/client-scopes', bearer=token)}
     for client in clients:
         matches = send(path + '?clientId=' + urllib.parse.quote(client['clientId']), bearer=token)
         if matches:
@@ -47,7 +49,19 @@ try:
             send(path + '/' + current['id'], current, 'PUT', token)
         else:
             send(path, client, 'POST', token)
+        client_id = send(path + '?clientId=' + urllib.parse.quote(client['clientId']), bearer=token)[0]['id']
+        # Client updates do not reliably replace scope associations; bind the built-in scope explicitly.
+        for scope in client.get('optionalClientScopes', []):
+            send(path + '/' + client_id + '/optional-client-scopes/' + scopes[scope], method='PUT', bearer=token)
         print('Configured local public client:', client['clientId'])
+    # Seeded imports need an explicit mapping for the realm's offline-access role.
+    # Add only fixture-declared roles to existing seeded subjects; preserve all other mappings.
+    existing_users = {user['id'] for user in send('/admin/realms/aso-dev/users?max=1000', bearer=token)}
+    for user in seed['users']:
+        if user['id'] in existing_users:
+            roles = [send('/admin/realms/aso-dev/roles/' + urllib.parse.quote(role, safe=''), bearer=token) for role in user.get('realmRoles', [])]
+            if roles:
+                send('/admin/realms/aso-dev/users/' + user['id'] + '/role-mappings/realm', roles, 'POST', token)
     # Only known obsolete development fixtures are disabled; unrelated registrations are untouched.
     for obsolete in ('aso-web', 'aso-codex', 'aso-mcpjam', 'aso-mcp-test', 'aso-dev-probe'):
         matches = send(path + '?clientId=' + urllib.parse.quote(obsolete), bearer=token)

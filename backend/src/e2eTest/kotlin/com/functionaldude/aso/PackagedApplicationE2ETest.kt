@@ -7,6 +7,7 @@ import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
+import com.microsoft.playwright.Route
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.AriaRole
 import com.microsoft.playwright.options.RequestOptions
@@ -250,6 +251,11 @@ class PackagedApplicationE2ETest {
         browser.newContext(Browser.NewContextOptions().setViewportSize(1440, 1000)).use { context ->
             context.grantPermissions(listOf("clipboard-read", "clipboard-write"))
             val page = context.newPage()
+
+            fun capture(name: String) {
+                page.evaluate("document.activeElement?.blur(); window.scrollTo(0, 0)")
+                page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve(name)).setFullPage(true))
+            }
             val errors = mutableListOf<String>()
             page.onPageError { errors.add(it) }
             page.navigate(base)
@@ -275,28 +281,60 @@ class PackagedApplicationE2ETest {
             assertThat(page.locator("#mcp-url")).hasValue("$base/mcp")
             val codexConfig = page.locator("#codex-config").inputValue()
             assertTrue(codexConfig.contains("$base/mcp"))
-            assertTrue(codexConfig.contains("scopes = [\"openid\", \"profile\", \"email\"]"))
+            assertTrue(codexConfig.contains("scopes = [\"openid\", \"profile\", \"email\", \"offline_access\"]"))
             assertTrue(codexConfig.contains("client_id = \"aso\""))
             assertTrue(codexConfig.contains("callback_url = \"http://127.0.0.1:8766/callback\"\ncallback_port = 8766"))
             assertEquals("codex mcp login aso", page.locator("#codex-login").inputValue())
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy Codex configuration")).click()
             assertEquals(codexConfig, page.evaluate("navigator.clipboard.readText()"))
+            assertEquals(
+                listOf("openid", "profile", "email", "offline_access"),
+                setup["scopes"].asSequence().map { it.asString() }.toList(),
+            )
+            val codexTab = page.getByRole(AriaRole.TAB, Page.GetByRoleOptions().setName("Codex").setExact(true))
+            val claudeTab = page.getByRole(AriaRole.TAB, Page.GetByRoleOptions().setName("Claude Code").setExact(true))
+            val cursorTab = page.getByRole(AriaRole.TAB, Page.GetByRoleOptions().setName("Cursor").setExact(true))
+            assertThat(codexTab).hasAttribute("aria-selected", "true")
+            codexTab.focus()
+            codexTab.press("ArrowRight")
+            assertThat(claudeTab).isFocused()
+            claudeTab.press("Enter")
+            assertThat(claudeTab).hasAttribute("aria-selected", "true")
+            assertThat(page.locator("#claude-config")).isVisible()
+            assertEquals("claude mcp login aso", page.locator("#claude-login").inputValue())
+            assertEquals("@AGENTS.md", page.locator("#claude-import").inputValue())
+            val claudeCommand = page.locator("#claude-config").inputValue()
+            assertTrue(claudeCommand.contains("openid profile email offline_access"))
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy Claude Code command").setExact(true)).click()
+            assertEquals(claudeCommand, page.evaluate("navigator.clipboard.readText()"))
+            capture("agent-setup-claude-desktop.png")
+            claudeTab.press("ArrowRight")
+            assertThat(cursorTab).isFocused()
+            cursorTab.press("Enter")
+            assertThat(cursorTab).hasAttribute("aria-selected", "true")
+            val cursorConfig = page.locator("#cursor-config").inputValue()
+            val cursorServer = json.readTree(cursorConfig)["mcpServers"]["aso"]
+            assertEquals("$base/mcp", cursorServer["url"].asString())
+            assertEquals("aso", cursorServer["auth"]["CLIENT_ID"].asString())
+            assertEquals(setup["scopes"], cursorServer["auth"]["scopes"])
+            assertFalse(cursorServer["auth"].has("CLIENT_SECRET"))
+            page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy Cursor configuration")).click()
+            assertEquals(cursorConfig, page.evaluate("navigator.clipboard.readText()"))
+            capture("agent-setup-cursor-desktop.png")
+            codexTab.click()
             val paragraph = setup["recommendedParagraph"].asString()
             val source = Files.readString(Path.of(System.getProperty("aso.test.agent-guide")))
             assertTrue(source.contains("```markdown\n$paragraph\n```"))
             assertEquals(paragraph, page.locator("#recommended-paragraph").inputValue())
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy recommended paragraph")).click()
             assertThat(
-                page.getByRole(AriaRole.STATUS).filter(
-                    com.microsoft.playwright.Locator
-                        .FilterOptions()
-                        .setHasText("Copied to clipboard."),
-                ),
-            ).isVisible()
+                page.locator("#recommended-paragraph").locator("..").getByRole(AriaRole.STATUS),
+            ).hasText("Copied to clipboard.")
             assertEquals(paragraph, page.evaluate("navigator.clipboard.readText()"))
-            page.evaluate(
-                "Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: () => Promise.reject(new Error('blocked'))}})",
-            )
+            val blockedClipboard =
+                "Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: () => Promise.reject(new Error('blocked'))}})"
+            page.addInitScript(blockedClipboard)
+            page.evaluate(blockedClipboard)
             val connectionHelp = page.getByText("Connection details and callbacks", Page.GetByTextOptions().setExact(true))
             connectionHelp.click()
             page.getByRole(AriaRole.BUTTON, Page.GetByRoleOptions().setName("Copy MCP URL")).click()
@@ -314,12 +352,49 @@ class PackagedApplicationE2ETest {
                 ),
             )
             connectionHelp.click()
-            page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("agent-setup-desktop.png")).setFullPage(true))
+            capture("agent-setup-desktop.png")
             page.setViewportSize(390, 844)
             page.reload()
             assertThat(page.getByRole(AriaRole.HEADING, Page.GetByRoleOptions().setName("Agent setup"))).isVisible()
             assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
-            page.screenshot(Page.ScreenshotOptions().setPath(artifacts.resolve("agent-setup-mobile.png")).setFullPage(true))
+            capture("agent-setup-mobile.png")
+            for ((name, file, field) in listOf(
+                Triple("Claude Code", "claude", "#claude-config"),
+                Triple("Cursor", "cursor", "#cursor-config"),
+            )) {
+                page.getByRole(AriaRole.TAB, Page.GetByRoleOptions().setName(name).setExact(true)).click()
+                assertThat(page.locator(field)).isVisible()
+                assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") as Boolean)
+                capture("agent-setup-$file-mobile.png")
+                val block = page.locator(field).locator("..")
+                block.getByRole(AriaRole.BUTTON).click()
+                assertThat(block.getByRole(AriaRole.STATUS)).containsText("Text selected")
+                assertThat(page.locator(field)).isFocused()
+                assertEquals(
+                    page.locator(field).inputValue(),
+                    page.evaluate(
+                        "document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd)",
+                    ),
+                )
+            }
+            val syntheticId = "team's \"memory\" \$(printf expanded) `printf expanded` \$ASO_SHELL_ESCAPE_TEST \\path"
+            page.route("**/api/v1/agent-setup") { route ->
+                val synthetic = json.readTree(body) as tools.jackson.databind.node.ObjectNode
+                synthetic.put("clientId", syntheticId)
+                route.fulfill(
+                    Route.FulfillOptions().setContentType("application/json").setBody(json.writeValueAsString(synthetic)),
+                )
+            }
+            page.reload()
+            page.getByRole(AriaRole.TAB, Page.GetByRoleOptions().setName("Claude Code").setExact(true)).click()
+            val quotedCommand = page.locator("#claude-config").inputValue()
+            // set -- parses arguments without running Claude. Only synthetic, harmless expansions are present.
+            val shell = ProcessBuilder("/bin/sh", "-c", "set -- $quotedCommand\nprintf '%s' \"\$5\"").start()
+            val parsed = json.readTree(shell.inputStream.bufferedReader().readText())
+            assertEquals(0, shell.waitFor())
+            assertEquals(syntheticId, parsed["oauth"]["clientId"].asString())
+            assertEquals(8767, parsed["oauth"]["callbackPort"].asInt())
+            assertEquals("$base/mcp", parsed["url"].asString())
             assertTrue(errors.isEmpty(), errors.joinToString("\n"))
         }
     }
