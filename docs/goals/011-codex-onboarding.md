@@ -1,6 +1,6 @@
 # 011 — Simpler Codex onboarding
 
-Status: Complete — implementation and local verification finished; PR open for review
+Status: Complete — merged; post-merge CI repair evidence recorded below
 
 ## Dependencies and prerequisites
 
@@ -60,3 +60,13 @@ MCP Jam CLI **5.16.1** separately completed real listener/PKCE login, tool disco
 The probe used the packaged jar, disposable PostgreSQL/Keycloak and private temporary client configuration/credential storage. Temporary credentials, the private model-login copy and raw client diagnostics were removed. Owner configuration, persistent services and volumes were untouched. Sanitized results and automated logs remain under ignored `backend/build/e2e/goal-011/`.
 
 Implementation commit `d827346` is delivered in [PR #14](https://github.com/functionaldude/aso/pull/14). Another IdP and remote/proxy Codex are not verified. No merge, image publication or deployment was performed.
+
+
+## Post-merge CI repair — 2026-10-18
+
+The master run for merge commit `111860f` failed in the [packaged browser job](https://github.com/functionaldude/aso/actions/runs/39139387668/job/117710480865). The downloaded JUnit report shows Playwright strict-mode ambiguity after reloading a question: the whole-question status locator matched both the persisted “Encounter recorded” message and an independently loading “Loading context…” message. The PR run passed, but its faster request timing did not expose this overlap. OIDC, lifecycle and integration checks had passed; image build/publication were skipped after the browser failure.
+
+The owner authorized committing this repair directly to master. Scope the persisted-encounter assertion to the existing accessible “question encounters” region. The browser regression now holds the real question-context request during reload, verifies that its loading status overlaps the persisted encounter, then resumes the request and verifies loading completes. Preserve retry IDs/counts, accessible status messages, strict locator checks and existing timeouts. No production behavior or authentication configuration changes.
+
+- Before the fix, the controlled overlap reproduced the exact two-element strict-mode error locally with `./gradlew --no-daemon :backend:e2eTest --tests com.functionaldude.aso.PackagedApplicationE2ETest`.
+- `./gradlew --no-daemon spotlessApply check bootJar e2eTest`: passed with Java 25.0.4.1 / Gradle 9.2.1. Both packaged browser suites pass with the controlled overlap; default unit/lint/format/build checks pass (unchanged unit tasks reused valid results). `git diff --check` also passes. The [master CI history](https://github.com/functionaldude/aso/actions?query=branch%3Amaster) records the fresh Linux verification/publication run after this repair is pushed.

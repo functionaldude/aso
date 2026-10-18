@@ -1263,8 +1263,33 @@ class PackagedApplicationE2ETest {
                 assertThat(ownerQuestion).containsText("All time: 1 encounters · 1 distinct developers")
                 assertEquals(2, requests.size)
                 assertEquals(requests[0], requests[1])
-                owner.reload()
-                assertThat(ownerQuestion.getByRole(AriaRole.STATUS)).containsText("Encounter recorded")
+                // Context loads independently; keep its status visible while checking the persisted encounter.
+                val commentsPath = "**/api/v1/content/question/$q/comments"
+                val pendingComments = mutableListOf<com.microsoft.playwright.Route>()
+                owner.route(commentsPath) { pendingComments.add(it) }
+                val questionComments =
+                    ownerQuestion.getByRole(
+                        AriaRole.REGION,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("Comments and context"),
+                    )
+                val encounters =
+                    ownerQuestion.getByRole(
+                        AriaRole.REGION,
+                        com.microsoft.playwright.Locator
+                            .GetByRoleOptions()
+                            .setName("question encounters"),
+                    )
+                try {
+                    owner.reload()
+                    assertThat(questionComments.getByRole(AriaRole.STATUS)).hasText("Loading context…")
+                    assertThat(encounters.getByRole(AriaRole.STATUS)).containsText("Encounter recorded")
+                } finally {
+                    pendingComments.forEach { it.resume() }
+                    owner.unroute(commentsPath)
+                }
+                assertThat(questionComments.getByRole(AriaRole.STATUS)).hasCount(0)
                 ownerQuestion
                     .getByRole(
                         AriaRole.BUTTON,
