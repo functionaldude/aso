@@ -1,6 +1,6 @@
 # 011 — Simpler Codex onboarding
 
-Status: Complete — implementation and local verification finished; PR delivery in progress
+Status: Complete — implementation and local verification finished; PR open for review
 
 ## Dependencies and prerequisites
 
@@ -33,7 +33,7 @@ Run `check bootJar`, `oidcSmokeTest`, `integrationTest`, `e2eTest`, disposable l
 
 ## Progress and blockers
 
-Implementation and local verification finished on `codex/goal-011-codex-onboarding`. Preparing the pull request; its Linux checks will report CI results separately.
+Implementation and local verification finished on `codex/goal-011-codex-onboarding`, delivered through [PR #14](https://github.com/functionaldude/aso/pull/14). Linux verification is reported by the [PR checks](https://github.com/functionaldude/aso/pull/14/checks).
 
 ## Completion evidence
 
@@ -59,4 +59,4 @@ MCP Jam CLI **5.16.1** separately completed real listener/PKCE login, tool disco
 
 The probe used the packaged jar, disposable PostgreSQL/Keycloak and private temporary client configuration/credential storage. Temporary credentials, the private model-login copy and raw client diagnostics were removed. Owner configuration, persistent services and volumes were untouched. Sanitized results and automated logs remain under ignored `backend/build/e2e/goal-011/`.
 
-Another IdP and remote/proxy Codex are not verified. No merge, image publication or deployment was performed.
+Implementation commit `d827346` is delivered in [PR #14](https://github.com/functionaldude/aso/pull/14). Another IdP and remote/proxy Codex are not verified. No merge, image publication or deployment was performed.
