@@ -62,4 +62,4 @@ Desktop **1440 px** and mobile **390 px** screenshots were visually inspected an
 
 Claude Code/Cursor setup follows the official sources above. Neither native client was installed or exercised, and their ASO interoperability remains **unverified**. The Keycloak refresh test does not claim either native client's behavior. No persistent development realm/database, external IdP, owner client configuration or live deployment was changed.
 
-Delivery: feature-branch PR pending creation. Sanitized verification logs are retained under ignored `backend/build/e2e/goal-013/`; the full-run log retains the corrected browser-fixture failure and the final run records passing verification.
+Delivery: implementation commit `df36434` in [PR #16](https://github.com/functionaldude/aso/pull/16). The PR remains open for review; Linux CI is tracked by [its checks](https://github.com/functionaldude/aso/pull/16/checks). Sanitized verification logs are retained under ignored `backend/build/e2e/goal-013/`; the full-run log retains the corrected browser-fixture failure and the final run records passing verification.
