@@ -300,6 +300,42 @@ class QuestionIntegrationTest {
         }
 
     @Test
+    fun `setup scopes obtain refresh tokens and preserve each persons MCP identity`() {
+        Playwright.create().use { playwright ->
+            playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(true)).use { browser ->
+                val contexts = mutableListOf<BrowserContext>()
+                try {
+                    val scopes =
+                        web(null, "/api/v1/agent-setup")
+                            .body["scopes"]
+                            .asSequence()
+                            .map { it.asString() }
+                            .toList()
+                    assertEquals(listOf("openid", "profile", "email", "offline_access"), scopes)
+                    for (username in listOf("alice", "bob")) {
+                        val person = actor(browser, username, contexts)
+                        // Existing clients without offline access remain valid resource callers.
+                        assertFalse("offline_access" in decoder.decode(person.token).getClaimAsString("scope")!!.split(' '))
+                        assertEquals(person.id, mcp(person, "identity", emptyMap<String, String>()).body["id"].asString())
+                        val tokens = login.tokens(browser, issuer, username, resource = "$base/mcp", scopes = scopes.joinToString(" "))
+                        assertTrue(tokens["refresh_token"].asString().isNotBlank(), "Refresh token must be issued")
+                        assertTrue("offline_access" in tokens["scope"].asString().split(' '))
+                        val refreshed = login.refresh(issuer, tokens["refresh_token"].asString(), resource = "$base/mcp")
+                        val access = refreshed["access_token"].asString()
+                        assertTrue(access.isNotBlank(), "Refresh must issue an access token")
+                        val identity = mcp(person.copy(token = access), "identity", emptyMap<String, String>())
+                        assertEquals(200, identity.status)
+                        assertEquals(person.id, identity.body["id"].asString())
+                        assertEquals("mcp", identity.body["channel"].asString())
+                    }
+                } finally {
+                    contexts.forEach { it.close() }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `typed MCP envelopes preserve discovery results notifications and protocol errors`() =
         withActors { alice, _ ->
             fun request(
@@ -324,6 +360,7 @@ class QuestionIntegrationTest {
                 metadata.propertyNames().toSet(),
             )
             assertEquals("$base/mcp", metadata["resource"].asString())
+            assertEquals(listOf("openid", "profile", "email"), metadata["scopes_supported"].asSequence().map { it.asString() }.toList())
             val initialized = rpc(alice, request("initialize")).body["result"]
             assertEquals("2025-11-25", initialized["protocolVersion"].asString())
             assertFalse(initialized["capabilities"]["tools"]["listChanged"].asBoolean())

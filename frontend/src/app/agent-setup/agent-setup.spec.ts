@@ -7,7 +7,7 @@ import { AgentSetup } from './agent-setup';
 const details = {
   mcpUrl: 'http://127.0.0.1:8080/mcp',
   issuer: 'http://127.0.0.1:8180/realms/aso-dev',
-  scopes: ['openid', 'profile', 'email'],
+  scopes: ['openid', 'profile', 'email', 'offline_access'],
   clientId: 'aso',
   codexCallbackUrl: 'http://127.0.0.1:8766/callback',
   recommendedParagraph: 'Use ASO under my individual identity.',
@@ -42,7 +42,7 @@ describe('Agent setup', () => {
       details.mcpUrl,
     );
     const config = (host.querySelector('#codex-config') as HTMLTextAreaElement).value;
-    expect(config).toContain('scopes = ["openid", "profile", "email"]');
+    expect(config).toContain('scopes = ["openid", "profile", "email", "offline_access"]');
     expect(config).toContain('client_id = "aso"');
     expect(config).toContain(
       'callback_url = "http://127.0.0.1:8766/callback"\ncallback_port = 8766',
@@ -163,5 +163,102 @@ describe('Agent setup', () => {
     expect(document.activeElement).toBe(field);
     expect(field.value.substring(field.selectionStart, field.selectionEnd)).toBe(details.mcpUrl);
     expect(host.textContent).toContain('Text selected; use your device’s copy command.');
+  });
+  it('switches between client setup instructions and generates installation-specific Cursor JSON', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const fixture = TestBed.createComponent(AgentSetup);
+    fixture.detectChanges();
+    const installation = {
+      ...details,
+      mcpUrl: 'https://knowledge.example.invalid/mcp',
+      clientId: 'team-knowledge',
+    };
+    TestBed.inject(HttpTestingController).expectOne('/api/v1/agent-setup').flush(installation);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const tabs = Array.from(host.querySelectorAll<HTMLElement>('[role="tab"]'));
+    expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(['Codex', 'Claude Code', 'Cursor']);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+    tabs[1].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('#codex-config')).toBeNull();
+    expect(host.querySelector('#claude-config')).not.toBeNull();
+    expect((host.querySelector('#claude-login') as HTMLTextAreaElement).value).toBe(
+      'claude mcp login aso',
+    );
+    expect((host.querySelector('#claude-import') as HTMLTextAreaElement).value).toBe('@AGENTS.md');
+    expect(host.textContent).toContain('claude mcp remove aso --scope user');
+    expect(host.querySelectorAll('details[open]').length).toBe(0);
+    tabs[2].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('#claude-config')).toBeNull();
+    const field = host.querySelector('#cursor-config') as HTMLTextAreaElement;
+    expect(JSON.parse(field.value)).toEqual({
+      mcpServers: {
+        aso: {
+          url: installation.mcpUrl,
+          auth: { CLIENT_ID: installation.clientId, scopes: details.scopes },
+        },
+      },
+    });
+    expect(host.textContent).toContain('~/.cursor/mcp.json');
+    expect(host.textContent).toContain('Customize → MCPs');
+    expect(host.textContent).not.toContain('claude mcp logout');
+    (
+      Array.from(host.querySelectorAll('button')).find((button) =>
+        button.textContent?.includes('Copy Cursor configuration'),
+      ) as HTMLButtonElement
+    ).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(writeText).toHaveBeenCalledWith(field.value);
+    expect((host.querySelector('#recommended-paragraph') as HTMLTextAreaElement).value).toBe(
+      details.recommendedParagraph,
+    );
+  });
+
+  it('protects quotes and shell substitutions in the Claude command and escapes Cursor JSON', async () => {
+    const fixture = TestBed.createComponent(AgentSetup);
+    fixture.detectChanges();
+    const clientId =
+      'team' + "'" + 's "memory" $(touch /tmp/aso-should-not-exist) `id` $HOME\\path';
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/agent-setup')
+      .flush({ ...details, clientId });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const tabs = host.querySelectorAll<HTMLElement>('[role="tab"]');
+    tabs[1].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const command = (host.querySelector('#claude-config') as HTMLTextAreaElement).value;
+    expect(command.startsWith("claude mcp add-json aso '")).toBe(true);
+    expect(command.endsWith("' --scope user")).toBe(true);
+    // Decode the POSIX single-quote escape, then validate the independent JSON wire shape.
+    const payload = command
+      .slice("claude mcp add-json aso '".length, -"' --scope user".length)
+      .replaceAll("'\"'\"'", "'");
+    expect(JSON.parse(payload)).toEqual({
+      type: 'http',
+      url: details.mcpUrl,
+      oauth: {
+        clientId,
+        callbackPort: 8767,
+        scopes: 'openid profile email offline_access',
+      },
+    });
+    expect(payload).not.toContain('clientSecret');
+    tabs[2].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(
+      JSON.parse((host.querySelector('#cursor-config') as HTMLTextAreaElement).value).mcpServers.aso
+        .auth.CLIENT_ID,
+    ).toBe(clientId);
   });
 });

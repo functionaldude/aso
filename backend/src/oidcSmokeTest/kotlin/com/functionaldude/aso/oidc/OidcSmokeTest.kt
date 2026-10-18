@@ -61,6 +61,7 @@ class OidcSmokeTest {
                     }.toSet(),
             )
             assertTrue(it["standardFlowEnabled"].asBoolean())
+            assertEquals(listOf("offline_access"), it["optionalClientScopes"].asSequence().map { scope -> scope.asString() }.toList())
             assertFalse(it["directAccessGrantsEnabled"].asBoolean())
             assertFalse(it["implicitFlowEnabled"].asBoolean())
             assertFalse(it["serviceAccountsEnabled"].asBoolean())
@@ -72,6 +73,8 @@ class OidcSmokeTest {
             listOf(
                 "\${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}",
                 "\${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}",
+                "http://localhost:8767/callback",
+                "http://localhost:8787/callback",
             ),
             clients
                 .getValue("aso")["redirectUris"]

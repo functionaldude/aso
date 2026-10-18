@@ -37,6 +37,7 @@ class OidcBrowserLogin : AutoCloseable {
         username: String,
         client: String = "aso",
         resource: String? = null,
+        scopes: String = "openid profile email",
     ): JsonNode {
         val verifier = UUID.randomUUID().toString().repeat(2)
         val challenge =
@@ -49,7 +50,7 @@ class OidcBrowserLogin : AutoCloseable {
                 "client_id" to client,
                 "redirect_uri" to callback,
                 "response_type" to "code",
-                "scope" to "openid profile email",
+                "scope" to scopes,
                 "state" to state,
                 "code_challenge" to challenge,
                 "code_challenge_method" to "S256",
@@ -80,16 +81,34 @@ class OidcBrowserLogin : AutoCloseable {
                 "code_verifier" to verifier,
             )
         if (resource != null) exchange["resource"] = resource
+        return exchange(issuer, exchange)
+    }
+
+    fun refresh(
+        issuer: String,
+        refreshToken: String,
+        client: String = "aso",
+        resource: String? = null,
+    ): JsonNode {
+        val params = mutableMapOf("grant_type" to "refresh_token", "client_id" to client, "refresh_token" to refreshToken)
+        if (resource != null) params["resource"] = resource
+        return exchange(issuer, params)
+    }
+
+    private fun exchange(
+        issuer: String,
+        params: Map<String, String>,
+    ): JsonNode {
         val response =
             HttpClient.newHttpClient().send(
                 HttpRequest
                     .newBuilder(URI("$issuer/protocol/openid-connect/token"))
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(form(exchange)))
+                    .POST(HttpRequest.BodyPublishers.ofString(form(params)))
                     .build(),
                 HttpResponse.BodyHandlers.ofString(),
             )
-        check(response.statusCode() == 200) { "Code exchange failed: HTTP ${response.statusCode()}" }
+        check(response.statusCode() == 200) { "Token exchange failed: HTTP ${response.statusCode()}" }
         return JsonMapper.builder().build().readTree(response.body())
     }
 

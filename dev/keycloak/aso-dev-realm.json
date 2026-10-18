@@ -25,6 +25,9 @@
       "firstName": "alice",
       "lastName": "Fixture",
       "requiredActions": [],
+      "realmRoles": [
+        "offline_access"
+      ],
       "groups": [
         "/aso-members"
       ],
@@ -45,6 +48,9 @@
       "firstName": "bob",
       "lastName": "Fixture",
       "requiredActions": [],
+      "realmRoles": [
+        "offline_access"
+      ],
       "groups": [
         "/aso-members"
       ],
@@ -65,6 +71,9 @@
       "firstName": "aso-admin",
       "lastName": "Fixture",
       "requiredActions": [],
+      "realmRoles": [
+        "offline_access"
+      ],
       "groups": [
         "/aso-members",
         "/aso-admins"
@@ -86,6 +95,9 @@
       "firstName": "outsider",
       "lastName": "Fixture",
       "requiredActions": [],
+      "realmRoles": [
+        "offline_access"
+      ],
       "groups": [],
       "credentials": [
         {
@@ -109,7 +121,9 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "${ASO_WEB_CALLBACK:http://127.0.0.1:8080/login/oauth2/code/oidc}",
-        "${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}"
+        "${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}",
+        "http://localhost:8767/callback",
+        "http://localhost:8787/callback"
       ],
       "webOrigins": [],
       "attributes": {
@@ -120,6 +134,9 @@
         "basic",
         "profile",
         "email"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
       ],
       "protocolMappers": [
         {

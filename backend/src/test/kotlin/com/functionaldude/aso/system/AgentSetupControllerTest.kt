@@ -26,7 +26,7 @@ class AgentSetupControllerTest {
             val setup = AgentSetupController(identity, blank).info()
             assertEquals("https://knowledge.example.invalid/mcp", setup.mcpUrl)
             assertEquals("engineering-memory", setup.clientId)
-            assertEquals(listOf("openid", "profile", "email"), setup.scopes)
+            assertEquals(listOf("openid", "profile", "email", "offline_access"), setup.scopes)
             assertEquals(default, setup.codexCallbackUrl)
             assertTrue(setup.recommendedParagraph.startsWith("Use the configured ASO MCP server"))
         }

@@ -1,7 +1,7 @@
 <article>
   <p class="eyebrow">Workspace / Agent connection</p>
   <h1>Agent setup</h1>
-  <p class="intro">Connect Codex to ASO with your own account in four steps.</p>
+  <p class="intro">Choose your coding agent and connect to ASO with your own account.</p>
 
   @if (error()) {
     <p class="notice error" role="alert">
@@ -9,89 +9,241 @@
     </p>
     <button mat-stroked-button (click)="load()">Retry setup details</button>
   } @else if (setup(); as value) {
-    <section aria-labelledby="open-title">
-      <h2 id="open-title">1. Open your Codex configuration</h2>
-      <p>
-        Open or create <code>~/.codex/config.toml</code> in a text editor. If you customized
-        <code>CODEX_HOME</code>, use <code>$CODEX_HOME/config.toml</code> instead.
-      </p>
-      <details>
-        <summary>Open the file from a terminal on macOS or Linux</summary>
-        <p>This command creates the directory and opens the file in Nano:</p>
-        <div class="copy-block">
-          <label for="codex-open">Open config.toml</label>
-          <textarea
-            #codexOpenField
-            id="codex-open"
-            readonly
-            rows="2"
-            [value]="codexOpenConfig"
-          ></textarea>
-          <button mat-stroked-button (click)="copy('codex-open', codexOpenConfig, codexOpenField)">
-            Copy editor command
-          </button>
-          <span role="status" aria-live="polite">{{ copied()['codex-open'] }}</span>
-        </div>
-        <p>
-          In Nano, press <kbd>Ctrl+O</kbd>, <kbd>Enter</kbd>, then <kbd>Ctrl+X</kbd> to save and
-          exit.
-        </p>
-      </details>
-    </section>
+    <mat-tab-group
+      aria-label="Coding agent setup"
+      [selectedIndex]="selectedTab()"
+      (selectedIndexChange)="selectedTab.set($event)"
+      animationDuration="0ms"
+    >
+      <mat-tab label="Codex">
+        <ng-template matTabContent>
+          <section aria-labelledby="open-title">
+            <h2 id="open-title">1. Open your Codex configuration</h2>
+            <p>
+              Open or create <code>~/.codex/config.toml</code> in a text editor. If you customized
+              <code>CODEX_HOME</code>, use <code>$CODEX_HOME/config.toml</code> instead.
+            </p>
+            <details>
+              <summary>Open the file from a terminal on macOS or Linux</summary>
+              <p>This command creates the directory and opens the file in Nano:</p>
+              <div class="copy-block">
+                <label for="codex-open">Open config.toml</label>
+                <textarea
+                  #codexOpenField
+                  id="codex-open"
+                  readonly
+                  rows="2"
+                  [value]="codexOpenConfig"
+                ></textarea>
+                <button
+                  mat-stroked-button
+                  (click)="copy('codex-open', codexOpenConfig, codexOpenField)"
+                >
+                  Copy editor command
+                </button>
+                <span role="status" aria-live="polite">{{ copied()['codex-open'] }}</span>
+              </div>
+              <p>
+                In Nano, press <kbd>Ctrl+O</kbd>, <kbd>Enter</kbd>, then <kbd>Ctrl+X</kbd> to save
+                and exit.
+              </p>
+            </details>
+          </section>
 
-    <section aria-labelledby="config-title">
-      <h2 id="config-title">2. Paste this configuration and save</h2>
-      <p>
-        This configuration is filled in for this ASO installation. If
-        <code>[mcp_servers.aso]</code> or <code>[mcp_servers.aso.oauth]</code> already exists,
-        update that table instead of adding a duplicate. Keep your other settings.
-      </p>
-      <div class="copy-block">
-        <label for="codex-config">Codex configuration (TOML)</label>
-        <textarea
-          #codexField
-          id="codex-config"
-          readonly
-          rows="9"
-          [value]="codexConfig(value)"
-        ></textarea>
-        <button mat-stroked-button (click)="copy('codex', codexConfig(value), codexField)">
-          Copy Codex configuration
-        </button>
-        <span role="status" aria-live="polite">{{ copied()['codex'] }}</span>
-      </div>
-    </section>
+          <section aria-labelledby="config-title">
+            <h2 id="config-title">2. Paste this configuration and save</h2>
+            <p>
+              This configuration is filled in for this ASO installation. If
+              <code>[mcp_servers.aso]</code> or <code>[mcp_servers.aso.oauth]</code> already exists,
+              update that table instead of adding a duplicate. Keep your other settings.
+            </p>
+            <div class="copy-block">
+              <label for="codex-config">Codex configuration (TOML)</label>
+              <textarea
+                #codexField
+                id="codex-config"
+                readonly
+                rows="9"
+                [value]="codexConfig(value)"
+              ></textarea>
+              <button mat-stroked-button (click)="copy('codex', codexConfig(value), codexField)">
+                Copy Codex configuration
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['codex'] }}</span>
+            </div>
+          </section>
 
-    <section aria-labelledby="login-title">
-      <h2 id="login-title">3. Sign in to ASO</h2>
-      <p>
-        Run this command in a terminal, then complete the browser sign-in with your own account:
-      </p>
-      <div class="copy-block">
-        <label for="codex-login">Sign in to ASO</label>
-        <textarea
-          #codexLoginField
-          id="codex-login"
-          readonly
-          rows="1"
-          [value]="codexLogin"
-        ></textarea>
-        <button mat-stroked-button (click)="copy('codex-login', codexLogin, codexLoginField)">
-          Copy login command
-        </button>
-        <span role="status" aria-live="polite">{{ copied()['codex-login'] }}</span>
-      </div>
-    </section>
+          <section aria-labelledby="login-title">
+            <h2 id="login-title">3. Sign in to ASO</h2>
+            <p>
+              Run this command in a terminal, then complete the browser sign-in with your own
+              account:
+            </p>
+            <div class="copy-block">
+              <label for="codex-login">Sign in to ASO</label>
+              <textarea
+                #codexLoginField
+                id="codex-login"
+                readonly
+                rows="1"
+                [value]="codexLogin"
+              ></textarea>
+              <button mat-stroked-button (click)="copy('codex-login', codexLogin, codexLoginField)">
+                Copy login command
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['codex-login'] }}</span>
+            </div>
+          </section>
 
-    <section aria-labelledby="check-title">
-      <h2 id="check-title">4. Reload Codex and check your identity</h2>
-      <p>Restart or reload Codex, then ask:</p>
-      <blockquote>Call only ASO’s identity tool and show my name.</blockquote>
-      <p>
-        Check that it names you. You can also use <code>/mcp</code> to check the connection. The
-        desktop app, CLI, and IDE extension share this configuration on the same Codex host.
-      </p>
-    </section>
+          <section aria-labelledby="check-title">
+            <h2 id="check-title">4. Reload Codex and check your identity</h2>
+            <p>Restart or reload Codex, then ask:</p>
+            <blockquote>Call only ASO’s identity tool and show my name.</blockquote>
+            <p>
+              Check that it names you. You can also use <code>/mcp</code> to check the connection.
+              The desktop app, CLI, and IDE extension share this configuration on the same Codex
+              host.
+            </p>
+          </section>
+        </ng-template>
+      </mat-tab>
+      <mat-tab label="Claude Code">
+        <ng-template matTabContent>
+          <section aria-labelledby="claude-open-title">
+            <h2 id="claude-open-title">1. Open a terminal with Claude Code installed</h2>
+            <p>
+              Use the terminal on the computer where you run Claude Code. The command below adds ASO
+              to your personal configuration for use across repositories.
+            </p>
+          </section>
+          <section aria-labelledby="claude-config-title">
+            <h2 id="claude-config-title">2. Add ASO to Claude Code</h2>
+            <p>
+              Run this command in a macOS or Linux shell. If ASO is already configured, inspect it
+              with <code>claude mcp get aso</code>. To replace that personal entry, run
+              <code>claude mcp remove aso --scope user</code>, then add it again below.
+            </p>
+            <div class="copy-block">
+              <label for="claude-config">Claude Code setup command</label>
+              <textarea
+                #claudeField
+                id="claude-config"
+                readonly
+                rows="6"
+                [value]="claudeCommand(value)"
+              ></textarea>
+              <button
+                mat-stroked-button
+                (click)="copy('claude', claudeCommand(value), claudeField)"
+              >
+                Copy Claude Code command
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['claude'] }}</span>
+            </div>
+          </section>
+          <section aria-labelledby="claude-login-title">
+            <h2 id="claude-login-title">3. Sign in to ASO</h2>
+            <p>Run this command, then complete the browser sign-in with your own ASO account:</p>
+            <div class="copy-block">
+              <label for="claude-login">Sign in to ASO in Claude Code</label>
+              <textarea
+                #claudeLoginField
+                id="claude-login"
+                readonly
+                rows="1"
+                [value]="claudeLogin"
+              ></textarea>
+              <button
+                mat-stroked-button
+                (click)="copy('claude-login', claudeLogin, claudeLoginField)"
+              >
+                Copy Claude Code login command
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['claude-login'] }}</span>
+            </div>
+            <p>
+              You can also open <code>/mcp</code> in Claude Code to authenticate and check status.
+            </p>
+          </section>
+          <section aria-labelledby="claude-check-title">
+            <h2 id="claude-check-title">4. Reload Claude Code and check your identity</h2>
+            <p>Start a new Claude Code session, then ask:</p>
+            <blockquote>Call only ASO’s identity tool and show my name.</blockquote>
+            <p>
+              Check that it names you. Add the shared paragraph below to your repository’s
+              <code>AGENTS.md</code>. In <code>CLAUDE.md</code> beside it, add this plain line so
+              Claude Code loads those instructions. Preserve any existing instructions.
+            </p>
+            <div class="copy-block">
+              <label for="claude-import">CLAUDE.md import</label>
+              <textarea
+                #claudeImportField
+                id="claude-import"
+                readonly
+                rows="1"
+                [value]="claudeImport"
+              ></textarea>
+              <button
+                mat-stroked-button
+                (click)="copy('claude-import', claudeImport, claudeImportField)"
+              >
+                Copy CLAUDE.md import
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['claude-import'] }}</span>
+            </div>
+          </section>
+        </ng-template>
+      </mat-tab>
+      <mat-tab label="Cursor">
+        <ng-template matTabContent>
+          <section aria-labelledby="cursor-open-title">
+            <h2 id="cursor-open-title">1. Open your Cursor MCP configuration</h2>
+            <p>
+              Open or create <code>~/.cursor/mcp.json</code> in a text editor for personal setup in
+              Cursor’s desktop editor. A repository can instead use <code>.cursor/mcp.json</code>.
+            </p>
+          </section>
+          <section aria-labelledby="cursor-config-title">
+            <h2 id="cursor-config-title">2. Paste this configuration and save</h2>
+            <p>
+              If the file already has <code>mcpServers</code>, merge the <code>aso</code> entry into
+              it. Update an existing ASO entry instead of adding a duplicate, and preserve your
+              other servers and settings.
+            </p>
+            <div class="copy-block">
+              <label for="cursor-config">Cursor configuration (JSON)</label>
+              <textarea
+                #cursorField
+                id="cursor-config"
+                readonly
+                rows="18"
+                [value]="cursorConfig(value)"
+              ></textarea>
+              <button mat-stroked-button (click)="copy('cursor', cursorConfig(value), cursorField)">
+                Copy Cursor configuration
+              </button>
+              <span role="status" aria-live="polite">{{ copied()['cursor'] }}</span>
+            </div>
+          </section>
+          <section aria-labelledby="cursor-login-title">
+            <h2 id="cursor-login-title">3. Restart Cursor and sign in to ASO</h2>
+            <p>
+              Restart Cursor, open <strong>Customize → MCPs</strong>, and find ASO. Complete its
+              authentication prompts and the browser sign-in with your own ASO account.
+            </p>
+          </section>
+          <section aria-labelledby="cursor-check-title">
+            <h2 id="cursor-check-title">4. Check your identity in Cursor</h2>
+            <p>Ask Cursor’s agent:</p>
+            <blockquote>Call only ASO’s identity tool and show my name.</blockquote>
+            <p>
+              Check that it names you, then add the shared paragraph below to your repository’s
+              <code>AGENTS.md</code> so Cursor knows when to consult ASO.
+            </p>
+          </section>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
 
     <section aria-labelledby="paragraph-title">
       <h2 id="paragraph-title">Add ASO to your repository’s AGENTS.md</h2>
@@ -138,39 +290,78 @@
           <dd>{{ value.scopes.join(' ') }}</dd>
           <dt>Codex callback</dt>
           <dd>{{ value.codexCallbackUrl }}</dd>
+          <dt>Claude callback</dt>
+          <dd>http://localhost:8767/callback</dd>
+          <dt>Cursor callback</dt>
+          <dd>http://localhost:8787/callback</dd>
         </dl>
         <p>
-          ASO and Codex share one public client ID. Their callbacks return the sign-in result to
-          different applications: ASO’s server or Codex on your computer. Browser sign-in does not
-          authenticate Codex, though your existing provider session may make signing in quicker.
+          ASO and your coding agents share one public client ID. Their callbacks return the sign-in
+          result to ASO’s server or the selected agent on your computer. Each client completes its
+          own login; your provider’s browser session may make signing in quicker.
         </p>
         <p>
-          Your administrator registers the callback once. The configuration above reflects this
-          installation’s settings; it does not verify the provider’s registration. For a local
-          callback, <code>callback_port</code> must match the port in <code>callback_url</code>.
+          Your administrator registers each exact callback once and enables refresh-token access.
+          Configuration reflects this installation’s settings; it does not verify the provider’s
+          registration. Codex’s local <code>callback_port</code> must match
+          <code>callback_url</code>. Claude Code uses port 8767; Cursor desktop uses port 8787.
+        </p>
+        <p>
+          All setup examples request <code>offline_access</code> so the client can refresh its
+          login. If you previously connected without it, update your configuration and authenticate
+          again. Your provider must also allow that scope; Authentik needs its
+          <code>offline_access</code> scope mapping enabled.
         </p>
       </details>
       <details>
         <summary>Sign out or change accounts</summary>
         <p>
-          Run this command to sign out of the MCP connection. To change accounts, also sign out of
-          the identity provider in your browser, then sign in again and recheck
-          <code>identity</code>.
+          To change accounts, sign out of the identity provider in your browser as well as your
+          client’s MCP connection, then authenticate again and recheck <code>identity</code>.
+          Otherwise the provider’s browser session can retain the previous person.
         </p>
-        <div class="copy-block">
-          <label for="codex-logout">Sign out of ASO in Codex</label>
-          <textarea
-            #codexLogoutField
-            id="codex-logout"
-            readonly
-            rows="1"
-            [value]="codexLogout"
-          ></textarea>
-          <button mat-stroked-button (click)="copy('codex-logout', codexLogout, codexLogoutField)">
-            Copy logout command
-          </button>
-          <span role="status" aria-live="polite">{{ copied()['codex-logout'] }}</span>
-        </div>
+        @if (selectedTab() === 0) {
+          <div class="copy-block">
+            <label for="codex-logout">Sign out of ASO in Codex</label>
+            <textarea
+              #codexLogoutField
+              id="codex-logout"
+              readonly
+              rows="1"
+              [value]="codexLogout"
+            ></textarea>
+            <button
+              mat-stroked-button
+              (click)="copy('codex-logout', codexLogout, codexLogoutField)"
+            >
+              Copy logout command
+            </button>
+            <span role="status" aria-live="polite">{{ copied()['codex-logout'] }}</span>
+          </div>
+        } @else if (selectedTab() === 1) {
+          <div class="copy-block">
+            <label for="claude-logout">Sign out of ASO in Claude Code</label>
+            <textarea
+              #claudeLogoutField
+              id="claude-logout"
+              readonly
+              rows="1"
+              [value]="claudeLogout"
+            ></textarea>
+            <button
+              mat-stroked-button
+              (click)="copy('claude-logout', claudeLogout, claudeLogoutField)"
+            >
+              Copy Claude Code logout command
+            </button>
+            <span role="status" aria-live="polite">{{ copied()['claude-logout'] }}</span>
+          </div>
+        } @else {
+          <p>
+            Manage the ASO connection in Cursor’s <strong>Customize → MCPs</strong> panel. Follow
+            its authentication prompts and check <code>identity</code> after reconnecting.
+          </p>
+        }
       </details>
       <details>
         <summary>Troubleshooting</summary>
@@ -181,12 +372,13 @@
           </li>
           <li>
             <strong>Login or redirect fails:</strong> ask your administrator to check the registered
-            Codex callback and listener port. If the port is already in use, close the other login
-            attempt and retry.
+            callback for the selected client and its listener port. If the port is already in use,
+            close the other login attempt and retry.
           </li>
           <li>
-            <strong>Wrong account or expired login:</strong> sign out of Codex’s MCP connection and
-            the provider’s browser session, then sign in again and check <code>identity</code>.
+            <strong>Wrong account or expired login:</strong> use your client’s authentication
+            controls and the provider’s browser session to sign in again and check
+            <code>identity</code>.
           </li>
           <li>
             <strong>ASO or search is unavailable:</strong> tell the agent to continue local work and

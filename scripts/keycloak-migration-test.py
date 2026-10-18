@@ -57,7 +57,7 @@ def send(path, data=None, method=None, bearer=None):
     headers = {}
     if bearer:
         headers['Authorization'] = 'Bearer ' + bearer
-    if isinstance(data, dict):
+    if isinstance(data, (dict, list)):
         data = json.dumps(data).encode()
         headers['Content-Type'] = 'application/json'
     elif isinstance(data, bytes):
@@ -81,8 +81,24 @@ try:
     }
     shared = send(path + '/clients?clientId=aso', bearer=token)[0]
     shared = send(path + '/clients/' + shared['id'], bearer=token)
-    shared['redirectUris'].append('http://localhost:6274/oauth/callback')
+    shared['redirectUris'] = [
+        'http://127.0.0.1:8080/login/oauth2/code/oidc',
+        'http://127.0.0.1:8766/callback',
+        'http://localhost:6274/oauth/callback',
+    ]
     send(path + '/clients/' + shared['id'], shared, 'PUT', token)
+    offline_scope = next(scope for scope in send(path + '/client-scopes', bearer=token) if scope['name'] == 'offline_access')
+    send(path + '/clients/' + shared['id'] + '/optional-client-scopes/' + offline_scope['id'], method='DELETE', bearer=token)
+    offline_role = send(path + '/roles/offline_access', bearer=token)
+    for user in users_before:
+        send(path + '/users/' + user['id'] + '/role-mappings/realm', [offline_role], 'DELETE', token)
+    send(path + '/roles', {'name': 'unrelated-test-role'}, 'POST', token)
+    unrelated_role = send(path + '/roles/unrelated-test-role', bearer=token)
+    send(path + '/users/' + users_before[0]['id'] + '/role-mappings/realm', [unrelated_role], 'POST', token)
+    roles_before = {
+        user['id']: {role['id'] for role in send(path + '/users/' + user['id'] + '/role-mappings/realm', bearer=token)}
+        for user in users_before
+    }
     legacy_ids = ('aso-web', 'aso-codex', 'aso-mcpjam', 'aso-mcp-test', 'aso-dev-probe')
     for client_id in legacy_ids + ('unrelated-test-client',):
         client = copy.deepcopy(shared)
@@ -98,6 +114,7 @@ try:
 
     environment = {key: value for key, value in os.environ.items() if not key.startswith('ASO_')}
     environment['ASO_KEYCLOAK_PORT'] = str(forwarder.server_address[1])
+    unrelated_before = send(path + '/clients/' + send(path + '/clients?clientId=unrelated-test-client', bearer=token)[0]['id'], bearer=token)
     for attempt in range(2):
         subprocess.run([sys.executable, 'scripts/keycloak-configure-identity.py'], env=environment, check=True)
         clients = {client['clientId']: client for client in send(path + '/clients', bearer=token)}
@@ -109,10 +126,18 @@ try:
         assert set(configured['redirectUris']) == {
             'http://127.0.0.1:8080/login/oauth2/code/oidc',
             'http://127.0.0.1:8766/callback',
+            'http://localhost:8767/callback',
+            'http://localhost:8787/callback',
         }
+        optional_scopes = send(path + '/clients/' + clients['aso']['id'] + '/optional-client-scopes', bearer=token)
+        assert [scope['name'] for scope in optional_scopes].count('offline_access') == 1
+        assert send(path + '/clients/' + clients['unrelated-test-client']['id'], bearer=token) == unrelated_before
         assert configured['standardFlowEnabled']
         assert not any(configured[grant] for grant in ('implicitFlowEnabled', 'directAccessGrantsEnabled', 'serviceAccountsEnabled'))
         assert send(path + '/users', bearer=token) == users_before
+        for user in users_before:
+            role_ids = {role['id'] for role in send(path + '/users/' + user['id'] + '/role-mappings/realm', bearer=token)}
+            assert role_ids == roles_before[user['id']] | {offline_role['id']}
         assert {
             user['id']: send(path + '/users/' + user['id'] + '/groups', bearer=token)
             for user in users_before
