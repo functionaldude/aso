@@ -1,10 +1,8 @@
-# Connect a coding agent to ASO
+# Connect Codex to ASO
 
-This is the canonical guide for the **Agent setup** page and the recommended repository paragraph. The page is readable before sign-in and uses the installation’s configured backend URL, shared public client ID, scopes, and tool callbacks. Browser, Codex, and MCP Jam use one public OIDC registration with authorization code flow and S256 PKCE. Each person signs in individually; no client secret is needed.
+The **Agent setup** page provides configuration filled in for your ASO installation. Sign in with your own account, then add the recommended repository instructions below.
 
-## Connect Codex step by step
-
-### 1. Open your configuration file
+## 1. Open your Codex configuration
 
 Open or create `~/.codex/config.toml` in a text editor. If you customized `CODEX_HOME`, use `$CODEX_HOME/config.toml` instead. On macOS/Linux, this command creates the directory and opens the file in Nano:
 
@@ -12,11 +10,11 @@ Open or create `~/.codex/config.toml` in a text editor. If you customized `CODEX
 mkdir -p "${CODEX_HOME:-$HOME/.codex}" && nano "${CODEX_HOME:-$HOME/.codex}/config.toml"
 ```
 
-The desktop app, CLI, and IDE extension share this configuration on the same Codex host. For repository-specific configuration, a trusted project can instead use `.codex/config.toml`; use the personal file above for the normal setup.
+The desktop app, CLI and IDE extension share this configuration on the same Codex host. A trusted project can instead use `.codex/config.toml`; the personal file is the normal setup.
 
-### 2. Paste the configuration and save
+## 2. Paste the configuration and save
 
-Copy the block from your installation’s **Agent setup** page. It already contains the correct backend MCP URL and shared client ID. Angular’s development port 4200 is not the MCP backend URL. The seeded local development example is:
+Copy the complete block from your installation’s **Agent setup** page. The local development example is:
 
 ```toml
 [mcp_servers.aso]
@@ -31,61 +29,27 @@ callback_port = 8766
 
 If `[mcp_servers.aso]` or `[mcp_servers.aso.oauth]` already exists, update that table instead of adding a duplicate. Keep your other settings. In Nano, press **Ctrl+O**, **Enter**, then **Ctrl+X** to save and exit.
 
-For another installation, use its configured URL/client ID and exact registered callback. If the page shows `YOUR_EXACT_REGISTERED_CALLBACK_URL`, ask the administrator to register the exact callback reported by Codex on the shared public registration and configure `ASO_CODEX_CALLBACK_URL`. Replace the placeholder before logging in. An administrator can inspect the callback with `codex mcp add aso --url <MCP_URL> --oauth-client-id <SHARED_CLIENT_ID>`; this updates that local Codex entry and reports its callback. Preserve any existing settings when using it.
+## 3. Sign in to ASO
 
-For a fixed loopback port, `callback_port` must match the port in `callback_url`; the URL alone does not choose the listener port. An `http://127.0.0.1` callback without an explicit port lets Codex select a port, which the provider must support. Provider issuer metadata can affect the callback path; always register the exact URL Codex reports. Remote proxy callbacks can use a different external port from the local listener and require installation-specific listener configuration. See [official Codex MCP setup and OAuth configuration](https://learn.chatgpt.com/docs/extend/mcp#oauth-client-registration-and-callbacks).
-
-### 3. Sign in from a terminal
+Run this command in a terminal and complete the browser sign-in with your own ASO account:
 
 ```bash
 codex mcp login aso
 ```
 
-Complete the browser login with your own ASO account. The configured scopes are `openid`, `profile`, and `email`. Browser sign-in to ASO does not automatically authenticate this MCP connection. Shared bot credentials and caller-supplied author IDs are not supported.
+## 4. Reload Codex and check your identity
 
-### 4. Reload Codex and check your identity
-
-Restart or reload Codex after saving/signing in. Use `/mcp` to check available servers, then ask:
+Restart or reload Codex, then ask:
 
 ```text
 Call only ASO’s identity tool and show my name.
 ```
 
-Confirm the expected person. Then list tools or try `search_questions` with sanitized text and `state: "all"` to include resolved problems. Add the recommended paragraph below to the consuming repository’s `AGENTS.md`, then start a task that reads its repository instructions.
-
-### Optional: sign out or change accounts
-
-```bash
-codex mcp logout aso
-```
-
-To change accounts, also sign out of the identity provider’s browser session, then log in again and recheck `identity`. Otherwise SSO can retain the previous person.
-
-### MCP Jam CLI local development example
-
-Use Node 24 for this pinned example (ASO provisions it for its build). The shared development registration is `aso`; each person completes their own login and keeps a separate private credentials file.
-
-```bash
-npx --yes @mcpjam/cli@5.16.1 --no-telemetry oauth login \
-  --url http://127.0.0.1:8080/mcp --protocol-version 2025-11-25 \
-  --registration preregistered --client-id aso \
-  --redirect-url http://localhost:6274/oauth/callback \
-  --scopes 'openid profile email' --verify-tools --verify-call-tool identity \
-  --credentials-out /tmp/aso-mcpjam-credentials.json
-
-npx --yes @mcpjam/cli@5.16.1 --no-telemetry tools call \
-  --url http://127.0.0.1:8080/mcp \
-  --credentials-file /tmp/aso-mcpjam-credentials.json \
-  --tool-name identity --tool-args '{}' --validate-response --expect-success
-```
-
-Keep credential files private and out of Git, and remove them when finished. For another user, sign out of the IdP browser session or use a separate session before logging in; otherwise SSO can retain the previous person. For writes, save sanitized arguments in a private file and retain its request/event ID across retries; see [Q&A contracts](questions-and-answers.md).
-
-MCP Jam CLI supports OAuth checks and direct tool calls; see [its CLI documentation](https://www.mcpjam.com/features/cli). Unavailable-client simulations here mean replaying explicit MCP workflows through this CLI. Verify supported commands for the pinned version; do not invent native-client emulation switches or identify simulated runs as native app tests.
+Check that it names you. You can also use `/mcp` to check the connection. Add the paragraph below to the repository where your agent works.
 
 ## Recommended paragraph for AGENTS.md
 
-Copy only this Markdown paragraph into the repository where the coding agent performs development:
+Copy only this Markdown paragraph into the consuming repository’s `AGENTS.md`:
 
 <!-- aso-agents-paragraph:start -->
 
@@ -95,34 +59,68 @@ Use the configured ASO MCP server under my individual authenticated identity as 
 
 <!-- aso-agents-paragraph:end -->
 
-## Troubleshooting and verification status
+## More setup help
 
-- **Connection fails:** confirm the backend MCP URL, server availability, and this client's configuration. The Angular development origin is not the backend's public MCP resource URL.
-- **Login/redirect fails:** check the shared public client ID, callback, listener port, issuer and intended resource/audience. Use individual OAuth login; do not paste browser cookies or tokens into repository files.
-- **Identity is the wrong person:** log out/re-authenticate with a fresh IdP session, then call `identity` again. A client name is not the authenticated user.
-- **Codex tools disappear after token expiry:** the local 2026-10-17 run saw refresh fail with `invalid_scope` after its seeded IdP session was ended. Run `codex mcp login aso` again, then call `identity`; do not treat a stale client name as proof of identity.
-- **Search is degraded:** exact/keyword retrieval can remain available while embeddings recover. Preserve the reported limitation and the normal publication/retry rules.
-- **A write times out/conflicts:** retain its original request/event ID, read current state, and follow the actionable error before retrying. Do not blindly generate another ID for the same uncertain write.
-- **Compatibility:** earlier goals record actual Codex and MCP Jam login/Q&A evidence. Goal 006 records the complete workflow evidence, versions and simulation matrix. Native Claude Code/Cursor testing is unavailable and their compatibility remains unverified under the owner's amended MVP scope.
-- **OAuth conformance:** the existing local HTTP loopback/Keycloak audience-mapper setup is documented in README; successful login/tool calls are not a strict HTTPS/RFC 8707 conformance claim. Another IdP or deployment needs separate verification.
+<details>
+<summary>Connection details and callbacks</summary>
 
-The web guide must display only safe public configuration and preserve these distinctions. It must never return an IdP bootstrap credential, OAuth token, or private knowledge content as setup data.
+The page uses the configured backend MCP URL, shared public client ID, scopes and effective Codex callback. Angular’s development port 4200 is not the MCP backend URL.
+
+Browser and Codex sign-in use one public registration, with separate callbacks delivering the result to ASO’s server or Codex’s local listener. This does not distinguish humans from agents. Each application completes its own login; an existing provider session may make sign-in quicker.
+
+The default callback is `http://127.0.0.1:8766/callback`, with listener port `8766`. Your administrator registers it once. Configuration reflects ASO’s settings, not proof of matching provider registration. For custom local callbacks, the URL and `callback_port` must use the same port. See [official Codex OAuth configuration](https://learn.chatgpt.com/docs/extend/mcp#oauth-client-registration-and-callbacks).
+
+</details>
+
+<details>
+<summary>Sign out or change accounts</summary>
+
+```bash
+codex mcp logout aso
+```
+
+To change accounts, also sign out of the provider’s browser session, then sign in again and recheck `identity`. Otherwise SSO can retain the previous person.
+
+</details>
+
+<details>
+<summary>Troubleshooting</summary>
+
+- **Cannot connect:** check the backend MCP URL and that ASO is running.
+- **Login or redirect fails:** ask your administrator to check the registered callback and listener port. Close another login attempt if the port is occupied, then retry.
+- **Wrong account or expired login:** sign out of the MCP connection and provider session, sign in again and check `identity`.
+- **ASO/search unavailable:** continue local work and report the limitation.
+- **Uncertain write:** retain its original request/event ID, check current state and follow the error before retrying.
+
+</details>
 
 ## Administrator setup and migration
 
-Configure one **public** OIDC client with authorization code flow and mandatory **S256 PKCE**, with password, implicit, and service-account grants disabled. Register the browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc`, post-logout URL `<ASO_PUBLIC_URL>/?signedOut`, and exact Codex/MCP Jam callbacks on that client. Emit signed membership/admin group claims in ID/access tokens and the intended MCP resource audience in access tokens only. Pre-registration remains the supported flow; no anonymous dynamic-registration permission is required.
+Configure one **public** OIDC client with authorization code flow and mandatory **S256 PKCE**, with password, implicit and service-account grants disabled. Register these exact callbacks once:
 
-Set `ASO_OIDC_CLIENT_ID` once. `ASO_CODEX_CALLBACK_URL` and `ASO_MCP_JAM_CALLBACK_URL` tell the setup page which registered tool callbacks to display; they do not create provider registrations. Development supplies its seeded callbacks. Outside development, omitted callbacks produce setup guidance/placeholders rather than invented local values.
+- Browser: `<ASO_PUBLIC_URL>/login/oauth2/code/oidc`.
+- Codex on each user’s computer: `http://127.0.0.1:8766/callback`.
+- Browser post-logout URL: `<ASO_PUBLIC_URL>/?signedOut`.
 
-This is a clean configuration switch: remove `ASO_OIDC_WEB_CLIENT_ID`, `ASO_OIDC_WEB_CLIENT_SECRET`, `ASO_CODEX_CLIENT_ID`, and `ASO_MCP_JAM_CLIENT_ID`. There are no aliases. The new shared ID is required outside the explicit development profile.
+Set `ASO_OIDC_CLIENT_ID` to that registration’s ID. Emit signed membership/admin group claims in ID/access tokens and the intended MCP audience in access tokens only. Pre-registration is the supported flow; anonymous dynamic registration is unnecessary.
 
-For an existing local realm, update the private runtime configuration to the shared `aso` client, stop ASO, then run:
+`ASO_CODEX_CALLBACK_URL` defaults to `http://127.0.0.1:8766/callback` in every profile, including when unset or blank. The setup page fills in the installation’s URL/client ID/scopes and this effective callback. Registering it is a one-time administrator task, with no per-user callback setup. The loopback address always refers to the computer completing the Codex login, even when ASO runs on a server or in a container.
+
+Ordinary OIDC discovery does not expose a client’s registered redirect list. ASO can supply its configured values, but cannot verify that list or update an external provider through discovery. Do not grant the application IdP administrative access for this purpose.
+
+For a custom local callback, set `ASO_CODEX_CALLBACK_URL` to the exact registered URL; the page includes a matching listener port when the loopback URL has an explicit port. An `http://127.0.0.1` URL without a port lets Codex choose one only if the provider supports variable loopback ports. A remote/proxied Codex host may require a different callback and separate listener-port configuration; do not infer its local port from the proxy’s external URL. See the official Codex documentation linked above.
+
+The default is verified with local Keycloak and Codex. Other IdPs need separate verification: Codex’s callback path depends on the provider’s issuer-response metadata. If issuer identification is unsupported, Codex may append a server-specific callback ID. Register the exact callback reported by `codex mcp add` and configure ASO’s override to match. That command changes local Codex configuration; preserve existing settings. Do not claim compatibility from discovery alone.
+
+Client IDs, callback URLs and scopes are public configuration. Keep tokens and cookies private. Preserve PKCE, state/nonce, issuer/audience/signature validation, CSRF and browser-session authorization. Sharing a public registration also shares provider policies and client-level revocation; it does not authenticate an agent’s software identity or prove human presence. Browser-only actions use separate session-protected routes.
+
+For an existing local realm, stop ASO and run:
 
 ```bash
 ./scripts/keycloak-start.sh
 ./scripts/keycloak-configure-identity.sh
 ```
 
-The development-only helper provisions/updates `aso` and disables obsolete fixture-managed registrations (`aso-web`, `aso-codex`, `aso-mcpjam`, `aso-mcp-test`, `aso-dev-probe`). It preserves users/subjects, unrelated registrations, ASO product data, and both volumes; running it again has the same result. It does not reset services. Restart ASO and reauthenticate browser and MCP clients using the updated configuration.
+The helper provisions/updates `aso`, replaces its fixture-managed callbacks with the browser/Codex callbacks, and disables obsolete fixture-managed registrations. It preserves users/subjects, unrelated registrations, ASO product data and both volumes; rerunning it has the same result. Restart ASO and reauthenticate. MCP Jam belongs in disposable test fixtures; remove the obsolete `ASO_MCP_JAM_CALLBACK_URL` setting from existing runtime configuration.
 
-For another IdP, convert the existing browser registration **in place** to public with mandatory S256 PKCE, add the tool callbacks/resource mapping, and put its existing ID in `ASO_OIDC_CLIENT_ID`. Check that the issuer and each user’s `sub` remain unchanged before switching; providers with client-dependent/pairwise subjects need their own migration verification. Never merge identities by email or reset product data. Update each user’s Codex/MCP Jam client ID and reauthenticate. Retire the former separate tool registrations after verifying the shared client. Verify that provider’s discovery, issuer/audiences, PKCE, callbacks, groups, logout, and actual clients separately; local Keycloak evidence does not establish its compatibility.
+For the shared-client migration from older versions, remove `ASO_OIDC_WEB_CLIENT_ID`, `ASO_OIDC_WEB_CLIENT_SECRET`, `ASO_CODEX_CLIENT_ID` and `ASO_MCP_JAM_CLIENT_ID`; there are no aliases. For an external IdP, convert the existing browser registration in place to public with mandatory S256 PKCE, add the Codex callback/resource mapping and retain its ID in `ASO_OIDC_CLIENT_ID`. Verify unchanged issuer and each user’s `sub` before switching; client-dependent/pairwise subjects require their own migration verification. Never merge users by email or reset product data. Update client configurations, reauthenticate, then retire former tool registrations. Verify discovery, issuer/audiences, PKCE, callbacks, groups, logout and the actual client separately.

@@ -58,8 +58,6 @@ class PackagedUiFixture(
                     "ASO_OIDC_CLIENT_ID" to "aso",
                     "ASO_PUBLIC_URL" to baseUrl,
                     "ASO_MCP_AUDIENCE" to "$baseUrl/mcp",
-                    "ASO_CODEX_CALLBACK_URL" to (codexCallbackUrl ?: login.callback),
-                    "ASO_MCP_JAM_CALLBACK_URL" to (mcpJamCallbackUrl ?: login.callback),
                     "ASO_OIDC_GROUPS_CLAIM" to "groups",
                     "ASO_OIDC_MEMBER_GROUP" to "aso-members",
                     "ASO_OIDC_ADMIN_GROUP" to "aso-admins",
@@ -73,6 +71,7 @@ class PackagedUiFixture(
                     "ASO_RATE_LIMIT_WRITES" to "100000",
                 ),
             )
+            codexCallbackUrl?.let { builder.environment()["ASO_CODEX_CALLBACK_URL"] = it }
             application = builder.start()
             val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()
             val deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos()

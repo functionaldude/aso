@@ -12,8 +12,7 @@ data class AgentSetupInfo(
     val issuer: String,
     val scopes: List<String>,
     val clientId: String,
-    val codexCallbackUrl: String?,
-    val mcpJamCallbackUrl: String?,
+    val codexCallbackUrl: String,
     val recommendedParagraph: String,
 )
 
@@ -21,9 +20,10 @@ data class AgentSetupInfo(
 @RestController
 class AgentSetupController(
     private val identity: IdentitySettings,
-    @Value("\${aso.agent-setup.codex-callback-url:}") private val codexCallbackUrl: String,
-    @Value("\${aso.agent-setup.mcp-jam-callback-url:}") private val mcpJamCallbackUrl: String,
+    @Value("\${aso.agent-setup.codex-callback-url:http://127.0.0.1:8766/callback}")
+    codexCallbackUrl: String = DEFAULT_CODEX_CALLBACK_URL,
 ) {
+    private val callbackUrl = callback(codexCallbackUrl.ifBlank { DEFAULT_CODEX_CALLBACK_URL })
     private val paragraph =
         ClassPathResource("agent-setup/agent-setup.md").inputStream.bufferedReader().use { source ->
             val match =
@@ -39,14 +39,13 @@ class AgentSetupController(
             issuer = identity.issuer,
             scopes = listOf("openid", "profile", "email"),
             clientId = identity.clientId,
-            codexCallbackUrl = callback(codexCallbackUrl),
-            mcpJamCallbackUrl = callback(mcpJamCallbackUrl),
+            codexCallbackUrl = callbackUrl,
             recommendedParagraph = paragraph,
         )
 
-    private fun callback(callbackUrl: String): String? {
-        if (callbackUrl.isBlank()) return null
+    private fun callback(callbackUrl: String): String {
         val callback = URI(callbackUrl)
+        require(callback.host != null) { "Public agent callbacks require a host" }
         require(callback.userInfo == null && callback.query == null && callback.fragment == null) {
             "Public agent callbacks must not contain credentials, query parameters or fragments"
         }
@@ -54,5 +53,9 @@ class AgentSetupController(
             "Public agent callbacks require HTTPS except on loopback"
         }
         return callbackUrl
+    }
+
+    companion object {
+        const val DEFAULT_CODEX_CALLBACK_URL = "http://127.0.0.1:8766/callback"
     }
 }

@@ -7,8 +7,7 @@ interface AgentSetupInfo {
   issuer: string;
   scopes: string[];
   clientId: string;
-  codexCallbackUrl: string | null;
-  mcpJamCallbackUrl: string | null;
+  codexCallbackUrl: string;
   recommendedParagraph: string;
 }
 
@@ -43,19 +42,14 @@ export class AgentSetup {
 
   protected codexConfig(value: AgentSetupInfo): string {
     const callback = value.codexCallbackUrl;
-    const url = callback ? new URL(callback) : null;
-    const port = url && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) ? url.port : '';
+    const url = new URL(callback);
+    const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
+    // URL.port omits explicit default ports, which still need a matching listener.
+    const explicitPort = /^https?:\/\/(?:\[[^\]]+\]|[^/:]+):[0-9]+(?:\/|$)/.test(callback);
+    const port =
+      loopback && explicitPort ? Number(url.port || (url.protocol === 'https:' ? 443 : 80)) : null;
     const scopes = value.scopes.map((scope) => JSON.stringify(scope)).join(', ');
-    return `[mcp_servers.aso]\nurl = ${JSON.stringify(value.mcpUrl)}\nscopes = [${scopes}]\n\n[mcp_servers.aso.oauth]\nclient_id = ${JSON.stringify(value.clientId)}\ncallback_url = ${JSON.stringify(callback ?? 'YOUR_EXACT_REGISTERED_CALLBACK_URL')}${port ? `\ncallback_port = ${port}` : ''}`;
-  }
-
-  protected jamCommands(value: AgentSetupInfo): string {
-    if (!value.mcpJamCallbackUrl) return '';
-    return `npx --yes @mcpjam/cli@5.16.1 --no-telemetry oauth login \\\n  --url ${this.shellQuote(value.mcpUrl)} --protocol-version 2025-11-25 \\\n  --registration preregistered --client-id ${this.shellQuote(value.clientId)} \\\n  --redirect-url ${this.shellQuote(value.mcpJamCallbackUrl)} \\\n  --scopes ${this.shellQuote(value.scopes.join(' '))} --verify-tools --verify-call-tool identity \\\n  --credentials-out /tmp/aso-mcpjam-credentials.json\n\nnpx --yes @mcpjam/cli@5.16.1 --no-telemetry tools call \\\n  --url ${this.shellQuote(value.mcpUrl)} --credentials-file /tmp/aso-mcpjam-credentials.json \\\n  --tool-name identity --tool-args '{}' --validate-response --expect-success`;
-  }
-
-  private shellQuote(value: string): string {
-    return `'${value.replaceAll("'", "'\\''")}'`;
+    return `[mcp_servers.aso]\nurl = ${JSON.stringify(value.mcpUrl)}\nscopes = [${scopes}]\n\n[mcp_servers.aso.oauth]\nclient_id = ${JSON.stringify(value.clientId)}\ncallback_url = ${JSON.stringify(callback)}${port !== null ? `\ncallback_port = ${port}` : ''}`;
   }
 
   protected async copy(key: string, value: string, field: HTMLTextAreaElement): Promise<void> {
