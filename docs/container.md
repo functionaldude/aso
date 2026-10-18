@@ -40,9 +40,11 @@ The checked-in [container template](../.env.container.example) lists every appli
 | `ASO_OIDC_ISSUER` | Exact issuer URL used by discovery and signed tokens, reachable from both application and browser |
 | `ASO_OIDC_CLIENT_ID` | Your shared public browser/MCP OIDC registration (no client secret) |
 | `ASO_PUBLIC_URL` | Canonical browser origin, without a trailing slash |
-| `ASO_MCP_AUDIENCE` | Required audience in MCP access tokens, normally `<ASO_PUBLIC_URL>/mcp` |
+| `ASO_MCP_AUDIENCE` | MCP resource audience, normally `<ASO_PUBLIC_URL>/mcp`; the shared client ID is also accepted |
 | `ASO_OIDC_GROUPS_CLAIM` | Signed ID/access-token claim containing group strings, e.g. `groups` |
 | `ASO_OIDC_MEMBER_GROUP`, `ASO_OIDC_ADMIN_GROUP` | Distinct workspace membership and admin groups; admins must also be members |
+
+MCP bearer tokens require a signed `scope` string containing `openid` as well as an accepted audience. Emit that scope claim in access tokens only; ID tokens remain invalid for MCP even when their audience matches the shared client ID. No client secret or additional provider audience mapper is required for client-ID access tokens.
 
 All seven identity variables must be nonempty; missing identity configuration fails startup. Register the exact browser callback `<ASO_PUBLIC_URL>/login/oauth2/code/oidc` and post-logout URL `<ASO_PUBLIC_URL>/?signedOut` with the provider. Issuer/public URLs require HTTPS except on loopback. Follow the [identity configuration and interoperability requirements](../README.md#identity-configuration-and-access), including signed groups and mandatory S256 PKCE; register Codex’s default `http://127.0.0.1:8766/callback` on the same public client. This callback targets Codex on the user’s computer, even when ASO runs in a container. The setup page generates configuration from application settings; discovery does not verify the registered redirect list.
 

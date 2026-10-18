@@ -49,7 +49,10 @@ class SecurityConfiguration(
     fun jwtDecoder(): JwtDecoder {
         val decoder = JwtDecoders.fromIssuerLocation<NimbusJwtDecoder>(settings.issuer)
         decoder.setJwtValidator(
-            DelegatingOAuth2TokenValidator(JwtValidators.createDefaultWithIssuer(settings.issuer), audienceValidator(settings.mcpAudience)),
+            DelegatingOAuth2TokenValidator(
+                JwtValidators.createDefaultWithIssuer(settings.issuer),
+                mcpTokenValidator(settings.mcpAudience, settings.clientId),
+            ),
         )
         return decoder
     }
@@ -133,13 +136,21 @@ class SecurityConfiguration(
     }
 
     companion object {
-        fun audienceValidator(expected: String) =
-            OAuth2TokenValidator<Jwt> { token ->
-                if (expected in token.audience.orEmpty() && !token.subject.isNullOrBlank()) {
-                    OAuth2TokenValidatorResult.success()
-                } else {
-                    OAuth2TokenValidatorResult.failure(OAuth2Error("invalid_token", "Expected resource audience and subject", null))
-                }
+        fun mcpTokenValidator(
+            resourceAudience: String,
+            clientId: String,
+        ) = OAuth2TokenValidator<Jwt> { token ->
+            val intendedAudience = token.audience.orEmpty().any { it == resourceAudience || it == clientId }
+            // The shared client is also an ID-token audience. Require the signed access-token
+            // scope claim so browser ID tokens cannot be replayed as MCP bearer credentials.
+            val scopes = (token.claims["scope"] as? String)?.split(' ').orEmpty()
+            if (intendedAudience && !token.subject.isNullOrBlank() && "openid" in scopes) {
+                OAuth2TokenValidatorResult.success()
+            } else {
+                OAuth2TokenValidatorResult.failure(
+                    OAuth2Error("invalid_token", "Expected ASO audience, subject and access-token scope", null),
+                )
             }
+        }
     }
 }
