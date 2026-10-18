@@ -56,14 +56,15 @@ aso:
     min-similarity: ${ASO_SEARCH_MIN_SIMILARITY:0.45}
 
   identity:
-    issuer: ${ASO_OIDC_ISSUER}
-    web-client-id: ${ASO_OIDC_WEB_CLIENT_ID}
-    web-client-secret: ${ASO_OIDC_WEB_CLIENT_SECRET}
-    public-url: ${ASO_PUBLIC_URL}
-    mcp-audience: ${ASO_MCP_AUDIENCE}
-    groups-claim: ${ASO_OIDC_GROUPS_CLAIM}
-    member-group: ${ASO_OIDC_MEMBER_GROUP}
-    admin-group: ${ASO_OIDC_ADMIN_GROUP}
+    # Empty fallbacks let IdentitySettings reject absent values instead of accepting literal placeholders.
+    issuer: ${ASO_OIDC_ISSUER:}
+    web-client-id: ${ASO_OIDC_WEB_CLIENT_ID:}
+    web-client-secret: ${ASO_OIDC_WEB_CLIENT_SECRET:}
+    public-url: ${ASO_PUBLIC_URL:}
+    mcp-audience: ${ASO_MCP_AUDIENCE:}
+    groups-claim: ${ASO_OIDC_GROUPS_CLAIM:}
+    member-group: ${ASO_OIDC_MEMBER_GROUP:}
+    admin-group: ${ASO_OIDC_ADMIN_GROUP:}
   agent-setup:
     codex-client-id: ${ASO_CODEX_CLIENT_ID:}
     codex-callback-url: ${ASO_CODEX_CALLBACK_URL:}

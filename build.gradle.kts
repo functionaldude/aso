@@ -82,6 +82,10 @@ tasks.register("e2eTest") {
     group = "verification"
     dependsOn(":backend:e2eTest")
 }
+tasks.register("imageSmokeTest") {
+    group = "verification"
+    dependsOn(":backend:imageSmokeTest")
+}
 tasks.register("uiPreview") {
     group = "verification"
     description = "Starts an isolated populated packaged UI for visual review; stop with Ctrl-C."

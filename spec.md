@@ -129,6 +129,12 @@ Goal 001 client evidence was amended by the owner on 2026-10-16: Claude Code/Cur
 - LM Studio endpoint, actual loaded model ID/output dimensions and preparation behavior, and representative sanitized search examples. These are setup/evaluation inputs for goal 005, not unresolved provider selection. Record actual laptop performance during that goal.
 - Future non-development IdP settings/compatibility, production model/runtime, PaaS, and provider-managed backup/restore configuration are deferred. Real configuration/secrets stay outside Git. Do not infer authorization to deploy or configure external infrastructure from this spec.
 
+## CI container publication (goal 009)
+
+The owner approved private GHCR image publication as post-MVP work on 2026-10-18. Extend the existing CI checks with a Java 25 buildpack image build and disposable container smoke test. Publish successful master pushes/manual master runs as `ghcr.io/functionaldude/aso:sha-<full-commit>` and `:latest`, for the existing Linux/AMD64 runners. Pull requests validate images without publishing. Only the publication job receives package write access, and it publishes the tested image transferred from verification. Provide a complete runtime environment template and container instructions; secrets are runtime inputs, never image-build inputs. Preserve the jar's loopback binding and provide an overridable all-interface container default. See [goal 009](docs/goals/009-ci-container-image.md).
+
+Deployment, a Compose application service, and multi-architecture publication are not included in this approved scope. Historical laptop-MVP records retain their original no-publication boundary.
+
 ## Outside the MVP
 
 Multiple tenants or restricted project workspaces; downvotes/reputation/gamification/badges; attachments; notifications/Slack/email; automatic duplicate merging; public federation; autonomous acceptance; cloud embeddings; answer-generating RAG; arbitrary code execution; a dedicated search cluster; production deployment/image publishing; application backup/restore functionality; and advanced analytics. Future PaaS backup/restore is outside this application's MVP scope.
