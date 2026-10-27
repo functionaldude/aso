@@ -151,6 +151,7 @@ class SecurityConfiguration(
             }
         }
 
+        // Reject a malformed claim even if the other is valid; both forms must describe the same scope set.
         private fun hasAccessScope(claims: Map<String, Any>): Boolean {
             val scope = if (claims.containsKey("scope")) scopeString(claims["scope"]) ?: return false else null
             val scp = if (claims.containsKey("scp")) scopeArray(claims["scp"]) ?: return false else null
@@ -158,15 +159,18 @@ class SecurityConfiguration(
             return "openid" in (scope ?: scp ?: return false)
         }
 
+        // OAuth's scope claim is a space-delimited string; null means it is malformed.
         private fun scopeString(value: Any?): Set<String>? =
             (value as? String)?.split(' ')?.takeIf { scopes -> scopes.all(::validScope) }?.toSet()
 
+        // Okta's scp claim is an array; do not silently discard malformed entries.
         private fun scopeArray(value: Any?): Set<String>? {
             val scopes = value as? Collection<*> ?: return null
             if (scopes.isEmpty() || scopes.any { it !is String || !validScope(it) }) return null
             return scopes.filterIsInstance<String>().toSet()
         }
 
+        // RFC 6749 scope tokens allow printable ASCII except space, double quote, and backslash.
         private fun validScope(scope: String): Boolean =
             scope.isNotEmpty() && scope.all { it.code in 0x21..0x7e && it != '"' && it != '\\' }
     }
