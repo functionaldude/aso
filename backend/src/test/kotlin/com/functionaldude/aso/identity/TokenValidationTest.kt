@@ -35,8 +35,9 @@ class TokenValidationTest {
         subject: String? = "alice",
         signingKey: com.nimbusds.jose.jwk.RSAKey = key,
         scope: Any? = "openid profile email",
+        scp: Any? = null,
     ): String {
-        val claims =
+        val builder =
             JWTClaimsSet
                 .Builder()
                 .issuer(
@@ -44,11 +45,11 @@ class TokenValidationTest {
                 ).audience(
                     audience,
                 ).subject(subject)
-                .claim("scope", scope)
                 .issueTime(Date.from(Instant.now().minusSeconds(600)))
                 .expirationTime(Date.from(expiry))
-                .build()
-        return SignedJWT(JWSHeader(JWSAlgorithm.RS256), claims).also { it.sign(RSASSASigner(signingKey)) }.serialize()
+        if (scope != null) builder.claim("scope", scope)
+        if (scp != null) builder.claim("scp", scp)
+        return SignedJWT(JWSHeader(JWSAlgorithm.RS256), builder.build()).also { it.sign(RSASSASigner(signingKey)) }.serialize()
     }
 
     @Test fun `signed access token requires exact issuer intended audience lifetime subject and signature`() {
@@ -77,11 +78,37 @@ class TokenValidationTest {
         }
     }
 
+    @Test fun `access tokens accept string or array scopes and consistent representations for either audience`() {
+        listOf("aso", "https://aso.example.invalid/mcp").forEach { audience ->
+            listOf(
+                token(audience = listOf(audience), scope = "openid profile email"),
+                token(audience = listOf(audience), scope = null, scp = listOf("openid", "profile", "email")),
+                token(audience = listOf(audience), scope = "openid profile email", scp = listOf("email", "openid", "profile")),
+            ).forEach { assertEquals("alice", decoder.decode(it).subject) }
+        }
+    }
+
     @Test fun `ID tokens and missing malformed or unrelated access scopes are rejected for either audience`() {
         listOf("aso", "https://aso.example.invalid/mcp").forEach { audience ->
             listOf(null, "", "profile email", "not-openid", listOf("openid", "profile")).forEach { scope ->
                 assertFailsWith<JwtException> { decoder.decode(token(audience = listOf(audience), scope = scope)) }
             }
+        }
+    }
+
+    @Test fun `array scope claims and conflicting or malformed dual claims are rejected`() {
+        listOf("aso", "https://aso.example.invalid/mcp").forEach { audience ->
+            listOf(
+                token(audience = listOf(audience), scope = null, scp = emptyList<String>()),
+                token(audience = listOf(audience), scope = null, scp = "openid profile"),
+                token(audience = listOf(audience), scope = null, scp = listOf("profile", "email")),
+                token(audience = listOf(audience), scope = null, scp = listOf("openid", 123)),
+                token(audience = listOf(audience), scope = null, scp = listOf("openid profile")),
+                token(audience = listOf(audience), scope = "openid profile", scp = listOf("openid")),
+                token(audience = listOf(audience), scope = "openid profile", scp = "openid profile"),
+                token(audience = listOf(audience), scope = listOf("openid"), scp = listOf("openid")),
+                token(audience = listOf(audience), scope = "openid  profile"),
+            ).forEach { assertFailsWith<JwtException> { decoder.decode(it) } }
         }
     }
 

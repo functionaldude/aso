@@ -53,7 +53,7 @@ class IdentityService(
         val subject = claims["sub"] as? String ?: throw AccessDeniedException("Subject required")
         if (subject.isBlank() || subject.length > 255) throw AccessDeniedException("Invalid subject")
         val groups = (claims[settings.groupsClaim] as? Collection<*>)?.filterIsInstance<String>().orEmpty()
-        if (settings.memberGroup !in groups) throw AccessDeniedException("Workspace membership required")
+        if (settings.memberGroup !in groups && settings.adminGroup !in groups) throw AccessDeniedException("Workspace membership required")
         val name = ((claims["name"] ?: claims["preferred_username"] ?: subject) as? String ?: subject).take(255)
         val email = (claims["email"] as? String)?.take(320)
         val user =

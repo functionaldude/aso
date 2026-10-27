@@ -141,10 +141,8 @@ class SecurityConfiguration(
             clientId: String,
         ) = OAuth2TokenValidator<Jwt> { token ->
             val intendedAudience = token.audience.orEmpty().any { it == resourceAudience || it == clientId }
-            // The shared client is also an ID-token audience. Require the signed access-token
-            // scope claim so browser ID tokens cannot be replayed as MCP bearer credentials.
-            val scopes = (token.claims["scope"] as? String)?.split(' ').orEmpty()
-            if (intendedAudience && !token.subject.isNullOrBlank() && "openid" in scopes) {
+            // The provider must emit scope/scp only in access tokens, so ID tokens cannot be replayed.
+            if (intendedAudience && !token.subject.isNullOrBlank() && hasAccessScope(token.claims)) {
                 OAuth2TokenValidatorResult.success()
             } else {
                 OAuth2TokenValidatorResult.failure(
@@ -152,5 +150,24 @@ class SecurityConfiguration(
                 )
             }
         }
+
+        private fun hasAccessScope(claims: Map<String, Any>): Boolean {
+            val scope = if (claims.containsKey("scope")) scopeString(claims["scope"]) ?: return false else null
+            val scp = if (claims.containsKey("scp")) scopeArray(claims["scp"]) ?: return false else null
+            if (scope != null && scp != null && scope != scp) return false
+            return "openid" in (scope ?: scp ?: return false)
+        }
+
+        private fun scopeString(value: Any?): Set<String>? =
+            (value as? String)?.split(' ')?.takeIf { scopes -> scopes.all(::validScope) }?.toSet()
+
+        private fun scopeArray(value: Any?): Set<String>? {
+            val scopes = value as? Collection<*> ?: return null
+            if (scopes.isEmpty() || scopes.any { it !is String || !validScope(it) }) return null
+            return scopes.filterIsInstance<String>().toSet()
+        }
+
+        private fun validScope(scope: String): Boolean =
+            scope.isNotEmpty() && scope.all { it.code in 0x21..0x7e && it != '"' && it != '\\' }
     }
 }

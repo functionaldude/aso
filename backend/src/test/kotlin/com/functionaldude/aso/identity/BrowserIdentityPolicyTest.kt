@@ -34,9 +34,9 @@ class BrowserIdentityPolicyTest {
     }
 
     @Test
-    fun `an admin claim without required workspace membership cannot create an identity`() {
+    fun `a user without member or admin group cannot create an identity`() {
         assertFailsWith<AccessDeniedException> {
-            service.current(session(listOf("admins"), Instant.now().plusSeconds(60)), human = true)
+            service.current(session(listOf("other"), Instant.now().plusSeconds(60)), human = true)
         }
         verifyNoInteractions(database)
     }
