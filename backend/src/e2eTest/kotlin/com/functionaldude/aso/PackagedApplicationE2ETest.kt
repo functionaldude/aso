@@ -48,7 +48,13 @@ class PackagedApplicationE2ETest {
             val port = ServerSocket(0).use { it.localPort }
             val baseUrl = "http://127.0.0.1:$port"
             OidcBrowserLogin().use { login ->
-                KeycloakFixture(login.callback, login.callback, "$baseUrl/mcp", "$baseUrl/login/oauth2/code/oidc").use { keycloak ->
+                KeycloakFixture(
+                    login.callback,
+                    login.callback,
+                    "$baseUrl/mcp",
+                    "$baseUrl/login/oauth2/code/oidc",
+                    adminOnly = true,
+                ).use { keycloak ->
                     keycloak.start()
                     val issuer = keycloak.issuer
                     val builder =

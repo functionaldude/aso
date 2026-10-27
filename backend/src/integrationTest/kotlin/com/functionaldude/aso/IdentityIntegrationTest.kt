@@ -51,6 +51,13 @@ class IdentityIntegrationTest {
                 listOf("alice", "bob", "aso-admin", "outsider").forEach { username ->
                     val tokens = login.tokens(browser, issuer, username, resource = resource)
                     val access = tokens["access_token"].asString()
+                    if (username == "aso-admin") {
+                        assertEquals(listOf("aso-admins"), JWTParser.parse(access).jwtClaimsSet.getStringListClaim("groups"))
+                        assertEquals(
+                            listOf("aso-admins"),
+                            JWTParser.parse(tokens["id_token"].asString()).jwtClaimsSet.getStringListClaim("groups"),
+                        )
+                    }
                     val audiences = JWTParser.parse(access).jwtClaimsSet.audience
                     assertTrue("aso" in audiences)
                     assertTrue(resource !in audiences, "Exercise client-ID audience without the resource audience")
@@ -157,7 +164,7 @@ class IdentityIntegrationTest {
         private val login = OidcBrowserLogin()
 
         // Emulate providers such as Authentik that issue access tokens for the public client ID.
-        private val keycloak = KeycloakFixture(login.callback, login.callback, "aso").also { it.start() }
+        private val keycloak = KeycloakFixture(login.callback, login.callback, "aso", adminOnly = true).also { it.start() }
         private val issuer = keycloak.issuer
         private val db =
             PostgreSQLContainer(

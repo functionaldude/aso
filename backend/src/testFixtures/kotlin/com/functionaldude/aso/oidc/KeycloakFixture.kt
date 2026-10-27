@@ -19,6 +19,7 @@ class KeycloakFixture(
     additionalMcpClient: Boolean = false,
     codexCallback: String? = null,
     mcpJamCallback: String? = null,
+    adminOnly: Boolean = false,
 ) : GenericContainer<KeycloakFixture>(DockerImageName.parse(System.getProperty("aso.test.keycloak-image"))) {
     private var forwarder: LoopbackPortForwarder? = null
     val issuer: String get() = "${checkNotNull(forwarder) { "Keycloak fixture must be started" }.baseUrl}/realms/aso-dev"
@@ -28,6 +29,10 @@ class KeycloakFixture(
         val destination = "/opt/keycloak/data/import/aso-dev-realm.json"
         val json = JsonMapper.builder().build()
         val realm = json.readTree(Path.of(System.getProperty("aso.test.realm")).toFile())
+        if (adminOnly) {
+            val admin = (realm["users"] as ArrayNode).first { it["username"].asString() == "aso-admin" } as ObjectNode
+            admin.putArray("groups").add("/aso-admins")
+        }
         val clients = realm["clients"] as ArrayNode
         val shared = clients.first { it["clientId"].asString() == "aso" } as ObjectNode
         (shared["redirectUris"] as ArrayNode).add(mcpCallback)
