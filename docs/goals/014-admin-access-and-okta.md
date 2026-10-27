@@ -1,6 +1,6 @@
 # 014 — Admin access and Okta compatibility
 
-Status: in progress
+Status: complete
 
 ## Dependencies and prerequisites
 
@@ -31,7 +31,7 @@ On 2026-10-27 the owner approved admin-only membership and targeted Okta compati
 
 ## Progress and blockers
 
-Implementation and local verification are complete; the feature branch and pull request are being prepared. Live Okta compatibility remains unverified.
+Implementation and local verification are complete in [PR #17](https://github.com/functionaldude/aso/pull/17). Live Okta compatibility remains unverified; external provider and client checks remain an installation follow-up.
 
 ## Completion evidence
 
@@ -40,3 +40,4 @@ Implementation and local verification are complete; the feature branch and pull 
 - The isolated Keycloak fixture issued ID/access tokens for an admin with only `aso-admins`. Integration checked both signed tokens and MCP identity/authorization; the packaged application checked browser/admin access and the same MCP identity. Other isolated suites retain the seeded admin with both groups.
 - Signed-JWT decoder tests cover the documented `scp` array, existing `scope` string, malformed/conflicting claims, both audiences, and existing signature/issuer/expiry/subject and ID-token boundaries.
 - No live Okta tenant, Okta CLI client, or external deployment was exercised; Okta interoperability is unverified and requires the checklist in the [administrator guide](../agent-setup.md#okta-administrator-setup).
+- The verified implementation is commit `40431c2` on `codex/014-admin-access-and-okta`; [PR #17](https://github.com/functionaldude/aso/pull/17) targets `master`. PR CI is separate from the local results above.
