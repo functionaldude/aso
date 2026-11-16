@@ -34,7 +34,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.security:spring-security-test")
     testFixturesImplementation("org.testcontainers:testcontainers")
-    testFixturesImplementation("com.microsoft.playwright:playwright:1.58.0")
+    testFixturesImplementation("com.microsoft.playwright:playwright:1.61.0")
     testFixturesImplementation("tools.jackson.core:jackson-databind")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -55,13 +55,13 @@ listOf(integrationTest, e2eTest, oidcSmokeTest, imageSmokeTest).forEach {
 dependencies {
     add(integrationTest.implementationConfigurationName, "org.springframework.boot:spring-boot-starter-test")
     add(integrationTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
-    add(integrationTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(integrationTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.61.0")
     add(integrationTest.implementationConfigurationName, "org.testcontainers:testcontainers")
     add(e2eTest.implementationConfigurationName, "org.testcontainers:testcontainers")
     add(e2eTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
-    add(e2eTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(e2eTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.61.0")
     add(oidcSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers")
-    add(oidcSmokeTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.58.0")
+    add(oidcSmokeTest.implementationConfigurationName, "com.microsoft.playwright:playwright:1.61.0")
     add(imageSmokeTest.implementationConfigurationName, "org.testcontainers:testcontainers-postgresql")
 }
 
