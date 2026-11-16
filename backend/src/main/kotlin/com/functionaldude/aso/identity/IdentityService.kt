@@ -6,6 +6,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -38,13 +39,30 @@ class IdentityService(
             is OAuth2AuthenticationToken -> {
                 val user = authentication.principal as? OidcUser ?: throw AccessDeniedException("OIDC session required")
                 if (user.idToken.expiresAt?.isAfter(Instant.now()) != true) throw AccessDeniedException("Session expired; sign in again")
-                // Authorization claims come from the signed ID token, not mutable request fields/userinfo.
-                claims = user.idToken.claims
+                if (user.idToken.issuer.toString() != settings.issuer) throw AccessDeniedException("Unexpected issuer")
+                // Spring binds userinfo to the signed ID-token subject. Org mode obtains groups from that endpoint.
+                claims =
+                    if (settings.mcpTokenMode == "okta-org") {
+                        val info = user.userInfo ?: throw AccessDeniedException("OIDC userinfo required")
+                        if (info.subject != user.idToken.subject) throw AccessDeniedException("OIDC subject mismatch")
+                        info.claims + mapOf("iss" to settings.issuer)
+                    } else {
+                        user.idToken.claims
+                    }
                 channel = "web"
             }
             is JwtAuthenticationToken -> {
+                if (settings.mcpTokenMode != "jwt") throw AccessDeniedException("Introspected identity required")
                 if (human) throw AccessDeniedException("An authenticated browser session is required")
                 claims = authentication.token.claims
+                channel = "mcp"
+            }
+            is BearerTokenAuthentication -> {
+                if (human) throw AccessDeniedException("An authenticated browser session is required")
+                if (settings.mcpTokenMode != "okta-org" || authentication.token.expiresAt?.isAfter(Instant.now()) != true) {
+                    throw AccessDeniedException("Active introspected identity required")
+                }
+                claims = authentication.tokenAttributes
                 channel = "mcp"
             }
             else -> throw AccessDeniedException("Validated identity required")

@@ -12,6 +12,7 @@ data class IdentitySettings(
     val groupsClaim: String,
     val memberGroup: String,
     val adminGroup: String,
+    val mcpTokenMode: String = "jwt",
 ) {
     init {
         listOf(issuer, clientId, publicUrl, mcpAudience, groupsClaim, memberGroup, adminGroup)
@@ -25,8 +26,17 @@ data class IdentitySettings(
         }
         require(!publicUrl.endsWith("/")) { "Public URL must not end in /" }
         require(memberGroup != adminGroup) { "Member and admin groups must differ" }
+        require(mcpTokenMode in setOf("jwt", "okta-org")) { "MCP token mode must be jwt or okta-org" }
+        if (mcpTokenMode == "okta-org") {
+            require(URI(issuer).path.orEmpty().isEmpty() && !issuer.endsWith('/')) {
+                "Okta org mode requires the org issuer origin without a path or trailing slash"
+            }
+        }
     }
 
     val resource: String get() = "$publicUrl/mcp"
     val metadata: String get() = "$publicUrl/.well-known/oauth-protected-resource/mcp"
+    val scopes: List<String> get() =
+        listOf("openid", "profile", "email") +
+            if (mcpTokenMode == "okta-org") listOf("groups") else emptyList()
 }

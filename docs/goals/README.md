@@ -22,6 +22,7 @@ The product requirements live in [the spec](../../spec.md). These records descri
 | [012 — MCP client-ID audience compatibility](012-mcp-client-id-audience.md) | Accept resource/client-ID access tokens while rejecting ID tokens | 011 | Complete |
 | [013 — Agent setup tabs and refresh tokens](013-agent-setup-tabs.md) | Codex/Claude/Cursor desktop instructions and explicit refresh-token scope | 012 | Complete |
 | [014 — Admin access and Okta compatibility](014-admin-access-and-okta.md) | Admin-only workspace access and Okta token-format support | 001, 012, 013 | Complete |
+| [016 — Okta org authentication](016-okta-org-authentication.md) | Explicit introspection/userinfo mode with client binding and shared individual identity | 014 | Ready for review |
 
 *Goals 001 and 002 use Codex and MCP Jam per the owner's 2026-10-16 amendment. The 2026-10-17 amendment extends this to goal 006 and laptop MVP delivery: actual Codex/MCP Jam CLI plus explicitly simulated unavailable-client workflows. Native Claude Code/Cursor compatibility remains unverified and is not a completion gate for this amended MVP. Goal 006 also adds the in-app setup guide and recommended copyable `AGENTS.md` paragraph. Historical evidence remains in merged PRs #2 and #3.
 
