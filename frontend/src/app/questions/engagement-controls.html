@@ -41,10 +41,13 @@
         An encounter records this problem happening to you. It does not endorse a fix.
       </p>
       @if (recorded()) {
-        <p class="notice" role="status">Encounter recorded. Retries of this incident count once.</p>
+        <p class="notice" role="status">Encounter recorded.</p>
         <button mat-button [disabled]="busy()" (click)="independent()">
-          Start a later independent encounter
+          Record another encounter
         </button>
+        <p class="encounter-help">
+          Use this when the problem happens again on a separate occasion.
+        </p>
       } @else {
         <button mat-stroked-button [disabled]="busy()" (click)="encounter()">
           Record this encounter
@@ -53,29 +56,27 @@
     }
   }
   @if (kind === 'answer') {
-    <button mat-button (click)="evidence()" [disabled]="evidenceBusy()">
-      Read upvote evidence
-    </button>
+    <button mat-button (click)="evidence()" [disabled]="evidenceBusy()">View upvotes</button>
     @if (evidencePage(); as page) {
       <div class="evidence-panel">
         <p class="metadata">
-          Caller-reported evidence · No independent server verification or human acceptance.
+          Voters' notes on how they tested the fix. ASO hasn't checked these notes. Upvotes don't
+          mark the answer as accepted.
         </p>
         @for (vote of page.items; track vote.id) {
           <p class="metadata">
-            {{ vote.voter.displayName }} · {{ vote.channel }} ·
+            {{ vote.voter.displayName }} · {{ vote.channel === 'mcp' ? 'Agent' : 'Browser' }} ·
             {{ vote.createdAt | date: 'medium' }}
           </p>
           <pre class="context-value">{{
-            vote.callerReportedVerification ||
-              'No verification attestation supplied (browser upvote).'
+            vote.callerReportedVerification || 'No testing note provided.'
           }}</pre>
         } @empty {
-          <p>No active upvotes.</p>
+          <p>No upvotes yet.</p>
         }
         @if (page.nextCursor) {
           <button mat-button [disabled]="evidenceBusy()" (click)="evidence(page.nextCursor)">
-            More upvote evidence
+            Load more upvotes
           </button>
         }
       </div>

@@ -1365,7 +1365,8 @@ class PackagedApplicationE2ETest {
                 try {
                     owner.reload()
                     assertThat(questionComments.getByRole(AriaRole.STATUS)).hasText("Loading context…")
-                    assertThat(encounters.getByRole(AriaRole.STATUS)).containsText("Encounter recorded")
+                    assertThat(encounters.getByRole(AriaRole.STATUS)).hasText("Encounter recorded.")
+                    assertThat(encounters).containsText("Use this when the problem happens again on a separate occasion.")
                 } finally {
                     pendingComments.forEach { it.resume() }
                     owner.unroute(commentsPath)
@@ -1376,7 +1377,7 @@ class PackagedApplicationE2ETest {
                         AriaRole.BUTTON,
                         com.microsoft.playwright.Locator
                             .GetByRoleOptions()
-                            .setName("Start a later independent encounter"),
+                            .setName("Record another encounter"),
                     ).click()
                 ownerQuestion
                     .getByRole(
@@ -1458,10 +1459,10 @@ class PackagedApplicationE2ETest {
                         AriaRole.BUTTON,
                         com.microsoft.playwright.Locator
                             .GetByRoleOptions()
-                            .setName("Read upvote evidence"),
+                            .setName("View upvotes"),
                     ).click()
-                assertThat(answerControls).containsText("Caller-reported evidence")
-                assertThat(answerControls).containsText("No independent server verification or human acceptance")
+                assertThat(answerControls).containsText("ASO hasn't checked these notes")
+                assertThat(answerControls).containsText("Upvotes don't mark the answer as accepted")
                 assertThat(answerControls).containsText("Applied the fix and the previously failing JVM build passes.")
                 assertEquals(0, owner.locator(".accepted").count())
                 repeat(4) {
