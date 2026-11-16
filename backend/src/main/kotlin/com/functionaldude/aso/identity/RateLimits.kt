@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.HandlerInterceptor
@@ -60,6 +61,7 @@ class RateLimits(
                 is OAuth2AuthenticationToken ->
                     (authentication.principal as? OidcUser)?.idToken?.takeIf { it.expiresAt?.isAfter(clock.instant()) == true }?.claims
                 is JwtAuthenticationToken -> authentication.token.claims
+                is BearerTokenAuthentication -> authentication.tokenAttributes
                 else -> null
             } ?: return null // Security rejects unauthenticated requests independently.
         val issuer = principal["iss"]?.toString() ?: return null

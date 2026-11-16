@@ -67,5 +67,6 @@ aso:
     groups-claim: ${ASO_OIDC_GROUPS_CLAIM:}
     member-group: ${ASO_OIDC_MEMBER_GROUP:}
     admin-group: ${ASO_OIDC_ADMIN_GROUP:}
+    mcp-token-mode: ${ASO_OIDC_MCP_TOKEN_MODE:jwt}
   agent-setup:
     codex-callback-url: ${ASO_CODEX_CALLBACK_URL:http://127.0.0.1:8766/callback}

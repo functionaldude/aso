@@ -37,7 +37,7 @@ class AgentSetupController(
         AgentSetupInfo(
             mcpUrl = identity.resource,
             issuer = identity.issuer,
-            scopes = listOf("openid", "profile", "email", "offline_access"),
+            scopes = identity.scopes + "offline_access",
             clientId = identity.clientId,
             codexCallbackUrl = callbackUrl,
             recommendedParagraph = paragraph,

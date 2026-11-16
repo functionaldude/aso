@@ -1,6 +1,8 @@
 package com.functionaldude.aso.identity
 
 import jakarta.servlet.DispatcherType
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -26,6 +28,7 @@ import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import java.time.Clock
 
 @Configuration
 @EnableConfigurationProperties(IdentitySettings::class)
@@ -40,12 +43,13 @@ class SecurityConfiguration(
                 .registrationId("oidc")
                 .clientId(settings.clientId)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-                .scope("openid", "profile", "email")
+                .scope(settings.scopes)
                 .redirectUri("${settings.publicUrl}/login/oauth2/code/oidc")
                 .build(),
         )
 
     @Bean
+    @ConditionalOnProperty(prefix = "aso.identity", name = ["mcp-token-mode"], havingValue = "jwt", matchIfMissing = true)
     fun jwtDecoder(): JwtDecoder {
         val decoder = JwtDecoders.fromIssuerLocation<NimbusJwtDecoder>(settings.issuer)
         decoder.setJwtValidator(
@@ -61,7 +65,8 @@ class SecurityConfiguration(
     @Order(1)
     fun mcp(
         http: HttpSecurity,
-        decoder: JwtDecoder,
+        decoder: ObjectProvider<JwtDecoder>,
+        clock: Clock,
     ): SecurityFilterChain {
         http
             .securityMatcher("/mcp", "/mcp/**")
@@ -70,7 +75,11 @@ class SecurityConfiguration(
             .requestCache { it.disable() }
             .authorizeHttpRequests { it.anyRequest().authenticated() }
             .oauth2ResourceServer { resource ->
-                resource.jwt { it.decoder(decoder) }
+                if (settings.mcpTokenMode == "okta-org") {
+                    resource.opaqueToken { it.introspector(OktaOrgTokenIntrospector(settings, clock)) }
+                } else {
+                    resource.jwt { it.decoder(decoder.getObject()) }
+                }
                 resource.authenticationEntryPoint { _, response, _ ->
                     response.status = 401
                     response.setHeader("WWW-Authenticate", "Bearer resource_metadata=\"${settings.metadata}\"")

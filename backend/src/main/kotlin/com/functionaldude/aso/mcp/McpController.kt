@@ -28,7 +28,7 @@ class McpController(
     private fun originAllowed(request: HttpServletRequest) = request.getHeader("Origin").let { it == null || it == settings.publicUrl }
 
     @GetMapping("/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp")
-    fun metadata() = ResourceMetadata(settings.resource, listOf(settings.issuer), listOf("openid", "profile", "email"), listOf("header"))
+    fun metadata() = ResourceMetadata(settings.resource, listOf(settings.issuer), settings.scopes, listOf("header"))
 
     @GetMapping("/mcp")
     fun stream(
