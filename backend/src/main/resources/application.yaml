@@ -32,6 +32,9 @@ aso:
     window: ${ASO_RATE_LIMIT_WINDOW:1m}
   embedding:
     enabled: ${ASO_EMBEDDING_ENABLED:false}
+    provider: ${ASO_EMBEDDING_PROVIDER:local}
+    vertex-project: ${ASO_EMBEDDING_VERTEX_PROJECT:}
+    vertex-location: ${ASO_EMBEDDING_VERTEX_LOCATION:europe-west1}
     base-url: ${ASO_EMBEDDING_BASE_URL:http://127.0.0.1:1234/v1}
     allowed-hosts: ${ASO_EMBEDDING_ALLOWED_HOSTS:127.0.0.1,localhost,::1}
     model: ${ASO_EMBEDDING_MODEL:text-embedding-qwen3-embedding-0.6b}

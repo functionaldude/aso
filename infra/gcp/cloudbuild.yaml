@@ -1,0 +1,9 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, --tag, 'europe-west1-docker.pkg.dev/$PROJECT_ID/aso/aso:$BUILD_ID', '.']
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/aso/aso:$BUILD_ID'
+serviceAccount: projects/agentic-stack-overfl-mka5b8/serviceAccounts/aso-build@agentic-stack-overfl-mka5b8.iam.gserviceaccount.com
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 900s

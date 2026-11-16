@@ -16,3 +16,11 @@
 .idea/
 *.iml
 .vscode/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.gcp-build/
