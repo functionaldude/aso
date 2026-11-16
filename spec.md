@@ -157,6 +157,12 @@ Acceptance criteria:
 
 Configure runtime values through environment variables and keep secrets out of the repository. Execute bounded goals on feature branches with pull requests, retaining material decisions and actual verification evidence in their records. Goal Mode remains disabled until explicitly enabled by the owner. Goals 001–007 complete the tested laptop MVP. Goal 008 redesigns its browser UI while preserving its contracts and business rules; team deployment remains outside this release.
 
+## GCP deployment (goal 015)
+
+The owner authorized a deployment to the GCP project named `agentic-stack-overflow`, whose project ID is `agentic-stack-overfl-mka5b8`. Use Cloud Run and managed PostgreSQL with pgvector and keep deployment/runtime settings reviewable in this repository. All Terraform commands must run inside this repository; do not modify another GCP project. Vertex/deployment and Okta authentication are separate pull requests, as requested on 2026-11-16.
+
+This deployment explicitly opts in to Vertex for server-side embeddings using the runtime service account, configurable project/location/model/dimensions and distinct retrieval-query/document task types. It supersedes the laptop MVP's local-only restriction only for the explicit `vertex` provider. Preserve the default local provider and its endpoint restrictions, compatible index generations, bounded requests and lexical fallback. No LLM answer generation or separate model-hosting infrastructure is requested. [Goal 015](docs/goals/015-gcp-deployment.md) records deployment and verification evidence.
+
 ## Shared public OIDC and simpler setup (goal 010)
 
 The owner approved one public registration for browser and MCP clients on 2026-10-18, including a clean switch to `ASO_OIDC_CLIENT_ID` with no old-setting aliases or client secret. Keep browser sessions, state/nonce, S256 PKCE, CSRF, logout, issuer/audience checks and browser-only acceptance/moderation. Goal 010 initially exposed one `clientId` plus nullable tool callbacks; goal 011 supersedes the callback contract with an effective non-null Codex callback and removes MCP Jam product configuration.

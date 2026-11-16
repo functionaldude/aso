@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (ignored). Provision with these blank, then fill after building/OIDC registration.
+image          = ""
+oidc_issuer    = ""
+oidc_client_id = ""

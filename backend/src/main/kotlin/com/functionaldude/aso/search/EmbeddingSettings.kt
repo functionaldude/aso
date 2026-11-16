@@ -17,6 +17,9 @@ class SearchConfiguration
 @ConfigurationProperties("aso.embedding")
 class EmbeddingSettings(
     val enabled: Boolean = false,
+    val provider: String = "local",
+    val vertexProject: String = "",
+    val vertexLocation: String = "europe-west1",
     val baseUrl: String = "http://127.0.0.1:1234/v1",
     val allowedHosts: List<String> = listOf("127.0.0.1", "localhost", "::1"),
     val model: String = "text-embedding-qwen3-embedding-0.6b",
@@ -40,6 +43,13 @@ class EmbeddingSettings(
     val minSimilarity: Double = 0.45,
 ) {
     init {
+        require(provider in setOf("local", "vertex")) { "Embedding provider must be local or vertex" }
+        if (provider == "vertex") {
+            require(vertexProject.matches(Regex("[a-z][a-z0-9-]{4,61}[a-z0-9]"))) { "Vertex requires an explicit project ID" }
+            require(vertexLocation.matches(Regex("[a-z]+-[a-z]+[0-9]+"))) { "Vertex requires a regional location" }
+            require(model.matches(Regex("[a-zA-Z0-9@._-]+")))
+            require(batchSize == 1) { "Vertex gemini-embedding requests support one input at a time" }
+        }
         require(dimensions in 1..16000 && model.isNotBlank() && preparationVersion.isNotBlank())
         require(maxInputCharacters in 128..100000 && maxQueryCharacters in 1..1000 && maxDocumentChunks in 1..1024)
         require(batchSize in 1..64 && maxResponseBytes in 1024..64_000_000 && workerBatchSize in 1..100)
@@ -57,7 +67,7 @@ class EmbeddingSettings(
     val profile: String
         get() =
             listOf(
-                baseUrl,
+                if (provider == "vertex") "vertex:$vertexProject/$vertexLocation" else baseUrl,
                 model,
                 dimensions,
                 preparationVersion,
@@ -72,6 +82,12 @@ class EmbeddingSettings(
         get() = MessageDigest.getInstance("SHA-256").digest(profile.toByteArray()).joinToString("") { "%02x".format(it) }
 
     fun endpoint(): URI {
+        if (provider == "vertex") {
+            return URI(
+                "https://$vertexLocation-aiplatform.googleapis.com/v1/projects/$vertexProject/locations/$vertexLocation/" +
+                    "publishers/google/models/$model:predict",
+            )
+        }
         val uri = URI("$baseUrl/embeddings")
         require(InetAddress.getAllByName(uri.host).all { it.isLoopbackAddress || it.isSiteLocalAddress || it.isLinkLocalAddress }) {
             "Embedding endpoint must resolve only to local infrastructure"

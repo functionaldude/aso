@@ -11,6 +11,7 @@ plugins {
 }
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+springBoot { mainClass = "com.functionaldude.aso.AsoApplicationKt" }
 kotlin { compilerOptions { freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property") } }
 
 dependencies {
@@ -24,6 +25,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.google.cloud.sql:postgres-socket-factory:1.31.0")
     implementation("org.commonmark:commonmark:0.30.0")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
