@@ -23,11 +23,12 @@ data class EmbeddingResponse(
     val data: List<EmbeddingRow>,
 )
 
-class EmbeddingUnavailable : RuntimeException("Local embeddings unavailable or incompatible")
+class EmbeddingUnavailable : RuntimeException("Embeddings unavailable or incompatible")
 
 @Component
 class EmbeddingClient(
     private val settings: EmbeddingSettings,
+    private val authorization: EmbeddingAuthorization = VertexAuthorization(),
 ) {
     private val json = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
     private val http =
@@ -50,38 +51,64 @@ class EmbeddingClient(
     ): List<List<Double>> {
         try {
             if (!settings.enabled || inputs.any { it.length > settings.maxInputCharacters }) throw EmbeddingUnavailable()
-            val builder =
-                HttpRequest
-                    .newBuilder(settings.endpoint())
-                    .timeout(if (indexing) settings.indexingTimeout else settings.requestTimeout)
-                    .header("Content-Type", "application/json")
-            if (settings.apiKey.isNotEmpty()) builder.header("Authorization", "Bearer ${settings.apiKey}")
-            val request =
-                builder
-                    .POST(
-                        HttpRequest.BodyPublishers.ofString(json.writeValueAsString(EmbeddingRequest(settings.model, inputs))),
-                    ).build()
             val response =
                 http.send(
-                    request,
+                    request(inputs, indexing),
                     HttpResponse.BodyHandlers.limiting(HttpResponse.BodyHandlers.ofByteArray(), settings.maxResponseBytes.toLong()),
                 )
             val body = response.body()
             if (response.statusCode() != 200 || body.size > settings.maxResponseBytes) throw EmbeddingUnavailable()
-            val result = json.readValue(body, EmbeddingResponse::class.java)
-            if (result.model != settings.model || result.data.size != inputs.size ||
-                result.data.map { it.index }.sorted() != inputs.indices.toList()
-            ) {
-                throw EmbeddingUnavailable()
-            }
-            return result.data.sortedBy { it.index }.map { row ->
-                if (row.embedding.size != settings.dimensions || row.embedding.any { !it.isFinite() }) throw EmbeddingUnavailable()
-                val norm = sqrt(row.embedding.sumOf { it * it })
+            return vectors(body, inputs.size).map { vector ->
+                if (vector.size != settings.dimensions || vector.any { !it.isFinite() }) throw EmbeddingUnavailable()
+                val norm = sqrt(vector.sumOf { it * it })
                 if (!norm.isFinite() || norm <= 0.0) throw EmbeddingUnavailable()
-                row.embedding.map { it / norm }
+                vector.map { it / norm }
             }
         } catch (_: Exception) {
             throw EmbeddingUnavailable()
         }
+    }
+
+    internal fun request(
+        inputs: List<String>,
+        indexing: Boolean,
+    ): HttpRequest {
+        val builder =
+            HttpRequest
+                .newBuilder(settings.endpoint())
+                .timeout(if (indexing) settings.indexingTimeout else settings.requestTimeout)
+                .header("Content-Type", "application/json")
+        val payload =
+            if (settings.provider == "vertex") {
+                builder.header("Authorization", "Bearer ${authorization.token()}")
+                VertexEmbeddingRequest(
+                    inputs.map { VertexEmbeddingInstance(it, if (indexing) "RETRIEVAL_DOCUMENT" else "RETRIEVAL_QUERY") },
+                    VertexEmbeddingParameters(settings.dimensions),
+                )
+            } else {
+                if (settings.apiKey.isNotEmpty()) builder.header("Authorization", "Bearer ${settings.apiKey}")
+                EmbeddingRequest(settings.model, inputs)
+            }
+        return builder.POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(payload))).build()
+    }
+
+    internal fun vectors(
+        body: ByteArray,
+        count: Int,
+    ): List<List<Double>> {
+        if (settings.provider == "vertex") {
+            val result = json.readValue(body, VertexEmbeddingResponse::class.java)
+            if (result.predictions.size != count || result.predictions.any { it.embeddings.statistics.truncated }) {
+                throw EmbeddingUnavailable()
+            }
+            return result.predictions.map { it.embeddings.values }
+        }
+        val result = json.readValue(body, EmbeddingResponse::class.java)
+        if (result.model != settings.model || result.data.size != count ||
+            result.data.map { it.index }.sorted() != (0 until count).toList()
+        ) {
+            throw EmbeddingUnavailable()
+        }
+        return result.data.sortedBy { it.index }.map { it.embedding }
     }
 }
