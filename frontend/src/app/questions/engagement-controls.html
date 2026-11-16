@@ -41,10 +41,13 @@
         An encounter records this problem happening to you. It does not endorse a fix.
       </p>
       @if (recorded()) {
-        <p class="notice" role="status">Encounter recorded. Retries of this incident count once.</p>
+        <p class="notice" role="status">Encounter recorded.</p>
         <button mat-button [disabled]="busy()" (click)="independent()">
-          Start a later independent encounter
+          Record another encounter
         </button>
+        <p class="encounter-help">
+          Use this when the problem happens again on a separate occasion.
+        </p>
       } @else {
         <button mat-stroked-button [disabled]="busy()" (click)="encounter()">
           Record this encounter

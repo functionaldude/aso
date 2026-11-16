@@ -1365,7 +1365,8 @@ class PackagedApplicationE2ETest {
                 try {
                     owner.reload()
                     assertThat(questionComments.getByRole(AriaRole.STATUS)).hasText("Loading context…")
-                    assertThat(encounters.getByRole(AriaRole.STATUS)).containsText("Encounter recorded")
+                    assertThat(encounters.getByRole(AriaRole.STATUS)).hasText("Encounter recorded.")
+                    assertThat(encounters).containsText("Use this when the problem happens again on a separate occasion.")
                 } finally {
                     pendingComments.forEach { it.resume() }
                     owner.unroute(commentsPath)
@@ -1376,7 +1377,7 @@ class PackagedApplicationE2ETest {
                         AriaRole.BUTTON,
                         com.microsoft.playwright.Locator
                             .GetByRoleOptions()
-                            .setName("Start a later independent encounter"),
+                            .setName("Record another encounter"),
                     ).click()
                 ownerQuestion
                     .getByRole(
